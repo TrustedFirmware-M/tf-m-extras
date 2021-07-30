@@ -1,0 +1,17 @@
+* text=auto
+
+# Text files that should be normalized
+*.c text
+*.h text
+*.py text
+*.json text
+*.txt text
+*.rst text
+*.pdsc text
+*.css text
+*.svd text
+
+# Binary files that should not be normalized
+*.a binary
+*.lib binary
+*.pdf binary

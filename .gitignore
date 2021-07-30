@@ -1,0 +1,13 @@
+*.pyc
+**/__pycache__
+*.uvguix.*
+*.uvmpw.uvgui.*
+
+# Eclipse
+*.project
+*.cproject
+.pydevproject
+.settings/
+
+# Visual Studio Code
+.vscode/
