@@ -59,6 +59,21 @@ Maintainers
 -----------
 - David Vincze `<David.Vincze@arm.com>`_
 
+vad_an552_sp
+============
+
+Description
+-----------
+Secure partition for the AN552 FPGA image. It implements voice activity
+detection on the microphone input of the MPS3 board, and if voice detected
+(which can be any noise) a short sample (~100 ms) is recorded. Then it can be
+calculated that which frequency component has the highest energy in the
+recorded sample.
+
+Maintainers
+-----------
+- Gabor Toth `<gabor.toth@arm.com> <gabor.toth@arm.com>`_
+- Mark Horvath `<mark.horvath@arm.com> <mark.horvath@arm.com>`_
 
 ---------------------------
 

@@ -1,0 +1,27 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2018-2022, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "description": "Extra manifest list for VAD AN552 example",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "description": "VAD AN552 Example Partition",
+      "manifest": "vad_an552_sp.yaml",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 274,
+      "linker_pattern": {
+        "library_list": [
+           "*vad_an552.*"
+        ]
+      }
+    }
+  ]
+}

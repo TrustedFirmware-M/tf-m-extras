@@ -1,0 +1,47 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2021-2022, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "psa_framework_version": 1.1,
+  "name": "TFM_SP_VAD_AN552",
+  "type": "APPLICATION-ROT",
+  "priority": "NORMAL",
+  "model": "IPC",
+  "entry_point": "vad_main",
+  "stack_size": "0x1000",
+  "services": [
+    {
+      "name": "TFM_AN552_VAD",
+      "sid": "0x00000100",
+      "connection_based": false,
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    }
+  ],
+  "irqs": [
+    {
+      "source": "I2S_IRQn",
+      "name": "I2S",
+      "handling": "FLIH",
+    }
+  ],
+  "mmio_regions": [
+    {
+      "name": "TFM_PERIPHERAL_FPGA_I2S",
+      "permission": "READ-WRITE"
+    },
+    {
+      "name": "TFM_PERIPHERAL_AUDIO_I2C",
+      "permission": "READ-WRITE"
+    },
+    {
+      "name": "TFM_PERIPHERAL_TIMER3",
+      "permission": "READ-WRITE"
+    }
+  ]
+}
