@@ -40,6 +40,19 @@ Maintainers
 -----------
 Jianliang Shen `<jianliang.shen@arm.com> <jianliang.shen@arm.com>`_
 
+vad_an552
+=========
+
+Description
+-----------
+Example application for the AN552 FPGA image, details can be found
+`here </examples/vad_an552/readme.rst>`.
+
+Maintainers
+-----------
+- Gabor Toth `<gabor.toth@arm.com> <gabor.toth@arm.com>`_
+- Mark Horvath `<mark.horvath@arm.com> <mark.horvath@arm.com>`_
+
 ---------------------------
 
 *Copyright (c) 2021-2022, Arm Limited. All rights reserved.*

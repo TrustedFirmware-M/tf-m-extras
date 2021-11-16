@@ -1,0 +1,123 @@
+From c18197c62a0fb0ca46e05b7709245d1652e160fd Mon Sep 17 00:00:00 2001
+From: Mark Horvath <mark.horvath@arm.com>
+Date: Thu, 28 Oct 2021 10:19:10 +0200
+Subject: [PATCH 1/1] Align with TF-M 1.4 release
+
+TF-M stepped mbedtls to 3.0.0 which requires some minor changes.
+
+Signed-off-by: Mark Horvath <mark.horvath@arm.com>
+---
+ iot_pkcs11_psa.c                   |  4 +--
+ iot_pkcs11_psa_object_management.c | 44 ++++++++++++++++++++----------
+ 2 files changed, 31 insertions(+), 17 deletions(-)
+
+diff --git a/iot_pkcs11_psa.c b/iot_pkcs11_psa.c
+index 7b4dafa..123714a 100644
+--- a/iot_pkcs11_psa.c
++++ b/iot_pkcs11_psa.c
+@@ -3502,7 +3502,7 @@ CK_DEFINE_FUNCTION( CK_RV, C_GenerateKeyPair )( CK_SESSION_HANDLE xSession,
+     if( xResult == CKR_OK )
+     {
+         uxAlgorithm = PSA_ALG_ECDSA( PSA_ALG_SHA_256 );
+-        uxKeyType = PSA_KEY_TYPE_ECC_KEY_PAIR( PSA_ECC_CURVE_SECP256R1 );
++        uxKeyType = PSA_KEY_TYPE_ECC_KEY_PAIR( PSA_ECC_FAMILY_SECP_R1 );
+         if( strcmp( pxPrivateLabel->pValue,
+                     pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS ) == 0 )
+         {
+@@ -3539,7 +3539,7 @@ CK_DEFINE_FUNCTION( CK_RV, C_GenerateKeyPair )( CK_SESSION_HANDLE xSession,
+         }
+         if ( uxStatus == PSA_SUCCESS )
+         {
+-            uxKeyType = PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_CURVE_SECP256R1);
++            uxKeyType = PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1);
+             uxAlgorithm = PSA_ALG_ECDSA( PSA_ALG_SHA_256 );
+             if( strcmp( pxPublicLabel->pValue,
+                         pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS ) == 0 )
+diff --git a/iot_pkcs11_psa_object_management.c b/iot_pkcs11_psa_object_management.c
+index 5f5ef79..64c8e83 100644
+--- a/iot_pkcs11_psa_object_management.c
++++ b/iot_pkcs11_psa_object_management.c
+@@ -38,6 +38,20 @@
+ extern int convert_pem_to_der( const unsigned char * pucInput, size_t xLen,
+                                unsigned char * pucOutput, size_t * pxOlen );
+ 
++/*
++ * Defines the maximum export size of a key with given key_type and key_bits.
++ */
++
++#define PSA_KEY_EXPORT_MAX_SIZE(key_type, key_bits)                     \
++    (PSA_KEY_TYPE_IS_UNSTRUCTURED(key_type) ? PSA_BITS_TO_BYTES(key_bits) : \
++     (key_type) == PSA_KEY_TYPE_RSA_KEY_PAIR ? PSA_KEY_EXPORT_RSA_KEY_PAIR_MAX_SIZE(key_bits) : \
++     (key_type) == PSA_KEY_TYPE_RSA_PUBLIC_KEY ? PSA_KEY_EXPORT_RSA_PUBLIC_KEY_MAX_SIZE(key_bits) : \
++     (key_type) == PSA_KEY_TYPE_DSA_KEY_PAIR ? PSA_KEY_EXPORT_DSA_KEY_PAIR_MAX_SIZE(key_bits) : \
++     (key_type) == PSA_KEY_TYPE_DSA_PUBLIC_KEY ? PSA_KEY_EXPORT_DSA_PUBLIC_KEY_MAX_SIZE(key_bits) : \
++     PSA_KEY_TYPE_IS_ECC_KEY_PAIR(key_type) ? PSA_KEY_EXPORT_ECC_KEY_PAIR_MAX_SIZE(key_bits) : \
++     PSA_KEY_TYPE_IS_ECC_PUBLIC_KEY(key_type) ? PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(key_bits) : \
++     0)
++
+ /*
+  * This is the context of the PKCS#11 PSA object. It is placed in a section.
+  * named "tasks_share". If MPU is enabled, tasks that call PKCS#11 APIs should
+@@ -53,36 +67,36 @@ P11KeyConfig_t P11KeyConfig __attribute__(( section( "tasks_share" ) ));
+ * @return PSA ECC group ID.
+ */
+ 
+-static psa_ecc_curve_t mbedtls_ecc_group_to_psa( mbedtls_ecp_group_id grpid )
++static psa_ecc_family_t mbedtls_ecc_group_to_psa( mbedtls_ecp_group_id grpid )
+ {
+     switch( grpid )
+     {
+         case MBEDTLS_ECP_DP_SECP192R1:
+-            return( PSA_ECC_CURVE_SECP192R1 );
++            return( PSA_ECC_FAMILY_SECP_R1 );
+         case MBEDTLS_ECP_DP_SECP224R1:
+-            return( PSA_ECC_CURVE_SECP224R1 );
++            return( PSA_ECC_FAMILY_SECP_R1 );
+         case MBEDTLS_ECP_DP_SECP256R1:
+-            return( PSA_ECC_CURVE_SECP256R1 );
++            return( PSA_ECC_FAMILY_SECP_R1 );
+         case MBEDTLS_ECP_DP_SECP384R1:
+-            return( PSA_ECC_CURVE_SECP384R1 );
++            return( PSA_ECC_FAMILY_SECP_R1 );
+         case MBEDTLS_ECP_DP_SECP521R1:
+-            return( PSA_ECC_CURVE_SECP521R1 );
++            return( PSA_ECC_FAMILY_SECP_R1 );
+         case MBEDTLS_ECP_DP_BP256R1:
+-            return( PSA_ECC_CURVE_BRAINPOOL_P256R1 );
++            return( PSA_ECC_FAMILY_BRAINPOOL_P_R1 );
+         case MBEDTLS_ECP_DP_BP384R1:
+-            return( PSA_ECC_CURVE_BRAINPOOL_P384R1 );
++            return( PSA_ECC_FAMILY_BRAINPOOL_P_R1 );
+         case MBEDTLS_ECP_DP_BP512R1:
+-            return( PSA_ECC_CURVE_BRAINPOOL_P512R1 );
++            return( PSA_ECC_FAMILY_BRAINPOOL_P_R1 );
+         case MBEDTLS_ECP_DP_CURVE25519:
+-            return( PSA_ECC_CURVE_CURVE25519 );
++            return( PSA_ECC_FAMILY_MONTGOMERY );
+         case MBEDTLS_ECP_DP_SECP192K1:
+-            return( PSA_ECC_CURVE_SECP192K1 );
++            return( PSA_ECC_FAMILY_SECP_K1 );
+         case MBEDTLS_ECP_DP_SECP224K1:
+-            return( PSA_ECC_CURVE_SECP224K1 );
++            return( PSA_ECC_FAMILY_SECP_K1 );
+         case MBEDTLS_ECP_DP_SECP256K1:
+-            return( PSA_ECC_CURVE_SECP256K1 );
++            return( PSA_ECC_FAMILY_SECP_K1 );
+         case MBEDTLS_ECP_DP_CURVE448:
+-            return( PSA_ECC_CURVE_CURVE448 );
++            return( PSA_ECC_FAMILY_MONTGOMERY );
+         default:
+             return( 0 );
+     }
+@@ -115,7 +129,7 @@ CK_OBJECT_HANDLE PKCS11PSASaveObject( CK_ATTRIBUTE_PTR pxClass,
+     CK_RV xBytesWritten = 0;
+     CK_RV xReturn;
+     psa_status_t uxStatus = PSA_SUCCESS;
+-    psa_ecc_curve_t curve_id;
++    psa_ecc_family_t curve_id;
+     const mbedtls_ecp_keypair *ec;
+     unsigned char cPrivateKeyRaw[EC_PRIVATE_KEY_MAX_LENGTH];
+     size_t xPrivateKeyRawSize = 0;
+-- 
+2.25.1
+

@@ -1,0 +1,28 @@
+From 35470d82fcf3be2ef68b54c7a999bde69b8a6a03 Mon Sep 17 00:00:00 2001
+From: Mark Horvath <mark.horvath@arm.com>
+Date: Thu, 28 Oct 2021 18:25:23 +0200
+Subject: [PATCH 1/1] Remove const qualifier from appFirmwareVersion
+
+The PSA implementation of the OTA PAL fills the application version at
+runtime.
+
+Signed-off-by: Mark Horvath <mark.horvath@arm.com>
+---
+ source/include/ota_appversion32.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/source/include/ota_appversion32.h b/source/include/ota_appversion32.h
+index 4db4e77..3fa0fae 100644
+--- a/source/include/ota_appversion32.h
++++ b/source/include/ota_appversion32.h
+@@ -64,6 +64,6 @@ typedef struct
+     } u; /*!< @brief Version based on configuration in big endian or little endian. */
+ } AppVersion32_t;
+ 
+-extern const AppVersion32_t appFirmwareVersion; /*!< @brief Making the version number available globally through external linkage. */
++extern AppVersion32_t appFirmwareVersion; /*!< @brief Making the version number available globally through external linkage. */
+ 
+ #endif /* ifndef IOT_APPVERSION32_H */
+-- 
+2.25.1
+
