@@ -1,0 +1,39 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2020-2022, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "psa_framework_version": 1.1,
+  "name": "TFM_DMA350_EXAMPLE",
+  "type": "APPLICATION-ROT",
+  "priority": "NORMAL",
+  "model": "IPC",
+  "entry_point": "tfm_dma350_example_partition_main",
+  "stack_size": "0x200",
+  "services": [
+    {
+      "name": "PLACEHOLDER_SERVICE",
+      "sid": "0x00001000",
+      "non_secure_clients": true,
+      "connection_based": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    }
+  ],
+  "mmio_regions": [
+    {
+      "name": "TFM_PERIPHERAL_DMA0_CH0",
+      "permission": "READ-WRITE"
+    }
+  ],
+  "irqs": [
+    {
+      "source": "TFM_DMA0_CH0_IRQ",
+      "name": "TFM_DMA0_CH0_IRQ",
+      "handling": "SLIH",
+    }
+  ]
+}
