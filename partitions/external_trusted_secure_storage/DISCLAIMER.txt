@@ -1,0 +1,13 @@
+Disclaimer of Warranty
+--------------------------
+This software code and all associated documentation, comments or other
+information (collectively "Software") is provided "AS IS" without warranty of
+any kind. MACRONIX INTERNATIONAL Co., LTD ("MXIC") does not warrant the
+functions contained in the program will meet your requirements or that the
+operation of the program will be uninterrupted or error-free.
+IN NO EVENT, UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING,
+MXIC OR ANY PERSON BE LIABLE FOR ANY LOSS, EXPENSE OR DAMAGE, OF ANY TYPE OR
+NATURE ARISING OUT OF THE USE OF, OR INABILITY TO USE THIS SOFTWARE OR PROGRAM,
+INCLUDING, BUT NOT LIMITED TO, CLAIMS, SUITS OR CAUSES OF ACTION INVOLVING
+ALLEGED INFRINGEMENT OF COPYRIGHTS, PATENTS, TRADEMARKS, TRADE SECRETS,
+OR UNFAIR COMPETITION.

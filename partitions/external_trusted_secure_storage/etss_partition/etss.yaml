@@ -1,0 +1,87 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2020-2022 Macronix. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "psa_framework_version": 1.0,
+  "name": "SP_ETSS",
+  "type": "PSA-ROT",
+  "priority": "NORMAL",
+  "entry_point": "etss_req_mngr_init",
+  "stack_size": "0x2000",
+  "services" : [{
+    "name": "ETSS_SET",
+    "sid": "0x000000f0",
+    "non_secure_clients": true,
+    "version": 1,
+    "version_policy": "STRICT"
+   },
+   {
+    "name": "ETSS_GET",
+    "sid": "0x000000f1",
+    "non_secure_clients": true,
+    "version": 1,
+    "version_policy": "STRICT"
+   },
+   {
+    "name": "ETSS_GET_INFO",
+    "sid": "0x000000f2",
+    "non_secure_clients": true,
+    "version": 1,
+    "version_policy": "STRICT"
+   },
+   {
+    "name": "ETSS_REMOVE",
+    "sid": "0x000000f3",
+    "non_secure_clients": true,
+    "version": 1,
+    "version_policy": "STRICT"
+   },
+   {
+      "name": "ETSS_GET_PUF",
+      "sid": "0x000000f4",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "ETSS_GENERATE_RANDOM_NUMBER",
+      "sid": "0x000000f5",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "ETSS_MC_INCREMENT",
+      "sid": "0x000000f6",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "ETSS_MC_GET",
+      "sid": "0x000000f7",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "ETSS_SECURE_FLASH_PROVISIONING",
+      "sid": "0x000000f8",
+      "non_secure_clients": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    }
+  ],
+
+  "dependencies": [
+    "TFM_ITS_SET",
+    "TFM_ITS_GET",
+    "TFM_ITS_GET_INFO",
+    "TFM_ITS_REMOVE",
+    "TFM_CRYPTO"
+  ]
+}

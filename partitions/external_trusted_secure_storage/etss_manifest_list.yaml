@@ -1,0 +1,29 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2020-2022 Macronix International Co. LTD. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "name": "etss partition manifests",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "name": "External Trusted Secure Storage Service",
+      "manifest": "etss_partition/etss.yaml",
+      "output_path": "secure_fw/partitions/external_trusted_secure_storage",
+      "conditional": "TFM_PARTITION_EXTERNAL_TRUSTED_SECURE_STORAGE",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 281,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_etss.*"
+         ]
+      }
+    }
+  ]
+}

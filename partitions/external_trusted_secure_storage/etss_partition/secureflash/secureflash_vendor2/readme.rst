@@ -1,0 +1,1 @@
+Reserved for secure flash vendor2's specifc implementation
