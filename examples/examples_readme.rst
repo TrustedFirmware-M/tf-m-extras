@@ -2,9 +2,33 @@
 Examples
 ########
 
-(The list and simple introduction of the examples in this folder)
+The list and simple introduction of the examples in this folder.
 
-*  DMA-350 Secure tests
-*  Non-secure DMA-350 examples for the Corstone-310 FVP platform
+corstone310_fvp_dma
+===================
+
+Description
+-----------
+
+* DMA-350 Secure tests
+* Non-secure DMA-350 examples for the Corstone-310 FVP platform
+
+Maintainers
+-----------
+- Bence Balogh `<bence.balogh@arm.com> <bence.balogh@arm.com>`_
+- Mark Horvath `<mark.horvath@arm.com> <mark.horvath@arm.com>`_
+
+extra_test_suites
+=================
+
+Description
+-----------
+An example and template of out-of-tree build of extra regression test suites.
+
+Maintainers
+-----------
+Jianliang Shen `<jianliang.shen@arm.com> <jianliang.shen@arm.com>`_
+
+---------------------------
 
 *Copyright (c) 2021-2022, Arm Limited. All rights reserved.*
