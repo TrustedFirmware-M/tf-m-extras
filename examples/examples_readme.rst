@@ -18,8 +18,8 @@ Maintainers
 - Bence Balogh `<bence.balogh@arm.com> <bence.balogh@arm.com>`_
 - Mark Horvath `<mark.horvath@arm.com> <mark.horvath@arm.com>`_
 
-extra_test_suites
-=================
+extra_test_suites_example
+=========================
 
 Description
 -----------

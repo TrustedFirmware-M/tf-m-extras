@@ -14,7 +14,7 @@ Build steps for mps3/corstone310_fvp platform
 
 .. code-block:: bash
 
- $ cmake -S . -B cmake_build -DTFM_PLATFORM=arm/mps3/corstone310_fvp -DTFM_TOOLCHAIN_FILE=toolchain_ARMCLANG.cmake -DEXTRA_S_TEST_SUITES_PATHS=<tf-m-extras root>/examples/extra_test_suites/dma350_s
+ $ cmake -S . -B cmake_build -DTFM_PLATFORM=arm/mps3/corstone310_fvp -DTFM_TOOLCHAIN_FILE=toolchain_ARMCLANG.cmake -DEXTRA_S_TEST_SUITES_PATHS=<tf-m-extras root>/examples/corstone310_fvp_dma/dma350_s
 
 2. Then:
 
