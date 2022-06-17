@@ -45,13 +45,6 @@ target_link_libraries(tfm_app_rot_partition_dma350_unpriv
         tfm_sprt
 )
 
-# The veneers give warnings about not being properly declared so they get hidden
-# to not overshadow _real_ warnings.
-set_source_files_properties(tfm_dma350_example_partition_secure_api.c
-    PROPERTIES
-        COMPILE_FLAGS -Wno-implicit-function-declaration
-)
-
 ############################ Partition Defs ####################################
 
 target_link_libraries(tfm_partitions
