@@ -16,6 +16,19 @@ Maintainers
 - Bence Balogh `<bence.balogh@arm.com> <bence.balogh@arm.com>`_
 - Mark Horvath `<mark.horvath@arm.com> <mark.horvath@arm.com>`_
 
+measured_boot
+=============
+
+Description
+-----------
+Measured boot partition for extending and retrieving software component
+measurements for RSS platform.
+
+Maintainers
+-----------
+- Maulik Patel `<Maulik.Patel@arm.com>`_
+- David Vincze `<David.Vincze@arm.com>`_
+
 ---------------------------
 
 *Copyright (c) 2021-2022, Arm Limited. All rights reserved.*

@@ -1,0 +1,29 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2022, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+{
+  "name": "Measured boot secure partition",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "name": "TFM Measured Boot Service",
+      "short_name": "TFM_SP_MEASURED_BOOT",
+      "manifest": "tfm_measured_boot.yaml",
+      "output_path": "secure_fw/partitions/measured_boot",
+      "conditional": "@TFM_PARTITION_MEASURED_BOOT@",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 275,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_measured_boot.*"
+        ]
+      }
+    }
+  ]
+}
