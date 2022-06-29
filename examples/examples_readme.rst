@@ -29,6 +29,17 @@ Maintainers
 -----------
 Jianliang Shen `<jianliang.shen@arm.com> <jianliang.shen@arm.com>`_
 
+example_partition
+=================
+
+Description
+-----------
+A simple secure partition implementation.
+
+Maintainers
+-----------
+Jianliang Shen `<jianliang.shen@arm.com> <jianliang.shen@arm.com>`_
+
 ---------------------------
 
 *Copyright (c) 2021-2022, Arm Limited. All rights reserved.*
