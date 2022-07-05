@@ -10,7 +10,7 @@
 #include "psa/client.h"
 #include "psa_manifest/sid.h"
 
-psa_status_t tfm_example_partition_call(uint32_t arg)
+psa_status_t tfm_example_service(uint32_t arg)
 {
     psa_status_t status;
     psa_handle_t handle;
@@ -23,7 +23,7 @@ psa_status_t tfm_example_partition_call(uint32_t arg)
         return PSA_HANDLE_TO_ERROR(handle);
     }
 
-    status = psa_call(handle, PSA_IPC_CALL, in_vec, 1, NULL, 0);
+    status = psa_call(handle, PSA_IPC_CALL, in_vec, IOVEC_LEN(in_vec), NULL, 0);
 
     psa_close(handle);
 

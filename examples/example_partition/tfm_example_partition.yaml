@@ -1,39 +1,28 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2020-2021, Arm Limited. All rights reserved.
+# Copyright (c) 2020-2022, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
 #-------------------------------------------------------------------------------
 
 {
-  "psa_framework_version": 1.0,
+  "psa_framework_version": 1.1,
   "name": "TFM_SP_EXAMPLE",
   "type": "APPLICATION-ROT",
+  "model": "SFN",
   "priority": "NORMAL",
   "entry_point": "tfm_example_partition_main",
   "stack_size": "0x200",
-  "mmio_regions": [
-    {
-      "name": "TFM_PERIPHERAL_TIMER0",
-      "permission": "READ-WRITE"
-    }
-  ],
   "services": [
     {
       "name": "TFM_EXAMPLE_SERVICE",
       # SIDs must be unique, ones that are currently in use are documented in
-      # tfm_secure_partition_addition.rst on line 184
+      # tfm_secure_partition_addition.rst
       "sid": "0x00001000",
+      "connection_based": true,
       "non_secure_clients": true,
       "version": 1,
       "version_policy": "STRICT"
-    }
-  ],
-  "irqs": [
-    {
-      "source": "TFM_TIMER0_IRQ",
-      "signal": "TFM_EXAMPLE_SIGNAL_TIMER_0_IRQ",
-      "tfm_irq_priority": 64,
     }
   ],
 }

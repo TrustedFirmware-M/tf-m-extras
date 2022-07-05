@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Arm Limited. All rights reserved.
+ * Copyright (c) 2020-2022, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -17,13 +17,13 @@ extern "C" {
 #endif
 
 /**
- * \brief Makes a psa_call to the example partition.
+ * \brief Makes a request to the example service.
  *
  * \param[in] arg  Example parameter
  *
  * \return Returns error code as specified in \ref psa_status_t
  */
-psa_status_t tfm_example_partition_call(uint32_t arg);
+psa_status_t tfm_example_service(uint32_t arg);
 
 #ifdef __cplusplus
 }
