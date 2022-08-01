@@ -64,7 +64,7 @@ target_compile_definitions(tfm_psa_rot_partition_measured_boot
     PUBLIC
         TFM_MEASURED_BOOT_HASH_ALG=${MEASURED_BOOT_HASH_ALG}
         MEASUREMENT_VALUE_SIZE=${MEASUREMENT_VALUE_SIZE}
-        $<$<BOOL:${TFM_BOOT_STORE_MEASUREMENTS}>:TFM_BOOT_STORE_MEASUREMENTS>
+        $<$<BOOL:${CONFIG_TFM_BOOT_STORE_MEASUREMENTS}>:CONFIG_TFM_BOOT_STORE_MEASUREMENTS>
 )
 
 ############################ Secure API ########################################

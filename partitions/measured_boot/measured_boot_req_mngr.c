@@ -195,7 +195,7 @@ psa_status_t tfm_measured_boot_init(void)
     LOG_DBGFMT("Measured Boot : selected algorithm: %x\r\n",
                TFM_MEASURED_BOOT_HASH_ALG);
 
-#ifdef TFM_BOOT_STORE_MEASUREMENTS
+#ifdef CONFIG_TFM_BOOT_STORE_MEASUREMENTS
     status = collect_shared_measurements();
 #endif
 

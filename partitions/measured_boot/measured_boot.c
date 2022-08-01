@@ -21,7 +21,7 @@
 
 #define TEMP_BUFFER_SIZE (MEASUREMENT_VALUE_SIZE + MEASUREMENT_VALUE_MAX_SIZE)
 
-#ifdef TFM_BOOT_STORE_MEASUREMENTS
+#ifdef CONFIG_TFM_BOOT_STORE_MEASUREMENTS
 /* Size of 1 complete measurement (value + metadata) in TLV format. */
 #define SHARED_BOOT_MEASUREMENT_SIZE                                           \
                             ((2 * SHARED_DATA_ENTRY_HEADER_SIZE)               \
@@ -57,7 +57,7 @@ struct boot_measurement_data {
  */
 __attribute__ ((aligned(4)))
 static struct boot_measurement_data boot_measurements;
-#endif /* TFM_BOOT_STORE_MEASUREMENTS */
+#endif /* CONFIG_TFM_BOOT_STORE_MEASUREMENTS */
 
 struct measurement_metadata_t {
     uint8_t  signer_id[SIGNER_ID_MAX_SIZE];
@@ -388,7 +388,7 @@ void initialise_all_measurements(void)
     }
 }
 
-#ifdef TFM_BOOT_STORE_MEASUREMENTS
+#ifdef CONFIG_TFM_BOOT_STORE_MEASUREMENTS
 psa_status_t collect_shared_measurements(void)
 {
     struct shared_data_tlv_entry tlv_entry;
@@ -478,4 +478,4 @@ psa_status_t collect_shared_measurements(void)
 
     return status;
 }
-#endif /* TFM_BOOT_STORE_MEASUREMENTS */
+#endif /* CONFIG_TFM_BOOT_STORE_MEASUREMENTS */
