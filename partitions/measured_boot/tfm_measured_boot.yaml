@@ -19,12 +19,12 @@
       "sid": "0x000000C0",
       "non_secure_clients": true,
       "connection_based": false,
-      "stateless_handle": auto,
+      "stateless_handle": 17,
       "version": 1,
       "version_policy": "STRICT"
     }
   ],
-    "dependencies": [
-        "TFM_CRYPTO"
+  "dependencies": [
+      "TFM_CRYPTO"
   ]
 }
