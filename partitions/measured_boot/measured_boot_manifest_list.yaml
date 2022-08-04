@@ -1,5 +1,7 @@
 #-------------------------------------------------------------------------------
 # Copyright (c) 2022, Arm Limited. All rights reserved.
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
+# or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -11,7 +13,7 @@
   "version_minor": 1,
   "manifest_list": [
     {
-      "name": "TFM Measured Boot Service",
+      "name": "TFM Measured Boot Partition",
       "short_name": "TFM_SP_MEASURED_BOOT",
       "manifest": "tfm_measured_boot.yaml",
       "output_path": "secure_fw/partitions/measured_boot",
