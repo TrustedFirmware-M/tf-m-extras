@@ -1,5 +1,7 @@
 #-------------------------------------------------------------------------------
 # Copyright (c) 2018-2022, Arm Limited. All rights reserved.
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
+# or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -13,7 +15,6 @@
   "manifest_list": [
       {
       "name": "TF-M DMA-350 Example Partition",
-      "short_name": "TFM_DMA350_EXAMPLE",
       "manifest": "tfm_dma350_example_partition.yaml",
       "version_major": 0,
       "version_minor": 1,

@@ -14,7 +14,6 @@
   "manifest_list": [
     {
       "name": "TFM Measured Boot Partition",
-      "short_name": "TFM_SP_MEASURED_BOOT",
       "manifest": "tfm_measured_boot.yaml",
       "output_path": "secure_fw/partitions/measured_boot",
       "conditional": "TFM_PARTITION_MEASURED_BOOT",
