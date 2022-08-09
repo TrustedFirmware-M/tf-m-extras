@@ -13,7 +13,7 @@
 
 /**
  * \brief An example service implementation that prints out an argument from the
- *        client and then starts a timer.
+ *        client.
  */
 psa_status_t tfm_example_service_sfn(const psa_msg_t *msg)
 {
