@@ -46,6 +46,19 @@ TF-M version
 ------------
 TF-M V1.4.0
 
+delegated_attestation
+=====================
+
+Description
+-----------
+The aim of the partition is to support platforms/systems using a delegated
+attestation model by providing services for delegated key generation and
+platform attestation token creation.
+
+Maintainers
+-----------
+- David Vincze `<David.Vincze@arm.com>`_
+
 
 ---------------------------
 

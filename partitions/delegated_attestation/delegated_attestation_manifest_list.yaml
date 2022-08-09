@@ -1,0 +1,28 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2022, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+{
+  "description": "Delegated Attestation secure partition",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "description": "TFM Delegated Attestation Partition",
+      "manifest": "tfm_delegated_attestation.yaml",
+      "output_path": "secure_fw/partitions/delegated_attestation",
+      "conditional": "TFM_PARTITION_DELEGATED_ATTESTATION",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 277,
+      "linker_pattern": {
+        "library_list": [
+          "*tfm_*partition_delegated_attestation*"
+        ]
+      }
+    }
+  ]
+}
