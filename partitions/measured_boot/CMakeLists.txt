@@ -38,8 +38,9 @@ target_sources(tfm_partitions
 
 # Set include directory
 target_include_directories(tfm_psa_rot_partition_measured_boot
-    PUBLIC
+    PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC
         ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/measured_boot
 )
 
@@ -73,7 +74,7 @@ set(INTERFACE_SRC_DIR            ${CMAKE_CURRENT_SOURCE_DIR}/interface/src)
 set(INTERFACE_INC_DIR            ${CMAKE_CURRENT_SOURCE_DIR}/interface/include)
 
 target_sources(tfm_sprt
-    INTERFACE
+    PRIVATE
         ${INTERFACE_SRC_DIR}/measured_boot_api.c
 )
 
@@ -87,6 +88,20 @@ target_include_directories(tfm_sprt
 set_source_files_properties(measured_boot_api.c
     PROPERTIES
         COMPILE_FLAGS -Wno-implicit-function-declaration
+)
+
+############################ Non-secure API ####################################
+
+add_library(measured_boot_api_ns INTERFACE)
+
+target_include_directories(measured_boot_api_ns
+    INTERFACE
+        ${INTERFACE_INC_DIR}
+)
+
+target_sources(measured_boot_api_ns
+    INTERFACE
+        ${INTERFACE_SRC_DIR}/measured_boot_api.c
 )
 
 ############################ Partition Defs ####################################
