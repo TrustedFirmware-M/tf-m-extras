@@ -7,7 +7,7 @@
 
 #include "dma350_s_test.h"
 #include "dma350_lib.h"
-#include "device_definition.h"
+#include "platform_base_address.h"
 #include "tfm_sp_log.h"
 
 #include <string.h>
@@ -40,6 +40,11 @@ const struct extra_tests_t plat_s_t = {
     .test_entry = dma350_s_test,
     .expected_ret = EXTRA_TEST_SUCCESS
 };
+
+static struct dma350_ch_dev_t DMA350_DMA0_CH0_DEV_S = {
+    .cfg = {.ch_base = (DMACH_TypeDef *)(DMA_350_BASE_S + 0x1000UL),
+            .channel = 0},
+    .data = {0}};
 
 int32_t dma350_s_test(void)
 {

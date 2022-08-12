@@ -74,6 +74,7 @@ target_sources(tfm_ns
         ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/native_drivers/dma350_drv.c
         ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/libraries/dma350_lib.c
         ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/libraries/dma350_checker_layer.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/device/source/dma350_address_remap.c
 
         # freeRTOS kernel files
         ${FREERTOS_SRC_PATH}/portable/Common/mpu_wrappers.c

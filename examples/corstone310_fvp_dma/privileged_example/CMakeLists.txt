@@ -73,7 +73,6 @@ target_sources(tfm_ns
         # DMA350 files
         ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/native_drivers/dma350_ch_drv.c
         ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/native_drivers/dma350_drv.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/libraries/dma350_lib.c
 
         # freeRTOS kernel files
         ${FREERTOS_SRC_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure/port.c

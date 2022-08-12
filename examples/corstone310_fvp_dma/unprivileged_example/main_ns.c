@@ -26,7 +26,6 @@
 #include "queue.h"
 #include "mpu_wrappers.h"
 #include "dma350_drv.h"
-#include "device_definition.h"
 #include "dma350_lib_unprivileged.h"
 
 extern uint32_t tfm_ns_interface_init(void);

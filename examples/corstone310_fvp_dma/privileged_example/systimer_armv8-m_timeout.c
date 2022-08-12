@@ -16,7 +16,6 @@
 
 #include "timeout.h"
 #include "systimer_armv8-m_drv.h"
-#include "device_definition.h"
 
 #define SYSTIMER3_ARMV8M_DEFAULT_FREQ_HZ    (32000000ul)
 #define MS_TO_TICK(ms)  ((ms) * (SYSTIMER3_ARMV8M_DEFAULT_FREQ_HZ / 1000))

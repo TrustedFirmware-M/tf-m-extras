@@ -23,7 +23,6 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "device_definition.h"
 
 /* Structure to maintain elapsed time */
 struct timeout_t {

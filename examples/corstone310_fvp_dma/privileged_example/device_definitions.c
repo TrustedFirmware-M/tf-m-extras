@@ -15,7 +15,6 @@
  */
 
 #include "platform_base_address.h"
-#include "device_definition.h"
 
 #include "dma350_drv.h"
 #include "dma350_ch_drv.h"
