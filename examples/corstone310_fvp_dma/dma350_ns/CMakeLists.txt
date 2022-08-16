@@ -11,7 +11,7 @@
 
 set(FREERTOS_SRC_PATH     "DOWNLOAD"  CACHE PATH  "Path to FreeRTOS kernel (or DOWNLOAD to fetch automatically")
 
-add_subdirectory(../common/ext/freertos-kernel freertos-kernel)
+add_subdirectory(ext/freertos-kernel freertos-kernel)
 
 ############################# Common variables ############################################
 
@@ -55,28 +55,44 @@ target_compile_definitions(tfm_ns_interface
 
 add_executable(tfm_ns)
 
+target_add_scatter_file(tfm_ns
+    $<$<C_COMPILER_ID:ARMClang>:${CMAKE_CURRENT_SOURCE_DIR}/freertos-demo/corstone310_freertos.sct>
+    $<$<C_COMPILER_ID:GNU>:${CMAKE_CURRENT_SOURCE_DIR}/corstone310_freertos.ld>
+)
+
 target_sources(tfm_ns
     PRIVATE
-        clcd_dma_wrapper.c
-        device_definitions.c
         main_ns.c
-        picture_bitmap.c
+        clcd_task.c
+        draw_task.c
+        shared_buffer.c
+        pattern.c
+        print_log.c
+        clcd_dma_wrapper.c
         systimer_armv8-m_timeout.c
-        ../common/amazon-freertos/aws_demo.c
-        ../common/print_log.c
+        amazon-freertos/aws_demo.c
+        $<$<C_COMPILER_ID:ARMClang>:freertos-demo/section_limits.c>
 
         # CLCD files
         clcd_lib/clcd_mps3_lib.c
         clcd_lib/clcd_mps3_drv.c
         ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/native_drivers/systimer_armv8-m_drv.c
 
+        # DMA350 unprivileged-specific files
+        dma350_lib/dma350_lib_unprivileged.c
+
         # DMA350 files
+        device_definition.c
         ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/native_drivers/dma350_ch_drv.c
         ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/native_drivers/dma350_drv.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/libraries/dma350_lib.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/libraries/dma350_checker_layer.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/device/source/dma350_address_remap.c
 
         # freeRTOS kernel files
-        ${FREERTOS_SRC_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure/port.c
-        ${FREERTOS_SRC_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c
+        ${FREERTOS_SRC_PATH}/portable/Common/mpu_wrappers.c
+        ${FREERTOS_SRC_PATH}/portable/GCC/ARM_CM85_NTZ/non_secure/port.c
+        ${FREERTOS_SRC_PATH}/portable/GCC/ARM_CM85_NTZ/non_secure/portasm.c
         ${FREERTOS_SRC_PATH}/list.c
         ${FREERTOS_SRC_PATH}/queue.c
         ${FREERTOS_SRC_PATH}/tasks.c
@@ -84,21 +100,20 @@ target_sources(tfm_ns
         ${FREERTOS_SRC_PATH}/timers.c
         ${FREERTOS_SRC_PATH}/event_groups.c
         ${FREERTOS_SRC_PATH}/portable/MemMang/heap_4.c
-        ${FREERTOS_SRC_PATH}/portable/ThirdParty/GCC/ARM_CM33_TFM/os_wrapper_freertos.c
+        ${FREERTOS_SRC_PATH}/portable/ThirdParty/GCC/ARM_TFM/os_wrapper_freertos.c
 )
 
 target_include_directories(tfm_ns
     PRIVATE
         .
         clcd_lib/
+        dma350_lib/
         freertos-config/
+        amazon-freertos/
         ${INTERFACE_INC_DIR}/
-        ../common/amazon-freertos
-        ../common
-
         # freeRTOS kernel
         ${FREERTOS_SRC_PATH}/include/
-        ${FREERTOS_SRC_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure/
+        ${FREERTOS_SRC_PATH}/portable/GCC/ARM_CM85_NTZ/non_secure/
 
         # DMA350
         ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/services/src/

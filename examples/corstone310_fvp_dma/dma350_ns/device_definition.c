@@ -15,10 +15,10 @@
  */
 
 #include "platform_base_address.h"
-
 #include "dma350_drv.h"
 #include "dma350_ch_drv.h"
 #include "dma350_regdef.h"
+#include "dma350_checker_layer.h"
 #include "clcd_mps3_drv.h"
 #include "clcd_mps3_reg_map.h"
 #include "systimer_armv8-m_drv.h"
@@ -30,6 +30,17 @@ struct dma350_ch_dev_t DMA350_DMA0_CH1_DEV_NS = {
     .cfg = {.ch_base = (DMACH_TypeDef *)(DMA_350_BASE_NS + 0x1100UL),
             .channel = 1},
     .data = {0}};
+
+struct dma350_ch_dev_t* const DMA350_DMA0_NS_CHANNELS[] = {
+    NULL,
+    &DMA350_DMA0_CH1_DEV_NS
+};
+
+struct dma350_checker_channels_t const DMA350_CHECKER_CHANNELS = {
+    .channels = DMA350_DMA0_NS_CHANNELS,
+    .number_of_channels = sizeof(DMA350_DMA0_NS_CHANNELS) /
+                          sizeof(DMA350_DMA0_NS_CHANNELS[0])
+};
 
 /* CLCD Device structure definitions */
 static const struct clcd_mps3_dev_cfg_t MPS3_CLCD_DEV_CFG_NS = {

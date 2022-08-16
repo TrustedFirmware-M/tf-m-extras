@@ -14,34 +14,32 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdbool.h>
 #include "dma350_drv.h"
 #include "dma350_ch_drv.h"
 #include "clcd_mps3_drv.h"
+#include "clcd_mps3_lib.h"
 #include "clcd_mps3_reg_map.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "print_log.h"
 #include "platform_irq.h"
 #include "cmsis.h"
+#include "clcd_dma_wrapper.h"
 
 #define LCD_WIDTH   320
 #define LCD_HEIGHT  240
 
-struct dma350_ch_dev_t* clcd_dma_ch_dev;
-struct clcd_mps3_dev_t* clcd_device;
-
-extern TaskHandle_t clcd_task_handle;
+static struct dma350_ch_dev_t* clcd_dma_ch_dev;
+static TaskHandle_t clcd_task_notify_handle;
 
 void dma_ch_irq_handler()
 {
     if(dma350_ch_is_intr_set(clcd_dma_ch_dev, DMA350_CH_INTREN_DONE)) {
         /* All transactions finished */
         dma350_ch_clear_stat(clcd_dma_ch_dev, DMA350_CH_STAT_DONE);
-        vTaskNotifyGiveFromISR( clcd_task_handle, NULL );
+        vTaskNotifyGiveFromISR( clcd_task_notify_handle, NULL );
     } else if (dma350_ch_is_intr_set(clcd_dma_ch_dev, DMA350_CH_INTREN_DESTRIGINWAIT)) {
-        /* In the FVP CLCD processes the input very fast, no need to chech CLCD status. */
+        /* In the FVP CLCD processes the input very fast, no need to check CLCD status. */
         dma350_ch_cmd(clcd_dma_ch_dev, DMA350_CH_CMD_DESSWTRIGINREQ_BLOCK);
     } else {
         vLoggingPrintf("Error, unexpected DMA interrupt!");
@@ -49,16 +47,57 @@ void dma_ch_irq_handler()
     }
 }
 
-/**
- * @brief Display a fixed size image on the LCD.
- *
- * @param picture_bitmap[in] Image to be displayed.
- * @param ch_dev[in]         DMA350 channel device.
- * @param clcd_dev[in]       CLCD device.
- */
-void display_image_with_dma(const unsigned short picture_bitmap[],
+void display_image_with_dma(uint32_t* first_command,
                             struct dma350_ch_dev_t* ch_dev,
                             struct clcd_mps3_dev_t* clcd_dev)
+{
+    dma350_ch_init(ch_dev);
+
+    clcd_dma_ch_dev = ch_dev;
+    clcd_task_notify_handle = xTaskGetCurrentTaskHandle();
+
+    /* Enable the interrupts and set the handler function */
+    NVIC_SetVector(DMA_CHANNEL_0_IRQn + ch_dev->cfg.channel, (uint32_t) dma_ch_irq_handler);
+    NVIC_EnableIRQ(DMA_CHANNEL_0_IRQn + ch_dev->cfg.channel);
+
+    /* Setup an arbitrary zero-length command to start the command link */
+    dma350_ch_set_xsize32(ch_dev, 0, 0);
+    dma350_ch_set_ysize16(ch_dev, 0, 0);
+    dma350_ch_set_xtype(ch_dev, DMA350_CH_XTYPE_CONTINUE);
+    dma350_ch_set_ytype(ch_dev, DMA350_CH_YTYPE_DISABLE);
+
+    /* Set the address of the first command */
+    dma350_ch_enable_linkaddr(ch_dev);
+    dma350_ch_set_linkaddr32(ch_dev, (uint32_t)first_command);
+    dma350_ch_disable_intr(ch_dev, DMA350_CH_INTREN_DONE);
+
+    clcd_mps3_lib_set_window(clcd_dev, 0, 0, LCD_WIDTH, LCD_HEIGHT);
+
+    /* Signal to CLCD peripheral that data will be sent */
+    clcd_mps3_clear_cs(clcd_dev);
+    clcd_mps3_write_command(clcd_dev, 0x22);
+    clcd_mps3_set_cs(clcd_dev);
+
+    clcd_mps3_clear_cs(clcd_dev);
+
+    vLoggingPrintf("Starting the DMA transactions");
+    dma350_ch_cmd(ch_dev, DMA350_CH_CMD_ENABLECMD);
+
+    /* Wait to be notified from the DMA channel IRQ once the image is displayed. */
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    vLoggingPrintf("Image displayed successfully!");
+
+    NVIC_DisableIRQ(DMA_CHANNEL_0_IRQn + ch_dev->cfg.channel);
+
+    /* Signal to CLCD peripheral that data transfer has ended */
+    clcd_mps3_set_cs(clcd_dev);
+}
+
+void generate_dma_cmdlinks_for_display(const uint16_t* picture_bitmap,
+                                       struct clcd_mps3_dev_t* clcd_dev,
+                                       uint32_t* cmd_buffer,
+                                       uint32_t* cmd_buffer_limit,
+                                       uint32_t** first_command)
 {
     /*
      * The image is diplayed using DMA350 command links to offload work from
@@ -74,18 +113,11 @@ void display_image_with_dma(const unsigned short picture_bitmap[],
     uint8_t *bitmap8_ptr = (uint8_t*) picture_bitmap;
     struct dma350_cmdlink_gencfg_t cmdlink1_cfg, cmdlink2_cfg, cmdlink3_cfg,
                                    cmdlink4_cfg, cmdlink_cleanup_cfg;
-    #define CMD_BUF_LEN 64
-    uint32_t cmd_buffer[CMD_BUF_LEN];
 
     /* Quarter size in pixels */
     #define QUARTER_SIZE  (LCD_WIDTH*LCD_HEIGHT/4)
     /* Generated command link command addresses */
     uint32_t *cmd1, *cmd2, *cmd3, *cmd4, *cmd_cleanup, *check;
-
-    clcd_device = clcd_dev;
-    clcd_dma_ch_dev = ch_dev;
-
-    dma350_ch_init(ch_dev);
 
     /* Setup cmdlinks */
 
@@ -131,23 +163,19 @@ void display_image_with_dma(const unsigned short picture_bitmap[],
        intervention */
     dma350_cmdlink_enable_intr(&cmdlink1_cfg, DMA350_CH_INTREN_DESTRIGINWAIT);
 
-    /* Enable the interrupts and set the handler function */
-    NVIC_SetVector(DMA_CHANNEL_0_IRQn + ch_dev->cfg.channel, (uint32_t) dma_ch_irq_handler);
-    NVIC_EnableIRQ(DMA_CHANNEL_0_IRQn + ch_dev->cfg.channel);
-
-    /* Max burst and blk size is half of CLCD buffer size.
-       This is the number of transfers after the DMA expects a trigger from the
-       destination */
-    dma350_cmdlink_set_desmaxburstlen(&cmdlink1_cfg, 4);
-    dma350_cmdlink_set_destriginblksize(&cmdlink1_cfg, 4);
+    /* This is the number of transfers after the DMA expects a trigger from the
+       destination, which represents the size after the CLCD signals transfer is
+       complete, or that it is ready for this much data.
+       This FVP implementation lacks such trigger, so the DMA is set up to send
+       a full buffer amount of data, then signal the CPU to check if more data
+       can be sent. */
+    dma350_cmdlink_set_desmaxburstlen(&cmdlink1_cfg, 8);
+    dma350_cmdlink_set_destriginblksize(&cmdlink1_cfg, 8);
     dma350_cmdlink_enable_linkaddr(&cmdlink1_cfg);
 
     /* Disable done interrupt */
-    /* Note: This should happen automatically when regclear bit is set for the
-             command, but there is a minor bug in the FVP. */
     dma350_cmdlink_set_donetype(&cmdlink1_cfg, DMA350_CH_DONETYPE_NONE);
     dma350_cmdlink_disable_intr(&cmdlink1_cfg, DMA350_CH_INTREN_DONE);
-    dma350_ch_disable_intr(ch_dev, DMA350_CH_INTREN_DONE);
 
 
     /* Setup CMD 2 */
@@ -200,7 +228,7 @@ void display_image_with_dma(const unsigned short picture_bitmap[],
        address cmd_cleanup if it fits before the end of buffer. It returns the next
        available address after the generated command, or NULL, if the command
        would overrun the available buffer. */
-    cmd4 = dma350_cmdlink_generate(&cmdlink_cleanup_cfg, cmd_cleanup, &cmd_buffer[CMD_BUF_LEN]);
+    cmd4 = dma350_cmdlink_generate(&cmdlink_cleanup_cfg, cmd_cleanup, cmd_buffer_limit);
     if(cmd4 == NULL) {
         vLoggingPrintf("Out of cmd buffer");
         return;
@@ -208,7 +236,7 @@ void display_image_with_dma(const unsigned short picture_bitmap[],
 
     /* Now that cmd_cleanup address is available, cmdlink4 can reference it */
     dma350_cmdlink_set_linkaddr32(&cmdlink4_cfg, (uint32_t) cmd_cleanup);
-    cmd3 = dma350_cmdlink_generate(&cmdlink4_cfg, cmd4, &cmd_buffer[CMD_BUF_LEN]);
+    cmd3 = dma350_cmdlink_generate(&cmdlink4_cfg, cmd4, cmd_buffer_limit);
     if(cmd3 == NULL) {
         vLoggingPrintf("Out of cmd buffer");
         return;
@@ -216,46 +244,27 @@ void display_image_with_dma(const unsigned short picture_bitmap[],
 
     /* Now that cmd4 address is available, cmdlink3 can reference it */
     dma350_cmdlink_set_linkaddr32(&cmdlink3_cfg, (uint32_t) cmd4);
-    cmd2 = dma350_cmdlink_generate(&cmdlink3_cfg, cmd3, &cmd_buffer[CMD_BUF_LEN]);
+    cmd2 = dma350_cmdlink_generate(&cmdlink3_cfg, cmd3, cmd_buffer_limit);
     if(cmd2 == NULL) {
         vLoggingPrintf("Out of cmd buffer");
         return;
     }
 
     dma350_cmdlink_set_linkaddr32(&cmdlink2_cfg, (uint32_t) cmd3);
-    cmd1 = dma350_cmdlink_generate(&cmdlink2_cfg, cmd2, &cmd_buffer[CMD_BUF_LEN]);
+    cmd1 = dma350_cmdlink_generate(&cmdlink2_cfg, cmd2, cmd_buffer_limit);
     if(cmd1 == NULL) {
         vLoggingPrintf("Out of cmd buffer");
         return;
     }
 
     dma350_cmdlink_set_linkaddr32(&cmdlink1_cfg, (uint32_t) cmd2);
-    check = dma350_cmdlink_generate(&cmdlink1_cfg, cmd1, &cmd_buffer[CMD_BUF_LEN]);
+    check = dma350_cmdlink_generate(&cmdlink1_cfg, cmd1, cmd_buffer_limit);
     if(check == NULL) {
         vLoggingPrintf("Out of cmd buffer");
         return;
     }
 
-    /* Set the address of the first command */
-    dma350_ch_enable_linkaddr(ch_dev);
-    dma350_ch_set_linkaddr32(ch_dev, (uint32_t)cmd1);
-
-    /* Signal to CLCD peripheral that data will be sent */
-    clcd_mps3_clear_cs(clcd_dev);
-    clcd_mps3_write_command(clcd_dev, 0x22);
-    clcd_mps3_set_cs(clcd_dev);
-
-    clcd_mps3_clear_cs(clcd_dev);
-
-    vLoggingPrintf("Starting the DMA transactions");
-    dma350_ch_cmd(ch_dev, DMA350_CH_CMD_ENABLECMD);
-
-    /* Wait to be notified from the DMA channel IRQ once the image is displayed. */
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    vLoggingPrintf("Image displayed successfully!");
-
-    NVIC_DisableIRQ(DMA_CHANNEL_0_IRQn + ch_dev->cfg.channel);
-
-    /* Signal to CLCD peripheral that data transfer has ended */
-    clcd_mps3_set_cs(clcd_dev);
+    *first_command = cmd1;
+    vLoggingPrintf("DMA commandlink setup complete");
+    return;
 }

@@ -22,9 +22,13 @@
 
 LR_APP NS_CODE_START ; load region
 {
+    /****  This initial section contains common code for non-secure binary */
+    ER_VECTORS +0 align 32 {
+        *.o (RESET +First)
+    }
+
     ER_IROM_NS_PRIVILEGED +0 ALIGN 32
     {
-        *.o(RESET, +First)
         *(InRoot$$Sections) ; All sections that must be in a root region
         *(privileged_functions)
     }

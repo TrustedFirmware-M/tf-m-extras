@@ -29,6 +29,7 @@
 #include "system_core_init.h"
 
 #define configENABLE_FPU 0
+#define configENABLE_MVE 0
 #define configENABLE_MPU 1
 #define configENABLE_TRUSTZONE 0
 #define configRUN_FREERTOS_SECURE_ONLY 0

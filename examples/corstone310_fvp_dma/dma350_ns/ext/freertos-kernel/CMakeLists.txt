@@ -13,8 +13,8 @@ endif()
 if ("${FREERTOS_SRC_PATH}" STREQUAL "DOWNLOAD")
     find_package(Git)
     FetchContent_Declare(freertos_kernel
-        GIT_REPOSITORY https://github.com/gbrtth/FreeRTOS-Kernel.git
-        GIT_TAG M55-support
+        GIT_REPOSITORY https://github.com/FreeRTOS/FreeRTOS-Kernel.git
+        GIT_TAG 030e76681b981335ca4f25f0adce09612bf757a5
     )
     FetchContent_GetProperties(freertos_kernel)
     if (NOT freertos_kernel)
