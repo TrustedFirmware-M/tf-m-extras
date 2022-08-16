@@ -8,13 +8,13 @@
 #-------------------------------------------------------------------------------
 
 {
-  "name": "Manifest list",
+  "description": "Manifest list",
   "type": "manifest_list",
   "version_major": 0,
   "version_minor": 1,
   "manifest_list": [
       {
-      "name": "TF-M DMA-350 Example Partition",
+      "description": "TF-M DMA-350 Example Partition",
       "manifest": "tfm_dma350_example_partition.yaml",
       "version_major": 0,
       "version_minor": 1,

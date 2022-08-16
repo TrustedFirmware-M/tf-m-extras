@@ -1,5 +1,7 @@
 #-------------------------------------------------------------------------------
 # Copyright (c) 2022, Arm Limited. All rights reserved.
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
+# or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -8,7 +10,7 @@
 {
   "manifest_list": [
     {
-      "name": "TF-M Example Partition",
+      "description": "TF-M Example Partition",
       "manifest": "tfm_example_partition.yaml",
       "output_path": "example_partition",
       "conditional": "TFM_PARTITION_EXAMPLE",

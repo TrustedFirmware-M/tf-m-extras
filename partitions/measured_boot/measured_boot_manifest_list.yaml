@@ -7,13 +7,13 @@
 #
 #-------------------------------------------------------------------------------
 {
-  "name": "Measured boot secure partition",
+  "description": "Measured boot secure partition",
   "type": "manifest_list",
   "version_major": 0,
   "version_minor": 1,
   "manifest_list": [
     {
-      "name": "TFM Measured Boot Partition",
+      "description": "TFM Measured Boot Partition",
       "manifest": "tfm_measured_boot.yaml",
       "output_path": "secure_fw/partitions/measured_boot",
       "conditional": "TFM_PARTITION_MEASURED_BOOT",
