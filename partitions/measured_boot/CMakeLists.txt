@@ -47,7 +47,6 @@ target_include_directories(tfm_psa_rot_partition_measured_boot
 
 target_link_libraries(tfm_psa_rot_partition_measured_boot
     PRIVATE
-        tfm_secure_api
         psa_interface
         platform_s
         tfm_sprt

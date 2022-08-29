@@ -24,8 +24,7 @@ target_include_directories(dma350_test_s
 # DMA-350 test links tfm_test_suite_extra_common to use related interface
 target_link_libraries(dma350_test_s
     PRIVATE
-        tfm_sp_log_raw
-
+        tfm_sprt
         tfm_test_suite_extra_common
         platform_s
 )

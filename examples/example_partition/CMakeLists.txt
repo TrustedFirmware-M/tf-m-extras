@@ -44,7 +44,6 @@ target_include_directories(tfm_app_rot_partition_example
 
 target_link_libraries(tfm_app_rot_partition_example
     PRIVATE
-        tfm_secure_api
         psa_interface
         tfm_sprt
 )
