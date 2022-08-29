@@ -23,7 +23,7 @@ static psa_key_id_t dak_key_id = PSA_KEY_ID_NULL;
 /* Keeps track of whether DAK has been requested */
 static bool dak_requested = false;
 /* Buffer to store the encoded platform boot state */
-static uint8_t boot_state_buffer[PSA_ATTEST_BOOT_RECORDS_MAX_SIZE];
+static uint8_t boot_state_buffer[TFM_ATTEST_BOOT_RECORDS_MAX_SIZE];
 /* Hash algorithm that is used by the owner of the DAK for calculating the
  * digest of the public part of the key (it serves as an input when creating
  * the platform attestation token).
