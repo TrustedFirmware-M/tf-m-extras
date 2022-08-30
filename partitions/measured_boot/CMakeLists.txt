@@ -61,7 +61,7 @@ else()
 endif()
 
 target_compile_definitions(tfm_psa_rot_partition_measured_boot
-    PUBLIC
+    PRIVATE
         TFM_MEASURED_BOOT_HASH_ALG=${MEASURED_BOOT_HASH_ALG}
         MEASUREMENT_VALUE_SIZE=${MEASUREMENT_VALUE_SIZE}
         $<$<BOOL:${CONFIG_TFM_BOOT_STORE_MEASUREMENTS}>:CONFIG_TFM_BOOT_STORE_MEASUREMENTS>
