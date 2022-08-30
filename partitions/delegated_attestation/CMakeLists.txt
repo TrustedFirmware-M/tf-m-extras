@@ -73,6 +73,20 @@ set_source_files_properties(delegated_attestation_api.c
             -Wno-implicit-function-declaration
 )
 
+############################ Non-secure API ####################################
+
+add_library(delegated_attest_api_ns INTERFACE)
+
+target_include_directories(delegated_attest_api_ns
+    INTERFACE
+        ${INTERFACE_INC_DIR}
+)
+
+target_sources(delegated_attest_api_ns
+    INTERFACE
+        ${INTERFACE_SRC_DIR}/tfm_delegated_attestation_api.c
+)
+
 ############################ Partition Defs ####################################
 
 target_link_libraries(tfm_partitions
