@@ -42,7 +42,6 @@ target_include_directories(tfm_app_rot_partition_delegated_attest
 
 target_link_libraries(tfm_app_rot_partition_delegated_attest
     PRIVATE
-        tfm_secure_api
         platform_s
         psa_interface
         tfm_sprt
