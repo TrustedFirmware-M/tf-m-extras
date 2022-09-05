@@ -77,7 +77,7 @@ tfm_delegated_attest_get_delegated_key(psa_ecc_family_t ecc_curve,
  * \note    A delegated attestation key must be derived before requesting
  *          for the platform attestation token as they are cryptographically
  *          linked together. Otherwise, the token request will fail and the
- *          PSA_ERROR_PROGRAMMER_ERROR code will be returned.
+ *          PSA_ERROR_INVALID_ARGUMENT code will be returned.
  */
 psa_status_t
 tfm_delegated_attest_get_token(const uint8_t *dak_pub_hash,
