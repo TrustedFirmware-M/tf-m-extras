@@ -101,20 +101,12 @@ static psa_status_t get_platform_attestation_token(const psa_msg_t *msg)
     token_buf_size = msg->out_size[0] < sizeof(token_buf) ?
                      msg->out_size[0] : sizeof(token_buf);
 
-    /* Check input parameters */
-    if (dak_pub_hash == NULL) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    /* Allowed nonce value lengths in attestation token: 32, 48, 64 bytes */
+    /* Check input parameters
+     * Allowed nonce value lengths in attestation token: 32, 48, 64 bytes.
+     */
     if (dak_pub_hash_size != PSA_HASH_LENGTH(PSA_ALG_SHA_256) &&
         dak_pub_hash_size != PSA_HASH_LENGTH(PSA_ALG_SHA_384) &&
         dak_pub_hash_size != PSA_HASH_LENGTH(PSA_ALG_SHA_512)) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    /* Check output parameters */
-    if (token_buf == NULL || token_buf_size == 0 || token_size == NULL) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
