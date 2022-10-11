@@ -1,0 +1,44 @@
+@startuml
+
+participant Application
+participant Delegated_attestation
+participant Initial_attestation
+participant Crypto
+participant Measured_boot
+participant Other_subsystem
+participant Bootloaders
+
+== TF-M Boot phase ==
+Rnote over Bootloaders: Get the IAK from the platform.\n\ IAK might derive from\n\ seed or pre-provisioned.
+Bootloaders -> Crypto: Pass Initial Attestation Key to Crypto
+Rnote over Bootloaders: Get the seed of\n\ Platform Attestation Key\n\ from the platform.
+Bootloaders -> Crypto: Pass Platform Attestation Key to Crypto
+Rnote over Bootloaders: Store firmware measurements\n\ and metadata to buffer
+Rnote over Measured_boot: Read measurement\n\ and metadata from buffer\n\ at service init.
+
+== TF-M Runtime ==
+Rnote over Other_subsystem: Firmware is measured\n\ at boot.
+Other_subsystem -> Measured_boot: extend_measurement
+Other_subsystem -> Measured_boot: extend_measurement
+Application -> Delegated_attestation: get_delegated_key
+Rnote over Delegated_attestation: Preparation to key\n\ derivation. Query all platform\n\ firmware measurements.
+Delegated_attestation -> Measured_boot: read_measurement
+Rnote over Delegated_attestation: Hashing the measurements\n\ and associated metadata.
+Delegated_attestation -> Crypto: psa_hash_compute
+Rnote over Delegated_attestation: Derive delegated key\n\ from seed. Input is the\n\ hash of measurements.
+Delegated_attestation -> Crypto: psa_derive_key
+Delegated_attestation -> Application: get_delegated_key
+Rnote over Application: Private key is returned.\n\ Public part is computed\n\ by the caller.
+Rnote over Application: Hash of public key\n\ is computed.
+Application -> Delegated_attestation: get_token
+Rnote over Delegated_attestation: Hash of public key\n\ is received as input.\n\ Compare against previously\n\ derived key.
+Delegated_attestation-> Initial_attestation: get_initial_attestion_token
+Rnote over Initial_attestation: Produce the token including\n\ the hash of public key as the\n\ Challenge claim
+Initial_attestation -> Measured_boot: read_measurement
+Rnote over Initial_attestation: Include firmware measurements\n\ and associated metadata.
+Rnote over Initial_attestation: Sign the token by IAK.
+Initial_attestation -> Delegated_attestation: get_initial_attestion_token
+Delegated_attestation -> Application: get_token
+Rnote over Application: Create and sign sub-token\n\ by delegated key.
+Rnote over Application: Create final token\n\ including all sub-tokens.
+@enduml
