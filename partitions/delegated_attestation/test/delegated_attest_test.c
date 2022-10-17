@@ -136,7 +136,7 @@ int32_t tfm_delegated_attest_test_1001(void)
 
     /* TODO: Validate the platform attestation token */
 
-    /* Check if dak_pub_hash does not match with expected value */
+    /* Negative test: Check if dak_pub_hash doesn't match with expected value */
     dak_pub_hash_buf[0] ^= 1 << 7; /* Toggle the first bit */
     status = tfm_delegated_attest_get_token(dak_pub_hash_buf, /* Invalid */
                                             dak_pub_hash_len,
@@ -150,12 +150,25 @@ int32_t tfm_delegated_attest_test_1001(void)
     }
 
     dak_pub_hash_buf[0] ^= 1 << 7; /* Toggle the first bit */
+    /* Negative test: size of the hash value is invalid */
     status = tfm_delegated_attest_get_token(dak_pub_hash_buf,
                                             dak_pub_hash_len - 1, /* Invalid */
                                             token_buf,
                                             sizeof(token_buf),
                                             &token_len);
     if (status != PSA_ERROR_INVALID_ARGUMENT) {
+        TEST_LOG("tfm_delegated_attest_get_token() failed, returned: %d\r\n", status);
+        TEST_LOG("Delegated attestation token request should fail with invalid parameters");
+        return EXTRA_TEST_FAILED;
+    }
+
+    /* Negative test: token_buf is too small (other than 0) */
+    status = tfm_delegated_attest_get_token(dak_pub_hash_buf,
+                                            dak_pub_hash_len,
+                                            token_buf,
+                                            1u, /* Invalid */
+                                            &token_len);
+    if (status != PSA_ERROR_BUFFER_TOO_SMALL) {
         TEST_LOG("tfm_delegated_attest_get_token() failed, returned: %d\r\n", status);
         TEST_LOG("Delegated attestation token request should fail with invalid parameters");
         return EXTRA_TEST_FAILED;
