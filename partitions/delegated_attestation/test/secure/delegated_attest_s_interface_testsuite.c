@@ -11,33 +11,33 @@
 
 static int32_t tfm_delegated_attest_test(void)
 {
-    int32_t ret;
+    uint32_t fail_cnt = 0;
 
-    TEST_LOG("  Delegated Attestation Secure Test 1001");
-    ret = tfm_delegated_attest_test_1001();
-    if (ret != EXTRA_TEST_SUCCESS) {
+    TEST_LOG("  Delegated Attestation Secure Test 1001: ");
+    if (tfm_delegated_attest_test_1001() != EXTRA_TEST_SUCCESS) {
         TEST_LOG(" - FAILED\r\n");
-        return ret;
+        fail_cnt++;
+    } else {
+        TEST_LOG(" - PASSED\r\n");
     }
-    TEST_LOG(" - PASSED\r\n");
 
-    TEST_LOG("  Delegated Attestation Secure Test 1002");
-    ret = tfm_delegated_attest_test_1002();
-    if (ret != EXTRA_TEST_SUCCESS) {
+    TEST_LOG("  Delegated Attestation Secure Test 1002: ");
+    if (tfm_delegated_attest_test_1002() != EXTRA_TEST_SUCCESS) {
         TEST_LOG(" - FAILED\r\n");
-        return ret;
+        fail_cnt++;
+    } else {
+        TEST_LOG(" - PASSED\r\n");
     }
-    TEST_LOG(" - PASSED\r\n");
 
-    TEST_LOG("  Delegated Attestation Secure Test 1003");
-    ret = tfm_delegated_attest_test_1003();
-    if (ret != EXTRA_TEST_SUCCESS) {
+    TEST_LOG("  Delegated Attestation Secure Test 1003: ");
+    if (tfm_delegated_attest_test_1003() != EXTRA_TEST_SUCCESS) {
         TEST_LOG(" - FAILED\r\n");
-        return ret;
+        fail_cnt++;
+    } else {
+        TEST_LOG(" - PASSED\r\n");
     }
-    TEST_LOG(" - PASSED\r\n");
 
-    return ret;
+    return (fail_cnt) ? EXTRA_TEST_FAILED : EXTRA_TEST_SUCCESS;
 }
 
 /* Define test suite for delegated attestation service tests */
