@@ -21,13 +21,11 @@ target_sources(tfm_app_rot_partition_dma350_unpriv
         tfm_dma350_example_partition.c
         dma350_lib/dma350_lib_unprivileged.c
         dma350_lib/dma350_privileged_config.c
-        $<$<BOOL:${TFM_PSA_API}>:
-            ${CMAKE_BINARY_DIR}/generated/auto_generated/intermedia_tfm_dma350_example_partition.c>
+        ${CMAKE_BINARY_DIR}/generated/auto_generated/intermedia_tfm_dma350_example_partition.c
 )
 target_sources(tfm_partitions
     INTERFACE
-        $<$<BOOL:${TFM_PSA_API}>:
-            ${CMAKE_BINARY_DIR}/generated/auto_generated/load_info_tfm_dma350_example_partition.c>
+        ${CMAKE_BINARY_DIR}/generated/auto_generated/load_info_tfm_dma350_example_partition.c
 )
 
 target_include_directories(tfm_app_rot_partition_dma350_unpriv

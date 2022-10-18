@@ -51,7 +51,6 @@ static size_t read_asset_datal_len = 0;
 static void tfm_etss_test_2001(struct test_result_t *ret);
 static void tfm_etss_test_2002(struct test_result_t *ret);
 static void tfm_etss_test_2003(struct test_result_t *ret);
-static void tfm_etss_test_2004(struct test_result_t *ret);
 static void tfm_etss_test_2005(struct test_result_t *ret);
 static void tfm_etss_test_2006(struct test_result_t *ret);
 static void tfm_etss_test_2007(struct test_result_t *ret);
@@ -61,7 +60,6 @@ static void tfm_etss_test_2010(struct test_result_t *ret);
 static void tfm_etss_test_2011(struct test_result_t *ret);
 static void tfm_etss_test_2012(struct test_result_t *ret);
 static void tfm_etss_test_2013(struct test_result_t *ret);
-static void tfm_etss_test_2014(struct test_result_t *ret);
 static void tfm_etss_test_2015(struct test_result_t *ret);
 static void tfm_etss_test_2016(struct test_result_t *ret);
 static void tfm_etss_test_2017(struct test_result_t *ret);
@@ -78,8 +76,6 @@ static struct test_t psa_etss_s_tests[] = {
      "Set interface with create flags"},
     {&tfm_etss_test_2003, "TFM_ETSS_TEST_2003",
      "Set interface with NULL data pointer"},
-    {&tfm_etss_test_2004, "TFM_ETSS_TEST_2004",
-     "Set interface with invalid data length"},
     {&tfm_etss_test_2005, "TFM_ETSS_TEST_2005",
      "Set interface with write once UID"},
     {&tfm_etss_test_2006, "TFM_ETSS_TEST_2006",
@@ -98,8 +94,6 @@ static struct test_t psa_etss_s_tests[] = {
      "Get info interface with valid UID"},
     {&tfm_etss_test_2013, "TFM_ETSS_TEST_2013",
      "Get info interface with invalid UIDs"},
-    {&tfm_etss_test_2014, "TFM_ETSS_TEST_2014",
-     "Get info interface with NULL info pointer"},
     {&tfm_etss_test_2015, "TFM_ETSS_TEST_2015",
      "Remove interface with valid UID"},
     {&tfm_etss_test_2016, "TFM_ETSS_TEST_2016",
@@ -244,37 +238,6 @@ static void tfm_etss_test_2003(struct test_result_t *ret)
         return;
     }
 
-    ret->val = TEST_PASSED;
-}
-
-/**
- * \brief Tests set function with:
- * - Data length longer than maximum permitted
- */
-static void tfm_etss_test_2004(struct test_result_t *ret)
-{
-#ifndef TFM_PSA_API
-    etss_err_t err;
-    const psa_storage_uid_t uid = TEST_UID_1;
-    const psa_storage_create_flags_t flags = PSA_STORAGE_FLAG_NONE;
-    const uint32_t data_len = INVALID_DATA_LEN;
-    const uint8_t write_data[] = WRITE_DATA;
-
-    /* A parameter with a buffer pointer where its data length is longer than
-     * maximum permitted, it is treated as a secure violation.
-     * TF-M framework rejects the request with a proper error code.
-     * The ETSS secure PSA ETSS implementation returns
-     * ETSS_ERR_INVALID_ARGUMENT in that case.
-     */
-
-    /* Set with data length longer than the maximum supported */
-    err = tfm_etss_set(uid, data_len, write_data, flags);
-    if (err != ETSS_ERR_INVALID_ARGUMENT) {
-        TEST_FAIL("Set should not succeed with invalid data length");
-        return;
-    }
-
-#endif
     ret->val = TEST_PASSED;
 }
 
@@ -512,7 +475,6 @@ static void tfm_etss_test_2008(struct test_result_t *ret)
  * - Offset greater than UID length
  * - Data length greater than UID length
  * - Data length + offset greater than UID length
- * - Invalid data len and offset
  */
 static void tfm_etss_test_2009(struct test_result_t *ret)
 {
@@ -600,35 +562,6 @@ static void tfm_etss_test_2009(struct test_result_t *ret)
         TEST_FAIL("Read data should be equal to original read data");
         return;
     }
-
-#ifndef TFM_PSA_API
-    /* Get with data length and offset set to invalid values */
-    read_len = INVALID_DATA_LEN;
-    offset = INVALID_OFFSET;
-
-    /* Reset read_data to original READ_DATA */
-    tfm_memcpy(read_data, READ_DATA, sizeof(read_data));
-
-    /* A parameter with a buffer pointer where its data length is longer than
-     * maximum permitted, it is treated as a secure violation.
-     * TF-M framework rejects the request with a proper error code.
-     * The ETSS secure PSA ETSS implementation returns
-     * ETSS_ERR_INVALID_ARGUMENT in that case.
-     */
-
-    err = tfm_etss_get(uid, offset, read_len, read_data + HALF_PADDING_SIZE,
-                        &read_data_len);
-    if (err != ETSS_ERR_INVALID_ARGUMENT) {
-        TEST_FAIL("Get should not succeed with invalid arguments");
-        return;
-    }
-
-    /* Check that the read data is unchanged */
-    if (tfm_memcmp(read_data, READ_DATA, sizeof(read_data)) != 0) {
-        TEST_FAIL("Read data should be equal to original read data");
-        return;
-    }
-#endif
 
     /* Call remove to clean up storage for the next test */
     err = tfm_etss_remove(uid);
@@ -804,49 +737,6 @@ static void tfm_etss_test_2013(struct test_result_t *ret)
 
     if (info.flags != 0) {
         TEST_FAIL("Flags should not have changed");
-        return;
-    }
-
-    ret->val = TEST_PASSED;
-}
-
-/**
- * \brief Tests get info function with:
- * - NULL info pointer
- */
-static void tfm_etss_test_2014(struct test_result_t *ret)
-{
-    etss_err_t err;
-    const psa_storage_uid_t uid = TEST_UID_3;
-    const psa_storage_create_flags_t flags = PSA_STORAGE_FLAG_NONE;
-    const uint32_t data_len = WRITE_DATA_SIZE;
-    const uint8_t write_data[] = WRITE_DATA;
-
-    err = tfm_etss_set(uid, data_len, write_data, flags);
-    if (err != ETSS_SUCCESS) {
-        TEST_FAIL("Set should not fail");
-        return;
-    }
-
-    /* A parameter with a null pointer is treated as a secure violation.
-     * TF-M framework rejects the request with a proper error code.
-     * The ETSS secure PSA ETSS implementation returns
-     * ETSS_ERR_GENERIC_ERROR in that case.
-     */
-
-    /* Get info with NULL info pointer */
-#ifndef TFM_PSA_API
-    err = tfm_etss_get_info(uid, NULL);
-    if (err != ETSS_ERR_INVALID_ARGUMENT) {
-        TEST_FAIL("Get info should not succeed with NULL info pointer");
-        return;
-    }
-#endif
-
-    /* Call remove to clean up storage for the next test */
-    err = tfm_etss_remove(uid);
-    if (err != ETSS_SUCCESS) {
-        TEST_FAIL("Remove should not fail with valid UID");
         return;
     }
 

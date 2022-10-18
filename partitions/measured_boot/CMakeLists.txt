@@ -27,13 +27,11 @@ target_sources(tfm_psa_rot_partition_measured_boot
 # The generated sources
 target_sources(tfm_psa_rot_partition_measured_boot
     PRIVATE
-        $<$<BOOL:${TFM_PSA_API}>:
-            ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/measured_boot/auto_generated/intermedia_tfm_measured_boot.c>
+        ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/measured_boot/auto_generated/intermedia_tfm_measured_boot.c
 )
 target_sources(tfm_partitions
     INTERFACE
-        $<$<BOOL:${TFM_PSA_API}>:
-            ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/measured_boot/auto_generated/load_info_tfm_measured_boot.c>
+        ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/measured_boot/auto_generated/load_info_tfm_measured_boot.c
 )
 
 # Set include directory

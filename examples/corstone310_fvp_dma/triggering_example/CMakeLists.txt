@@ -34,11 +34,6 @@ target_link_libraries(tfm_ns_interface
         tfm_partition_defs
 )
 
-target_compile_definitions(tfm_ns_interface
-    INTERFACE
-        TFM_PSA_API
-)
-
 ############################# TFM NS app #######################################
 
 add_executable(tfm_ns)

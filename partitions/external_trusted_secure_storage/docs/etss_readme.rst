@@ -248,7 +248,6 @@ build with the following commands.
     cd <TF-M base folder>
     cmake -S . -B cmake_build -DTFM_PLATFORM=stm/stm32l562e_dk \
     -DTFM_TOOLCHAIN_FILE=toolchain_GNUARM.cmake  -DTEST_S=ON -DTEST_NS=ON \
-    -DTFM_PSA_API=ON \
     -DTFM_EXTRA_MANIFEST_LIST_FILES=<tf-m-extras-abs-path>/partitions/external_trusted_secure_storage/etss_manifest_list.yaml \
     -DTFM_EXTRA_PARTITION_PATHS=<tf-m-extras-abs-path>/partitions/external_trusted_secure_storage/etss_partition \
     -DTFM_PARTITION_EXTERNAL_TRUSTED_SECURE_STORAGE=ON -DTFM_ISOLATION_LEVEL=2

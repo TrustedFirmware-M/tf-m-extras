@@ -43,13 +43,11 @@ target_sources(tfm_psa_rot_partition_etss
 # The generated sources
 target_sources(tfm_psa_rot_partition_etss
     PRIVATE
-        $<$<BOOL:${TFM_PSA_API}>:
-            ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/external_trusted_secure_storage/auto_generated/intermedia_etss.c>
+        ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/external_trusted_secure_storage/auto_generated/intermedia_etss.c
 )
 target_sources(tfm_partitions
     INTERFACE
-        $<$<BOOL:${TFM_PSA_API}>:
-            ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/external_trusted_secure_storage/auto_generated/load_info_etss.c>
+        ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/external_trusted_secure_storage/auto_generated/load_info_etss.c
 )
 
 target_link_libraries(tfm_psa_rot_partition_etss
