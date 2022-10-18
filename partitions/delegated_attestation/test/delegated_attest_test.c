@@ -29,7 +29,6 @@ static int calc_public_dak_hash(const uint8_t *dak_buf,
     psa_key_id_t dak_id;
     uint8_t dak_pub_buf[PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(521)];
     size_t dak_pub_len;
-    size_t hash_len;
 
     psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(
                                 DELEGATED_ATTEST_KEY_ELLIPTIC_CURVE));
@@ -246,8 +245,6 @@ int32_t tfm_delegated_attest_test_1002(void)
 int32_t tfm_delegated_attest_test_1003(void)
 {
     uint8_t dak_pub_hash_buf[DELEGATED_ATTEST_KEY_HASH_SIZE];
-    size_t  dak_pub_hash_len;
-    size_t token_len;
     size_t dak_len;
     psa_status_t err;
 
