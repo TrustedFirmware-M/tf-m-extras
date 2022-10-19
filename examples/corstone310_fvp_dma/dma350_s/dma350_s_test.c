@@ -54,7 +54,7 @@ int32_t dma350_s_test(void)
     /* Init DMA channel */
     ch_err = dma350_ch_init(&DMA350_DMA0_CH0_DEV_S);
     if (ch_err != DMA350_CH_ERR_NONE) {
-        tfm_sp_log_printf("DMA CH init failed: 0x%x\r\n", ch_err);
+        printf("DMA CH init failed: 0x%x\r\n", ch_err);
         return EXTRA_TEST_FAILED;
     }
 
@@ -114,14 +114,14 @@ static int32_t dma350_native_drv_test()
     /* Wait for completion, check if the operation is completed without error */
     status = dma350_ch_wait_status(ch_dev);
     if (!status.b.STAT_DONE || status.b.STAT_ERR) {
-        tfm_sp_log_printf("Channel not finished properly\r\n");
+        printf("Channel not finished properly\r\n");
         return EXTRA_TEST_FAILED;
     }
 
     /* Verify results */
     if (strncmp(DMA350_TEST_MEMORY_FROM, DMA350_TEST_MEMORY_TO,
                     DMA350_TEST_COPY_COUNT)) {
-        tfm_sp_log_printf("Copied data mismatch\r\n");
+        printf("Copied data mismatch\r\n");
         return EXTRA_TEST_FAILED;
     }
 
@@ -152,14 +152,14 @@ static int32_t dma350_library_test()
 
     /* Verify library return value */
     if (status != DMA350_LIB_ERR_NONE) {
-        tfm_sp_log_printf("Library call failed with 0x%x\r\n", status);
+        printf("Library call failed with 0x%x\r\n", status);
         return EXTRA_TEST_FAILED;
     }
 
     /* Verify results */
     if (strncmp(DMA350_TEST_ENDIAN_EXPECTED_RESULT, DMA350_TEST_MEMORY_TO,
                     DMA350_TEST_ENDIAN_LEN)) {
-        tfm_sp_log_printf("Copied data mismatch\r\n");
+        printf("Copied data mismatch\r\n");
         return EXTRA_TEST_FAILED;
     }
 
