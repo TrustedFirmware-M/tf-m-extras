@@ -53,6 +53,12 @@ target_sources(tfm_ns
         ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/device/source/dma350_address_remap.c
 )
 
+target_compile_definitions(tfm_ns
+    PRIVATE
+        # Needed for DMA-350 library
+        CMSIS_device_header=<corstone310.h>
+)
+
 target_link_libraries(tfm_ns
     PRIVATE
         platform_ns

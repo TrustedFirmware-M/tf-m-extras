@@ -123,7 +123,7 @@ target_compile_definitions(tfm_ns
     PRIVATE
         MBEDTLS_CONFIG_FILE="aws_mbedtls_config.h"
         # Needed for DMA-350 library
-        CMSIS_DEVICE_HEADER=<corstone310.h>
+        CMSIS_device_header=<corstone310.h>
 )
 
 target_link_libraries(tfm_ns
