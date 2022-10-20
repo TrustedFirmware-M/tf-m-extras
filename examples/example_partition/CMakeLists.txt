@@ -60,13 +60,6 @@ target_include_directories(tfm_sprt
         .
 )
 
-# The veneers give warnings about not being properly declared so they get hidden
-# to not overshadow _real_ warnings.
-set_source_files_properties(tfm_example_partition_api.c
-    PROPERTIES
-        COMPILE_FLAGS -Wno-implicit-function-declaration
-)
-
 ############################ Partition Defs ####################################
 
 target_link_libraries(tfm_partitions

@@ -80,13 +80,6 @@ target_include_directories(tfm_sprt
         ${INTERFACE_INC_DIR}
 )
 
-# The veneers give warnings about not being properly declared so they get hidden
-# to not overshadow _real_ warnings.
-set_source_files_properties(measured_boot_api.c
-    PROPERTIES
-        COMPILE_FLAGS -Wno-implicit-function-declaration
-)
-
 ############################ Non-secure API ####################################
 
 add_library(measured_boot_api_ns INTERFACE)
