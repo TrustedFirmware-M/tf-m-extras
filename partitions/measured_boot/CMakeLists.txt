@@ -51,9 +51,13 @@ target_link_libraries(tfm_psa_rot_partition_measured_boot
 )
 
 if(${MEASURED_BOOT_HASH_ALG} STREQUAL "PSA_ALG_SHA_512")
-    set(MEASUREMENT_VALUE_SIZE 64)
+    # In accordance with IANA hash algorithm registry:
+    # https://www.iana.org/assignments/hash-function-text-names/hash-function-text-names.xml
+    set(MEASUREMENT_HASH_ALGO_NAME "sha-512")
+    set(MEASUREMENT_VALUE_SIZE            64)
 elseif(${MEASURED_BOOT_HASH_ALG} STREQUAL "PSA_ALG_SHA_256")
-    set(MEASUREMENT_VALUE_SIZE 32)
+    set(MEASUREMENT_HASH_ALGO_NAME "sha-256")
+    set(MEASUREMENT_VALUE_SIZE            32)
 else()
     message(FATAL_ERROR "Unknown hash algorithm")
 endif()
@@ -104,6 +108,7 @@ target_link_libraries(tfm_partitions
 target_compile_definitions(tfm_partition_defs
     INTERFACE
         TFM_PARTITION_MEASURED_BOOT
+        MEASUREMENT_HASH_ALGO_NAME="${MEASUREMENT_HASH_ALGO_NAME}"
 )
 
 set(INSTALL_INTERFACE_SRC_DIR    ${TFM_INSTALL_PATH}/interface/src)
