@@ -18,7 +18,7 @@
 /* Platform attestation token buffer */
 static uint8_t token_buf[PLATFORM_TOKEN_BUFF_SIZE];
 /* Delegated attestation key buffer */
-static uint8_t dak_buf[DELEGATED_ATTEST_KEY_MAX_SIZE];
+static uint8_t static_dak_buf[DELEGATED_ATTEST_KEY_MAX_SIZE];
 
 #ifdef DELEG_ATTEST_DUMP_TOKEN_AND_KEY
 static void dump_data(unsigned char *buf, size_t len, const char *prefix)
@@ -88,7 +88,7 @@ static int calc_public_dak_hash(const uint8_t *dak_buf,
  */
 void tfm_delegated_attest_test_1001(struct test_result_t *ret)
 {
-    uint8_t dak_pub_hash_buf[DELEGATED_ATTEST_KEY_HASH_SIZE];
+    uint8_t dak_pub_hash_buf[DELEGATED_ATTEST_KEY_HASH_SIZE] = {0};
     size_t  dak_pub_hash_len;
     size_t token_len;
     size_t dak_len;
@@ -118,8 +118,8 @@ void tfm_delegated_attest_test_1001(struct test_result_t *ret)
     status = tfm_delegated_attest_get_delegated_key(
               DELEGATED_ATTEST_KEY_ELLIPTIC_CURVE,
               DELEGATED_ATTEST_KEY_BIT_SIZE,
-              dak_buf,
-              sizeof(dak_buf),
+              static_dak_buf,
+              sizeof(static_dak_buf),
               &dak_len,
               DELEGATED_ATTEST_KEY_HASH_ALGO);
     if (status != PSA_SUCCESS) {
@@ -142,11 +142,11 @@ void tfm_delegated_attest_test_1001(struct test_result_t *ret)
  * Keep this print unchanged, the log processing script expects to be present.
  */
 TEST_LOG("\nINFO:    Delegated attest key:\n");
-dump_data(dak_buf, dak_len, "INFO:    ");
+dump_data(static_dak_buf, dak_len, "INFO:    ");
 #endif
 
     /* Calculate the hash of the public part of the delegated attestation key */
-    err = calc_public_dak_hash(dak_buf,
+    err = calc_public_dak_hash(static_dak_buf,
                                DELEGATED_ATTEST_KEY_BIT_SIZE,
                                dak_pub_hash_buf,
                                sizeof(dak_pub_hash_buf),
@@ -258,8 +258,8 @@ void tfm_delegated_attest_test_1002(struct test_result_t *ret)
         err = tfm_delegated_attest_get_delegated_key(
                   DELEGATED_ATTEST_KEY_ELLIPTIC_CURVE,
                   key_bits[i],
-                  dak_buf,
-                  sizeof(dak_buf),
+                  static_dak_buf,
+                  sizeof(static_dak_buf),
                   &dak_len,
                   DELEGATED_ATTEST_KEY_HASH_ALGO);
         if (err != PSA_SUCCESS) {
@@ -280,8 +280,8 @@ void tfm_delegated_attest_test_1002(struct test_result_t *ret)
         err = tfm_delegated_attest_get_delegated_key(
                   DELEGATED_ATTEST_KEY_ELLIPTIC_CURVE,
                   DELEGATED_ATTEST_KEY_BIT_SIZE,
-                  dak_buf,
-                  sizeof(dak_buf),
+                  static_dak_buf,
+                  sizeof(static_dak_buf),
                   &dak_len,
                   hash_algos[i]);
         if (err != PSA_SUCCESS) {
@@ -300,7 +300,6 @@ void tfm_delegated_attest_test_1002(struct test_result_t *ret)
  */
 void tfm_delegated_attest_test_1003(struct test_result_t *ret)
 {
-    uint8_t dak_pub_hash_buf[DELEGATED_ATTEST_KEY_HASH_SIZE];
     size_t dak_len;
     psa_status_t err;
 
@@ -308,8 +307,8 @@ void tfm_delegated_attest_test_1003(struct test_result_t *ret)
     err = tfm_delegated_attest_get_delegated_key(
               PSA_ECC_FAMILY_SECP_K1, /* Invalid */
               DELEGATED_ATTEST_KEY_BIT_SIZE,
-              dak_buf,
-              sizeof(dak_buf),
+              static_dak_buf,
+              sizeof(static_dak_buf),
               &dak_len,
               DELEGATED_ATTEST_KEY_HASH_ALGO);
     if (err != PSA_ERROR_INVALID_ARGUMENT) {
@@ -323,8 +322,8 @@ void tfm_delegated_attest_test_1003(struct test_result_t *ret)
     err = tfm_delegated_attest_get_delegated_key(
               DELEGATED_ATTEST_KEY_ELLIPTIC_CURVE,
               224, /* Invalid */
-              dak_buf,
-              sizeof(dak_buf),
+              static_dak_buf,
+              sizeof(static_dak_buf),
               &dak_len,
               DELEGATED_ATTEST_KEY_HASH_ALGO);
     if (err != PSA_ERROR_INVALID_ARGUMENT) {
@@ -343,7 +342,7 @@ void tfm_delegated_attest_test_1003(struct test_result_t *ret)
     err = tfm_delegated_attest_get_delegated_key(
               DELEGATED_ATTEST_KEY_ELLIPTIC_CURVE,
               DELEGATED_ATTEST_KEY_BIT_SIZE,
-              dak_buf,
+              static_dak_buf,
               PSA_BITS_TO_BYTES(DELEGATED_ATTEST_KEY_BIT_SIZE) - 1, /* Invalid */
               &dak_len,
               DELEGATED_ATTEST_KEY_HASH_ALGO);
@@ -358,8 +357,8 @@ void tfm_delegated_attest_test_1003(struct test_result_t *ret)
     err = tfm_delegated_attest_get_delegated_key(
               DELEGATED_ATTEST_KEY_ELLIPTIC_CURVE,
               DELEGATED_ATTEST_KEY_BIT_SIZE,
-              dak_buf,
-              sizeof(dak_buf),
+              static_dak_buf,
+              sizeof(static_dak_buf),
               NULL, /* Invalid */
               DELEGATED_ATTEST_KEY_HASH_ALGO);
     if (err != PSA_ERROR_INVALID_ARGUMENT) {
@@ -373,8 +372,8 @@ void tfm_delegated_attest_test_1003(struct test_result_t *ret)
     err = tfm_delegated_attest_get_delegated_key(
               DELEGATED_ATTEST_KEY_ELLIPTIC_CURVE,
               DELEGATED_ATTEST_KEY_BIT_SIZE,
-              dak_buf,
-              sizeof(dak_buf),
+              static_dak_buf,
+              sizeof(static_dak_buf),
               &dak_len,
               PSA_ALG_SHA3_512 + 1); /* Invalid */
     if (err == PSA_SUCCESS) {
