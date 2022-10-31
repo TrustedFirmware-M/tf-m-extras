@@ -34,11 +34,6 @@ target_include_directories(tfm_ns_interface
         ${CMAKE_BINARY_DIR}/generated/interface/include
 )
 
-# PSA interface files are generated from a template
-add_dependencies(tfm_ns_interface
-    tfm_generated_files
-)
-
 # Include selection of Secure Partitions from TF-M build.
 # It can be replaced by NS side configurations later.
 target_link_libraries(tfm_ns_interface
