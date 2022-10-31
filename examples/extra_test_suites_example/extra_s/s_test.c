@@ -1,27 +1,36 @@
 /*
  * Copyright (c) 2021, Arm Limited. All rights reserved.
+ * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
+ * or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
  */
 
-#include "s_test.h"
+#include "extra_s_tests.h"
 
-const struct extra_tests_t plat_s_t = {
-    .test_entry = s_test,
-    .expected_ret = EXTRA_TEST_SUCCESS
-};
-
-int32_t s_test(void)
+void s_test(struct test_result_t *ret)
 {
     /* Add platform specific secure test suites code here. */
 
-    return EXTRA_TEST_SUCCESS;
+    ret->val = TEST_PASSED;
 }
 
-int32_t extra_tests_init(struct extra_tests_t *internal_test_t)
+static struct test_t plat_s_t[] = {
+    {&s_test, "TFM_S_EXTRA_TEST_1001",
+     "Extra Secure test"},
+};
+
+void register_testsuite_extra_s_interface(struct test_suite_t *p_test_suite)
 {
     /* Add platform init code here. */
 
-    return register_extra_tests(internal_test_t, &plat_s_t);
+    uint32_t list_size;
+
+    list_size = (sizeof(plat_s_t) /
+                 sizeof(plat_s_t[0]));
+
+    set_testsuite("Extra Secure interface tests"
+                  "(TFM_S_EXTRA_TEST_1XXX)",
+                  plat_s_t, list_size, p_test_suite);
 }

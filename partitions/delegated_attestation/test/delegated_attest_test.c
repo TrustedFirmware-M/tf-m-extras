@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
+ * or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -84,7 +86,7 @@ static int calc_public_dak_hash(const uint8_t *dak_buf,
 /*
  * Public function. See delegated_attest_test.h
  */
-int32_t tfm_delegated_attest_test_1001(void)
+void tfm_delegated_attest_test_1001(struct test_result_t *ret)
 {
     uint8_t dak_pub_hash_buf[DELEGATED_ATTEST_KEY_HASH_SIZE];
     size_t  dak_pub_hash_len;
@@ -108,7 +110,8 @@ int32_t tfm_delegated_attest_test_1001(void)
     if (status != PSA_ERROR_INVALID_ARGUMENT) {
         TEST_LOG("tfm_delegated_attest_get_token() failed, returned: %d\r\n", status);
         TEST_LOG("Delegated attestation token request should fail with invalid calling sequence");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     /* Make the calls in correct sequence */
@@ -122,12 +125,14 @@ int32_t tfm_delegated_attest_test_1001(void)
     if (status != PSA_SUCCESS) {
         TEST_LOG("tfm_delegated_attest_get_delegated_key() failed, returned: %d\r\n", status);
         TEST_LOG("DAK request should succeed with valid parameters");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     if (dak_len != PSA_BITS_TO_BYTES(DELEGATED_ATTEST_KEY_BIT_SIZE)) {
         TEST_LOG("DAK length does not match to key bit size");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
 #ifdef DELEG_ATTEST_DUMP_TOKEN_AND_KEY
@@ -149,7 +154,8 @@ dump_data(dak_buf, dak_len, "INFO:    ");
     if (err != 0) {
         TEST_LOG("calc_public_dak_hash() failed, returned: %d\r\n", err);
         TEST_LOG("Should succeed after delegated key is successfully requested");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     status = tfm_delegated_attest_get_token(dak_pub_hash_buf,
@@ -160,7 +166,8 @@ dump_data(dak_buf, dak_len, "INFO:    ");
     if (status != PSA_SUCCESS) {
         TEST_LOG("tfm_delegated_attest_get_token() failed, returned: %d\r\n", status);
         TEST_LOG("Delegated attestation token request should succeed with valid parameters");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
 #ifdef DELEG_ATTEST_DUMP_TOKEN_AND_KEY
@@ -187,7 +194,8 @@ TEST_LOG("INFO: End of delegated attest basic test\n");
     if (status != PSA_ERROR_INVALID_ARGUMENT) {
         TEST_LOG("tfm_delegated_attest_get_token() failed, returned: %d\r\n", status);
         TEST_LOG("Delegated attestation token request should fail with invalid parameters");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     dak_pub_hash_buf[0] ^= 1 << 7; /* Toggle the first bit */
@@ -200,7 +208,8 @@ TEST_LOG("INFO: End of delegated attest basic test\n");
     if (status != PSA_ERROR_INVALID_ARGUMENT) {
         TEST_LOG("tfm_delegated_attest_get_token() failed, returned: %d\r\n", status);
         TEST_LOG("Delegated attestation token request should fail with invalid parameters");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     /* Negative test: token_buf is too small (other than 0) */
@@ -212,7 +221,8 @@ TEST_LOG("INFO: End of delegated attest basic test\n");
     if (status != PSA_ERROR_BUFFER_TOO_SMALL) {
         TEST_LOG("tfm_delegated_attest_get_token() failed, returned: %d\r\n", status);
         TEST_LOG("Delegated attestation token request should fail with invalid parameters");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     /* Just make a final call with the right set of parameters */
@@ -224,16 +234,17 @@ TEST_LOG("INFO: End of delegated attest basic test\n");
     if (status != PSA_SUCCESS) {
         TEST_LOG("tfm_delegated_attest_get_token() failed, returned: %d\r\n", status);
         TEST_LOG("Delegated attestation token request should succeed with valid parameters");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
-    return EXTRA_TEST_SUCCESS;
+    ret->val = TEST_PASSED;
 }
 
 /*
  * Public function. See delegated_attest_test.h
  */
-int32_t tfm_delegated_attest_test_1002(void)
+void tfm_delegated_attest_test_1002(struct test_result_t *ret)
 {
     size_t key_bits[] = {256, 384, 521};
     size_t dak_len;
@@ -254,12 +265,14 @@ int32_t tfm_delegated_attest_test_1002(void)
         if (err != PSA_SUCCESS) {
             TEST_LOG("tfm_delegated_attest_get_delegated_key() failed, returned: %d\r\n", err);
             TEST_LOG("DAK request should succeed with valid parameters");
-            return EXTRA_TEST_FAILED;
+            ret->val = TEST_FAILED;
+            return;
         }
         if (dak_len != PSA_BITS_TO_BYTES(key_bits[i])) {
             TEST_LOG("key_bits: %d", key_bits[i]);
             TEST_LOG("DAK length does not match to key bit size");
-            return EXTRA_TEST_FAILED;
+            ret->val = TEST_FAILED;
+            return;
         }
     }
 
@@ -274,17 +287,18 @@ int32_t tfm_delegated_attest_test_1002(void)
         if (err != PSA_SUCCESS) {
             TEST_LOG("tfm_delegated_attest_get_delegated_key() failed, returned: %d\r\n", err);
             TEST_LOG("DAK request should succeed with valid parameters");
-            return EXTRA_TEST_FAILED;
+            ret->val = TEST_FAILED;
+            return;
         }
     }
 
-    return EXTRA_TEST_SUCCESS;
+    ret->val = TEST_PASSED;
 }
 
 /*
  * Public function. See delegated_attest_test.h
  */
-int32_t tfm_delegated_attest_test_1003(void)
+void tfm_delegated_attest_test_1003(struct test_result_t *ret)
 {
     uint8_t dak_pub_hash_buf[DELEGATED_ATTEST_KEY_HASH_SIZE];
     size_t dak_len;
@@ -301,7 +315,8 @@ int32_t tfm_delegated_attest_test_1003(void)
     if (err != PSA_ERROR_INVALID_ARGUMENT) {
         TEST_LOG("tfm_delegated_attest_get_delegated_key() failed, returned: %d\r\n", err);
         TEST_LOG("DAK request should fail with invalid parameters");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     /* Negative test: Invalid key_bits */
@@ -315,7 +330,8 @@ int32_t tfm_delegated_attest_test_1003(void)
     if (err != PSA_ERROR_INVALID_ARGUMENT) {
         TEST_LOG("tfm_delegated_attest_get_delegated_key() failed, returned: %d\r\n", err);
         TEST_LOG("DAK request should fail with invalid parameters");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     /*
@@ -334,7 +350,8 @@ int32_t tfm_delegated_attest_test_1003(void)
     if (err != PSA_ERROR_BUFFER_TOO_SMALL) {
         TEST_LOG("tfm_delegated_attest_get_delegated_key() failed, returned: %d\r\n", err);
         TEST_LOG("DAK request should fail with invalid parameters");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     /* Negative test: &dak_len is NULL */
@@ -348,7 +365,8 @@ int32_t tfm_delegated_attest_test_1003(void)
     if (err != PSA_ERROR_INVALID_ARGUMENT) {
         TEST_LOG("tfm_delegated_attest_get_delegated_key() failed, returned: %d\r\n", err);
         TEST_LOG("DAK request should fail with invalid parameters");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     /* Negative test: unsupported hash_algo */
@@ -362,8 +380,9 @@ int32_t tfm_delegated_attest_test_1003(void)
     if (err == PSA_SUCCESS) {
         TEST_LOG("tfm_delegated_attest_get_delegated_key() failed, returned: %d\r\n", err);
         TEST_LOG("DAK request should fail with invalid parameters");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
-    return EXTRA_TEST_SUCCESS;
+    ret->val = TEST_PASSED;
 }

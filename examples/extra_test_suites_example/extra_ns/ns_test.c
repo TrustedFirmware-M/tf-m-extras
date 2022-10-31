@@ -1,27 +1,36 @@
 /*
  * Copyright (c) 2021, Arm Limited. All rights reserved.
+ * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
+ * or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
  */
 
-#include "ns_test.h"
+#include "test_framework.h"
 
-const struct extra_tests_t plat_ns_t = {
-    .test_entry = ns_test,
-    .expected_ret = EXTRA_TEST_SUCCESS
-};
-
-int32_t ns_test(void)
+void ns_test(struct test_result_t *ret)
 {
     /* Add platform specific non-secure test suites code here. */
 
-    return EXTRA_TEST_SUCCESS;
+    ret->val = TEST_PASSED;
 }
 
-int32_t extra_tests_init(struct extra_tests_t *internal_test_t)
+static struct test_t plat_ns_t[] = {
+    {&ns_test, "TFM_NS_EXTRA_TEST_1001",
+     "Extra Non-Secure test"},
+};
+
+void register_testsuite_extra_ns_interface(struct test_suite_t *p_test_suite)
 {
     /* Add platform init code here. */
 
-    return register_extra_tests(internal_test_t, &plat_ns_t);
+    uint32_t list_size;
+
+    list_size = (sizeof(plat_ns_t) /
+                 sizeof(plat_ns_t[0]));
+
+    set_testsuite("Extra Non-Secure interface tests"
+                  "(TFM_NS_EXTRA_TEST_1XXX)",
+                  plat_ns_t, list_size, p_test_suite);
 }

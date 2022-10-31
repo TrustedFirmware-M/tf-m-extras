@@ -1,12 +1,13 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
+ * or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
  */
 
 #include "test_framework_helpers.h"
-#include "extra_tests_common.h"
 #include "../measured_boot_tests_common.h"
 #include "../measured_boot_common.h"
 
@@ -39,33 +40,14 @@ static struct test_t tfm_measured_boot_s_tests[] = {
      "Extend Measurement - different signer id"}
 };
 
-static int32_t tfm_measured_boot_test(void)
+void register_testsuite_extra_s_interface(struct test_suite_t *p_test_suite)
 {
-    uint32_t i;
-    struct test_result_t result;
+    uint32_t list_size;
 
-    uint32_t test_count = (sizeof(tfm_measured_boot_s_tests) /
-                           sizeof(tfm_measured_boot_s_tests[0]));
+    list_size = (sizeof(tfm_measured_boot_s_tests) /
+                 sizeof(tfm_measured_boot_s_tests[0]));
 
-    TEST_LOG("  Executing Measured Boot Secure tests \r\n");
-    for (i = 0; i < test_count; i++) {
-        TEST_LOG("  \r\n%s: %s \r\n", tfm_measured_boot_s_tests[i].name,
-                                      tfm_measured_boot_s_tests[i].desc);
-        tfm_measured_boot_s_tests[i].test(&result);
-        if (result.val != TEST_PASSED) {
-            return EXTRA_TEST_FAILED;
-        }
-    }
-    return EXTRA_TEST_SUCCESS;
-}
-
-/* Define test suite for measured boot service tests */
-const struct extra_tests_t measured_boot_s_t = {
-    .test_entry = tfm_measured_boot_test,
-    .expected_ret = EXTRA_TEST_SUCCESS,
-};
-
-int32_t extra_tests_init(struct extra_tests_t *internal_test_t)
-{
-    return register_extra_tests(internal_test_t, &measured_boot_s_t);
+    set_testsuite("Measured boot partition secure test suite"
+                  "(TFM_S_MEASURED_BOOT_TEST_1XXX)",
+                  tfm_measured_boot_s_tests, list_size, p_test_suite);
 }

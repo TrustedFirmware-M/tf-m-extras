@@ -1,5 +1,7 @@
 #-------------------------------------------------------------------------------
 # Copyright (c) 2022, Arm Limited. All rights reserved.
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
+# or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -15,35 +17,26 @@ else()
     message(FATAL_ERROR "Unknown hash algorithm")
 endif()
 
-add_library(tfm_test_suite_measured_boot_s STATIC EXCLUDE_FROM_ALL)
-
-target_sources(tfm_test_suite_measured_boot_s
+target_sources(tfm_test_suite_extra_s
     PRIVATE
         ../measured_boot_tests_common.c
         ../measured_boot_common.c
         measured_boot_s_interface_testsuite.c
 )
 
-target_include_directories(tfm_test_suite_measured_boot_s
+target_include_directories(tfm_test_suite_extra_s
     PRIVATE
         ..
 )
 
-target_compile_definitions(tfm_test_suite_measured_boot_s
+target_compile_definitions(tfm_test_suite_extra_s
     PRIVATE
         MEASURED_BOOT_HASH_ALG=${MEASURED_BOOT_HASH_ALG}
         MEASUREMENT_VALUE_SIZE=${MEASUREMENT_VALUE_SIZE}
 )
 
-target_link_libraries(tfm_test_suite_measured_boot_s
-    PRIVATE
-        tfm_test_framework_s
-        tfm_sprt #for public header: tfm_measured_boot_api.h
-        tfm_test_suite_extra_common
-        platform_region_defs
-)
-
 target_link_libraries(tfm_test_suite_extra_s
     PRIVATE
-        tfm_test_suite_measured_boot_s
+        tfm_sprt #for public header: tfm_measured_boot_api.h
+        platform_region_defs
 )

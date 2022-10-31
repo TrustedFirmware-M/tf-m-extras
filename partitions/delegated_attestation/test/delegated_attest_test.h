@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
+ * or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -9,7 +11,6 @@
 #define __DELEGATED_ATTEST_TEST_H__
 
 #include "test_framework.h"
-#include "extra_tests_common.h"
 #include "psa/crypto_types.h"
 #include "psa/crypto_values.h"
 #include "psa/crypto_sizes.h"
@@ -66,25 +67,25 @@ extern "C" {
  * \brief Interface test: Test the platform attestation token API with valid
  *        and invalid inputs.
  *
- * \return Test result
+ * \param[out] ret              Test result
  */
-int32_t tfm_delegated_attest_test_1001(void);
+void tfm_delegated_attest_test_1001(struct test_result_t *ret);
 
 /**
  * \brief Interface test: Test the delegated attestation key API with valid
  *        inputs.
  *
- * \return Test result
+ * \param[out] ret              Test result
  */
-int32_t tfm_delegated_attest_test_1002(void);
+void tfm_delegated_attest_test_1002(struct test_result_t *ret);
 
 /**
  * \brief Interface test: Test the delegated attestation key API with invalid
  *        inputs.
  *
- * \return Test result
+ * \param[out] ret              Test result
  */
-int32_t tfm_delegated_attest_test_1003(void);
+void tfm_delegated_attest_test_1003(struct test_result_t *ret);
 
 #ifdef __cplusplus
 }

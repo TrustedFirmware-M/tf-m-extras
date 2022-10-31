@@ -1,11 +1,13 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
+ * or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
  */
 
-#include "dma350_s_test.h"
+#include "extra_s_tests.h"
 #include "dma350_lib.h"
 #include "platform_base_address.h"
 #include "tfm_sp_log.h"
@@ -14,6 +16,11 @@
 
 static int32_t dma350_native_drv_test(void);
 static int32_t dma350_library_test(void);
+
+/* TODO: if needed each test function can be made as a separate test case, in
+ * such case EXTRA_TEST_XX definitions can be removed */
+#define EXTRA_TEST_SUCCESS 0
+#define EXTRA_TEST_FAILED -1
 
 #define DMA350_TEST_COPY_COUNT   442
 static char DMA350_TEST_MEMORY_TO[DMA350_TEST_COPY_COUNT] = {0};
@@ -36,17 +43,12 @@ static char DMA350_TEST_ENDIAN_EXPECTED_RESULT[DMA350_TEST_ENDIAN_LEN] =
     {'C','B','A','F','E','D','I','H','G'};
 
 
-const struct extra_tests_t plat_s_t = {
-    .test_entry = dma350_s_test,
-    .expected_ret = EXTRA_TEST_SUCCESS
-};
-
 static struct dma350_ch_dev_t DMA350_DMA0_CH0_DEV_S = {
     .cfg = {.ch_base = (DMACH_TypeDef *)(DMA_350_BASE_S + 0x1000UL),
             .channel = 0},
     .data = {0}};
 
-int32_t dma350_s_test(void)
+void dma350_s_test(struct test_result_t *ret)
 {
     int32_t result;
     enum dma350_ch_error_t ch_err;
@@ -55,25 +57,40 @@ int32_t dma350_s_test(void)
     ch_err = dma350_ch_init(&DMA350_DMA0_CH0_DEV_S);
     if (ch_err != DMA350_CH_ERR_NONE) {
         printf("DMA CH init failed: 0x%x\r\n", ch_err);
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     result = dma350_native_drv_test();
     if (result != EXTRA_TEST_SUCCESS) {
-        return result;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     result = dma350_library_test();
     if (result != EXTRA_TEST_SUCCESS) {
-        return result;
+        ret->val = TEST_FAILED;
+        return;
     }
 
-    return EXTRA_TEST_SUCCESS;
+    ret->val = TEST_PASSED;
 }
 
-int32_t extra_tests_init(struct extra_tests_t *internal_test_t)
+static struct test_t plat_s_t[] = {
+    {&dma350_s_test, "TFM_S_EXTRA_TEST_1001",
+     "Extra Secure test"},
+};
+
+void register_testsuite_extra_s_interface(struct test_suite_t *p_test_suite)
 {
-    return register_extra_tests(internal_test_t, &plat_s_t);
+    uint32_t list_size;
+
+    list_size = (sizeof(plat_s_t) /
+                 sizeof(plat_s_t[0]));
+
+    set_testsuite("Extra Secure interface tests"
+                  "(TFM_S_EXTRA_TEST_1XXX)",
+                  plat_s_t, list_size, p_test_suite);
 }
 
 /**

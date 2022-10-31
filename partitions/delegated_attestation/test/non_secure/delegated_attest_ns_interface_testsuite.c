@@ -1,54 +1,31 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
+ * or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
  */
 
-#include "extra_tests_common.h"
 #include "delegated_attest_test.h"
 
-
-static int32_t tfm_delegated_attest_test(void)
-{
-    uint32_t fail_cnt = 0;
-
-    TEST_LOG("  Delegated Attestation Non-Secure Test 1001: ");
-    if (tfm_delegated_attest_test_1001() != EXTRA_TEST_SUCCESS) {
-        TEST_LOG(" - FAILED\r\n");
-        fail_cnt++;
-    } else {
-        TEST_LOG(" - PASSED\r\n");
-    }
-
-    TEST_LOG("  Delegated Attestation Non-Secure Test 1002: ");
-    if (tfm_delegated_attest_test_1002() != EXTRA_TEST_SUCCESS) {
-        TEST_LOG(" - FAILED\r\n");
-        fail_cnt++;
-    } else {
-        TEST_LOG(" - PASSED\r\n");
-    }
-
-    TEST_LOG("  Delegated Attestation Non-Secure Test 1003: ");
-    if (tfm_delegated_attest_test_1003() != EXTRA_TEST_SUCCESS) {
-        TEST_LOG(" - FAILED\r\n");
-        fail_cnt++;
-    } else {
-        TEST_LOG(" - PASSED\r\n");
-    }
-
-    return (fail_cnt) ? EXTRA_TEST_FAILED : EXTRA_TEST_SUCCESS;
-}
-
-/* Define test suite for delegated attestation service tests */
-const struct extra_tests_t delegated_attestation_ns_t = {
-    .test_entry = tfm_delegated_attest_test,
-    .expected_ret = EXTRA_TEST_SUCCESS,
+static struct test_t tfm_delegated_attest_ns_tests[] = {
+    {&tfm_delegated_attest_test_1001, "TFM_NS_DELEGATED_ATTEST_TEST_1001",
+     "Delegated Attestation Non-Secure Test 1001"},
+    {&tfm_delegated_attest_test_1002, "TFM_NS_DELEGATED_ATTEST_TEST_1002",
+     "Delegated Attestation Non-Secure Test 1002"},
+    {&tfm_delegated_attest_test_1003, "TFM_NS_DELEGATED_ATTEST_TEST_1003",
+     "Delegated Attestation Non-Secure Test 1003"},
 };
 
-int32_t extra_tests_init(struct extra_tests_t *internal_test_t)
+void register_testsuite_extra_ns_interface(struct test_suite_t *p_test_suite)
 {
-    /* Add platform init code here. */
+    uint32_t list_size;
 
-    return register_extra_tests(internal_test_t, &delegated_attestation_ns_t);
+    list_size = (sizeof(tfm_delegated_attest_ns_tests) /
+                 sizeof(tfm_delegated_attest_ns_tests[0]));
+
+    set_testsuite("Delegated Attestation Non-Secure Tests"
+                  "(TFM_NS_DELEGATED_ATTEST_TEST_1XXX)",
+                  tfm_delegated_attest_ns_tests, list_size, p_test_suite);
 }
