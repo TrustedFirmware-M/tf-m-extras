@@ -181,6 +181,9 @@ Related compile time options for out of tree build
 - ``TFM_EXTRA_PARTITION_PATHS``: <tf-m-extras-repo>/partitions/
   delegated_attestation
 
+- ``DELEG_ATTEST_DUMP_TOKEN_AND_KEY``: If turned ON then the derived delegated
+  attestation key and the delegated attestation token is printed to the console.
+
 ************
 Verification
 ************

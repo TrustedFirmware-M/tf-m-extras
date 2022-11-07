@@ -18,6 +18,26 @@ static uint8_t token_buf[PLATFORM_TOKEN_BUFF_SIZE];
 /* Delegated attestation key buffer */
 static uint8_t dak_buf[DELEGATED_ATTEST_KEY_MAX_SIZE];
 
+#ifdef DELEG_ATTEST_DUMP_TOKEN_AND_KEY
+static void dump_data(unsigned char *buf, size_t len, const char *prefix)
+{
+    int i;
+    unsigned char num;
+
+    for (i = 0; i < len; ++i) {
+        num = buf[i];
+        if ((i % 16) == 0) {
+            TEST_LOG("%s", prefix);
+        }
+        TEST_LOG("%x%x ", (num & 0xF0) >> 4, num & 0x0F);
+        if (((i + 1) % 16) == 0) {
+            TEST_LOG("\n");
+        }
+    }
+    TEST_LOG("\n");
+}
+#endif
+
 static int calc_public_dak_hash(const uint8_t *dak_buf,
                                 uint32_t       dak_bits,
                                 uint8_t       *dak_pub_hash_buf,
@@ -110,6 +130,16 @@ int32_t tfm_delegated_attest_test_1001(void)
         return EXTRA_TEST_FAILED;
     }
 
+#ifdef DELEG_ATTEST_DUMP_TOKEN_AND_KEY
+/* Print delegated attest key in TF-A log style to be able to process it in the
+ * attestation verification script.
+ *
+ * Keep this print unchanged, the log processing script expects to be present.
+ */
+TEST_LOG("\nINFO:    Delegated attest key:\n");
+dump_data(dak_buf, dak_len, "INFO:    ");
+#endif
+
     /* Calculate the hash of the public part of the delegated attestation key */
     err = calc_public_dak_hash(dak_buf,
                                DELEGATED_ATTEST_KEY_BIT_SIZE,
@@ -132,6 +162,18 @@ int32_t tfm_delegated_attest_test_1001(void)
         TEST_LOG("Delegated attestation token request should succeed with valid parameters");
         return EXTRA_TEST_FAILED;
     }
+
+#ifdef DELEG_ATTEST_DUMP_TOKEN_AND_KEY
+/* Print the token in TF-A log style to be able to process it in attestation
+ * script.
+ *
+ * Keep this print unchanged, the log processing script expects to be present.
+ */
+TEST_LOG("\nINFO:    Platform attestation token:\n");
+dump_data(token_buf, token_len, "INFO:    ");
+/* This marks the end of the log to be processed. Keep it unchanged. */
+TEST_LOG("INFO: End of delegated attest basic test\n");
+#endif
 
     /* TODO: Validate the platform attestation token */
 

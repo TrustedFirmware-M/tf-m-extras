@@ -40,6 +40,11 @@ target_include_directories(tfm_app_rot_partition_delegated_attest
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+target_compile_definitions(tfm_app_rot_partition_delegated_attest
+    PRIVATE
+        $<$<BOOL:${DELEG_ATTEST_DUMP_TOKEN_AND_KEY}>:DELEG_ATTEST_DUMP_TOKEN_AND_KEY>
+)
+
 target_link_libraries(tfm_app_rot_partition_delegated_attest
     PRIVATE
         platform_s
