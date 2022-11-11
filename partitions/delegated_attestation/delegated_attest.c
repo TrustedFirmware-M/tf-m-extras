@@ -15,7 +15,7 @@
 #include "tfm_attest_iat_defs.h"
 #include "tfm_crypto_defs.h"
 #include "measured_boot_api.h"
-#include "qcbor.h"
+#include "qcbor/qcbor.h"
 #include "q_useful_buf.h"
 
 /* Delegated attestation key (DAK) identifier */

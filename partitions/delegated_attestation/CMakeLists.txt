@@ -50,8 +50,8 @@ target_link_libraries(tfm_app_rot_partition_delegated_attest
         platform_s
         psa_interface
         tfm_sprt
-        tfm_qcbor_s
         tfm_attestation_defs
+        qcbor
 )
 
 ############################ Secure API ########################################
