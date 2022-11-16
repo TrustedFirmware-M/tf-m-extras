@@ -17,7 +17,7 @@ Build steps
 
 .. code-block::
 
- $ cmake -S . -B cmake_build -DTFM_PLATFORM=arm/mps3/corstone310_fvp -DTFM_TOOLCHAIN_FILE=toolchain_ARMCLANG.cmake -DDEFAULT_NS_SCATTER=OFF -DPLATFORM_SVC_HANDLERS=ON -DNS_EVALUATION_APP_PATH=<tf-m-extras root>/examples/corstone310_fvp_dma/dma350_ns
+ $ cmake -S . -B cmake_build -DTFM_PLATFORM=arm/mps3/corstone310/fvp -DTFM_TOOLCHAIN_FILE=toolchain_ARMCLANG.cmake -DDEFAULT_NS_SCATTER=OFF -DPLATFORM_SVC_HANDLERS=ON -DNS_EVALUATION_APP_PATH=<tf-m-extras root>/examples/corstone310_fvp_dma/dma350_ns
 
 2. Then:
 

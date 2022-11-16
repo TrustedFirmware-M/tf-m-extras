@@ -66,18 +66,18 @@ target_sources(tfm_ns
         # CLCD files
         clcd_lib/clcd_mps3_lib.c
         clcd_lib/clcd_mps3_drv.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/native_drivers/systimer_armv8-m_drv.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/common/native_drivers/systimer_armv8-m_drv.c
 
         # DMA350 unprivileged-specific files
         dma350_lib/dma350_lib_unprivileged.c
 
         # DMA350 files
         device_definition.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/native_drivers/dma350_ch_drv.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/native_drivers/dma350_drv.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/libraries/dma350_lib.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/libraries/dma350_checker_layer.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/device/source/dma350_address_remap.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers/dma350_ch_drv.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers/dma350_drv.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/libraries/dma350_lib.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/libraries/dma350_checker_layer.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/device/source/dma350_address_remap.c
 
         # freeRTOS kernel files
         ${FREERTOS_SRC_PATH}/portable/Common/mpu_wrappers.c
@@ -106,7 +106,8 @@ target_include_directories(tfm_ns
         ${FREERTOS_SRC_PATH}/portable/GCC/ARM_CM85_NTZ/non_secure/
 
         # DMA350
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/services/src/
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/libraries
 )
 
 target_compile_definitions(tfm_ns

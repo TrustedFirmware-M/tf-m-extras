@@ -33,14 +33,21 @@ target_link_libraries(tfm_ns_interface
 
 add_executable(tfm_ns)
 
+target_include_directories(tfm_ns
+    PRIVATE
+        # DMA350
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/libraries
+)
+
 target_sources(tfm_ns
     PRIVATE
         main_ns.c
         # DMA350 files
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/native_drivers/dma350_ch_drv.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/native_drivers/dma350_drv.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/libraries/dma350_lib.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310_fvp/device/source/dma350_address_remap.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers/dma350_ch_drv.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers/dma350_drv.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/libraries/dma350_lib.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/device/source/dma350_address_remap.c
 )
 
 target_compile_definitions(tfm_ns
