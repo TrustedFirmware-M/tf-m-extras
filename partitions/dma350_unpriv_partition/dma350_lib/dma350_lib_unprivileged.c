@@ -12,8 +12,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-enum dma350_lib_error_t dma350_memcpy_unpriv(uint8_t channel,
-                                        void* src, void* des, uint32_t size,
+enum dma350_lib_error_t dma350_memcpy_unpriv(uint8_t channel, const void* src,
+                                        void* des, uint32_t size,
                                         enum dma350_lib_exec_type_t exec_type)
 {
     enum dma350_lib_error_t ret_val;
@@ -30,8 +30,8 @@ enum dma350_lib_error_t dma350_memcpy_unpriv(uint8_t channel,
     return ret_val;
 }
 
-enum dma350_lib_error_t dma350_memmove_unpriv(uint8_t channel,
-                                        void* src, void* des, uint32_t size,
+enum dma350_lib_error_t dma350_memmove_unpriv(uint8_t channel, const void* src,
+                                        void* des, uint32_t size,
                                         enum dma350_lib_exec_type_t exec_type)
 {
     enum dma350_lib_error_t ret_val;
@@ -44,6 +44,37 @@ enum dma350_lib_error_t dma350_memmove_unpriv(uint8_t channel,
 
     ret_val = request_dma350_priv_config(DMA_CALL_MEMMOVE, channel,
                                         &memmove_config);
+
+    return ret_val;
+}
+
+enum dma350_lib_error_t dma350_draw_from_canvas_unpriv(uint8_t channel,
+                                    const void* src, void* des,
+                                    uint32_t src_width, uint16_t src_height,
+                                    uint16_t src_line_width,
+                                    uint32_t des_width, uint16_t des_height,
+                                    uint16_t des_line_width,
+                                    enum dma350_ch_transize_t pixelsize,
+                                    enum dma350_lib_transform_t transform,
+                                    enum dma350_lib_exec_type_t exec_type)
+{
+    enum dma350_lib_error_t ret_val;
+    struct dma350_draw_config draw_config = {
+        .exec_type = exec_type,
+        .src = src,
+        .des = des,
+        .src_width = src_width,
+        .src_height = src_height,
+        .src_line_width = src_line_width,
+        .des_width = des_width,
+        .des_height = des_height,
+        .des_line_width = des_line_width,
+        .pixelsize = pixelsize,
+        .transform = transform
+    };
+
+    ret_val = request_dma350_priv_config(DMA_CALL_DRAW_FROM_CANVAS, channel,
+                                        &draw_config);
 
     return ret_val;
 }
