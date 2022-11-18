@@ -14,8 +14,8 @@
 
 #include <string.h>
 
-static int32_t dma350_native_drv_test(void);
-static int32_t dma350_library_test(void);
+static void dma350_native_drv_test(struct test_result_t *ret);
+static void dma350_library_test(struct test_result_t *ret);
 
 /* TODO: if needed each test function can be made as a separate test case, in
  * such case EXTRA_TEST_XX definitions can be removed */
@@ -48,37 +48,11 @@ static struct dma350_ch_dev_t DMA350_DMA0_CH0_DEV_S = {
             .channel = 0},
     .data = {0}};
 
-void dma350_s_test(struct test_result_t *ret)
-{
-    int32_t result;
-    enum dma350_ch_error_t ch_err;
-
-    /* Init DMA channel */
-    ch_err = dma350_ch_init(&DMA350_DMA0_CH0_DEV_S);
-    if (ch_err != DMA350_CH_ERR_NONE) {
-        printf("DMA CH init failed: 0x%x\r\n", ch_err);
-        ret->val = TEST_FAILED;
-        return;
-    }
-
-    result = dma350_native_drv_test();
-    if (result != EXTRA_TEST_SUCCESS) {
-        ret->val = TEST_FAILED;
-        return;
-    }
-
-    result = dma350_library_test();
-    if (result != EXTRA_TEST_SUCCESS) {
-        ret->val = TEST_FAILED;
-        return;
-    }
-
-    ret->val = TEST_PASSED;
-}
-
 static struct test_t plat_s_t[] = {
-    {&dma350_s_test, "TFM_S_EXTRA_TEST_1001",
-     "Extra Secure test"},
+    {&dma350_native_drv_test, "TFM_S_EXTRA_TEST_1001",
+     "DMA350 Native driver"},
+    {&dma350_library_test, "TFM_S_EXTRA_TEST_1002",
+     "DMA350 Library"},
 };
 
 void register_testsuite_extra_s_interface(struct test_suite_t *p_test_suite)
@@ -100,10 +74,19 @@ void register_testsuite_extra_s_interface(struct test_suite_t *p_test_suite)
  * \returns Return EXTRA_TEST_SUCCESS if succeeds. Otherwise, return
  *          EXTRA_TEST_FAILED.
  */
-static int32_t dma350_native_drv_test()
+static void dma350_native_drv_test(struct test_result_t *ret)
 {
     union dma350_ch_status_t status;
     struct dma350_ch_dev_t *ch_dev = &DMA350_DMA0_CH0_DEV_S;
+    enum dma350_ch_error_t ch_err;
+
+    /* Init DMA channel */
+    ch_err = dma350_ch_init(&DMA350_DMA0_CH0_DEV_S);
+    if (ch_err != DMA350_CH_ERR_NONE) {
+        printf("DMA CH init failed: 0x%x\r\n", ch_err);
+        ret->val = TEST_FAILED;
+        return;
+    }
 
     /* Clear destination */
     memset(DMA350_TEST_MEMORY_TO, '.', DMA350_TEST_COPY_COUNT);
@@ -132,17 +115,19 @@ static int32_t dma350_native_drv_test()
     status = dma350_ch_wait_status(ch_dev);
     if (!status.b.STAT_DONE || status.b.STAT_ERR) {
         printf("Channel not finished properly\r\n");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     /* Verify results */
     if (strncmp(DMA350_TEST_MEMORY_FROM, DMA350_TEST_MEMORY_TO,
                     DMA350_TEST_COPY_COUNT)) {
         printf("Copied data mismatch\r\n");
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
-
-    return EXTRA_TEST_SUCCESS;
+    ret->val = TEST_PASSED;
+    return;
 }
 
 /**
@@ -154,10 +139,19 @@ static int32_t dma350_native_drv_test()
  * \returns Return EXTRA_TEST_SUCCESS if succeeds. Otherwise, return
  *          EXTRA_TEST_FAILED.
  */
-static int32_t dma350_library_test()
+static void dma350_library_test(struct test_result_t *ret)
 {
     enum dma350_lib_error_t status;
     struct dma350_ch_dev_t *ch_dev = &DMA350_DMA0_CH0_DEV_S;
+    enum dma350_ch_error_t ch_err;
+
+    /* Init DMA channel */
+    ch_err = dma350_ch_init(&DMA350_DMA0_CH0_DEV_S);
+    if (ch_err != DMA350_CH_ERR_NONE) {
+        printf("DMA CH init failed: 0x%x\r\n", ch_err);
+        ret->val = TEST_FAILED;
+        return;
+    }
 
     /* Clear destination */
     memset(DMA350_TEST_MEMORY_TO, '.', DMA350_TEST_ENDIAN_LEN);
@@ -170,15 +164,20 @@ static int32_t dma350_library_test()
     /* Verify library return value */
     if (status != DMA350_LIB_ERR_NONE) {
         printf("Library call failed with 0x%x\r\n", status);
-        return EXTRA_TEST_FAILED;
+        ret->val = TEST_FAILED;
+        return;
     }
 
     /* Verify results */
     if (strncmp(DMA350_TEST_ENDIAN_EXPECTED_RESULT, DMA350_TEST_MEMORY_TO,
                     DMA350_TEST_ENDIAN_LEN)) {
-        printf("Copied data mismatch\r\n");
-        return EXTRA_TEST_FAILED;
+        printf("Copied data mismatch:\r\nEXP: %s\r\nDES: %s\r\n",
+                    DMA350_TEST_ENDIAN_EXPECTED_RESULT,
+                    DMA350_TEST_MEMORY_TO);
+        ret->val = TEST_FAILED;
+        return;
     }
 
-    return EXTRA_TEST_SUCCESS;
+    ret->val = TEST_PASSED;
+    return;
 }
