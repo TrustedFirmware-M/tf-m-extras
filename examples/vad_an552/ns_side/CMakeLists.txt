@@ -306,6 +306,9 @@ target_compile_definitions(tfm_ns
     PRIVATE
         MBEDTLS_CONFIG_FILE="aws_mbedtls_config.h"
         $<$<BOOL:${VAD_AN552_NO_CONNECTIVITY}>:VAD_AN552_NO_CONNECTIVITY>
+        # FreeRTOS OTA PSA PAL configuration
+        OTA_PAL_CODE_SIGNING_ALGO=OTA_PAL_CODE_SIGNING_RSA
+        OTA_PAL_SIGNATURE_FORMAT=OTA_PAL_SIGNATURE_RAW
 )
 
 target_link_libraries(tfm_ns
