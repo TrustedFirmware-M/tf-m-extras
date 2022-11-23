@@ -50,7 +50,6 @@ extern void publishToAWSTopic(const char *msg);
 static void* prvCalloc(size_t xNmemb, size_t xSize);
 static bool is_first_boot(void);
 static void write_boot_pattern(void);
-static void accept_primary_slot_image(void);
 
 /*
  * Semihosting is a mechanism that enables code running on an ARM target
@@ -77,17 +76,6 @@ int errno;
 
 psa_key_handle_t xOTACodeVerifyKeyHandle = 0xAA;
 
-static void accept_primary_slot_image(void)
-{
-    psa_image_id_t running_image = \
-                (psa_image_id_t)FWU_CALCULATE_IMAGE_ID(FWU_IMAGE_ID_SLOT_ACTIVE,
-                                                    FWU_IMAGE_TYPE_FULL,
-                                                    0);
-    vLoggingPrintf("Accepting image by setting image_ok flag to 0x1 in MCUBOOT trailer");
-    if (psa_fwu_accept(running_image) != PSA_SUCCESS) {
-        vLoggingPrintf("Accept failed");
-    }
-}
 
 static bool is_first_boot(void)
 {
@@ -226,8 +214,7 @@ int main()
     stdio_init();
     vUARTLockInit();
     tfm_ns_interface_init();
-
-    GetImageVersionPSA(FWU_IMAGE_TYPE_FULL);
+    GetImageVersionPSA(FWU_COMPONENT_ID_FULL);
     vLoggingPrintf("Application firmware version: %d.%d.%d",
                    appFirmwareVersion.u.x.major,
                    appFirmwareVersion.u.x.minor,
@@ -240,7 +227,6 @@ int main()
     mbedtls_platform_set_calloc_free(prvCalloc, vPortFree);
 
     if(is_first_boot()) {
-        accept_primary_slot_image();
         vDevModeKeyProvisioning();
         ota_privision_code_signing_key(&xOTACodeVerifyKeyHandle);
         write_boot_pattern();

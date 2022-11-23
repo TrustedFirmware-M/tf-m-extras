@@ -165,11 +165,15 @@ flags::
     -DNS_EVALUATION_APP_PATH=<path-to-tf-m-extras-repo>/examples/vad_an552/ns_side
     -DTFM_EXTRA_PARTITION_PATHS=<path-to-tf-m-extras-repo>/partitions/vad_an552_sp/
     -DTFM_EXTRA_MANIFEST_LIST_FILES=<path-to-tf-m-extras-repo>/partitions/vad_an552_sp/extra_manifest_list.yaml
-    -DCRYPTO_ENGINE_BUF_SIZE=0x8000 -DITS_MAX_ASSET_SIZE=1300
+    -DPROJECT_CONFIG_HEADER_FILE=<path-to-tf-m-extras-repo>/examples/vad_an552/ns_side/project_config.h
     -DTFM_PARTITION_FIRMWARE_UPDATE=ON -DMCUBOOT_DATA_SHARING=ON
     -DMCUBOOT_UPGRADE_STRATEGY=SWAP_USING_SCRATCH
     -DMCUBOOT_IMAGE_NUMBER=1 -DMCUBOOT_SIGNATURE_KEY_LEN=2048
-    -DCONFIG_TFM_ENABLE_MVE=ON
+    -DCONFIG_TFM_ENABLE_MVE=ON -DCONFIG_TFM_SPM_BACKEND=IPC
+    -DPLATFORM_HAS_FIRMWARE_UPDATE_SUPPORT=ON -DTFM_PARTITION_PLATFORM=ON
+    -DTFM_PARTITION_CRYPTO=ON -DTFM_PARTITION_INTERNAL_TRUSTED_STORAGE=ON
+    -DTFM_PARTITION_PROTECTED_STORAGE=ON -DMCUBOOT_CONFIRM_IMAGE=ON
+
 
 The application also can be run without MVE support, in that case the
 ``-DCONFIG_TFM_ENABLE_MVE=ON`` flags should be omitted, and the
@@ -218,8 +222,10 @@ Testing Amazon AWS OTA
 
 To run an OTA update a new image must be created with higher version number.
 This can be easily done by rebuilding the solution with the following cmake
-flag: -DMCUBOOT_IMAGE_VERSION_S=2.1.0. (The version itself can be anything, but
-must be higher than the version of the currently running image.)
+flag: ``-DMCUBOOT_IMAGE_VERSION_S=2.1.0``. (The version itself can be anything, but
+must be higher than the version of the currently running image.) The
+``-DMCUBOOT_CONFIRM_IMAGE`` flag should be set to OFF in the new image build
+config, because the demo going to confirm the new image after downloading it.
 
 The image signature must be extracted from the final binary, can be done by
 openssl running the following commands in the build directory:
@@ -248,7 +254,7 @@ can be created:
 #. Select upload new file and select the signed update binary
    ``tfm_s_ns_signed.bin``.
 #. Select the S3 bucket you created to upload the binary to.
-#. For ``Path name of file on device`` put in ``full image``.
+#. For ``Path name of file on device`` put in ``combined image``.
 #. As the role, select the OTA role you created.
 #. Click next.
 #. Click next, your update job is ready and running. If your board is running
