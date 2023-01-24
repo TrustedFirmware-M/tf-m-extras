@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -36,7 +36,7 @@ static psa_status_t get_delegated_attestation_key(const psa_msg_t *msg)
     if (msg->in_size[0] != sizeof(ecc_curve) ||
         msg->in_size[1] != sizeof(key_bits)  ||
         msg->in_size[2] != sizeof(hash_algo)) {
-        return PSA_ERROR_PROGRAMMER_ERROR;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
     bytes_read = psa_read(msg->handle, 0, &ecc_curve, sizeof(ecc_curve));
@@ -93,6 +93,9 @@ static psa_status_t get_platform_attestation_token(const psa_msg_t *msg)
     size_t bytes_read;
 
     dak_pub_hash_size = msg->in_size[0];
+    if (dak_pub_hash_size > sizeof(dak_pub_hash)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
     bytes_read = psa_read(msg->handle, 0, dak_pub_hash, dak_pub_hash_size);
     if (bytes_read != dak_pub_hash_size) {
         return PSA_ERROR_GENERIC_ERROR;
