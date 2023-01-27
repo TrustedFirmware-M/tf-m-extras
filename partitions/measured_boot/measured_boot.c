@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -103,23 +103,24 @@ static bool is_signer_id_different(uint8_t index, const uint8_t *signer_id)
 
 /* TODO: Access control strategy to be updated */
 static bool is_slot_access_prohibited(uint8_t slot_index,
-                                      const uint8_t *signer_id)
+                                      const uint8_t *signer_id,
+                                      uint32_t measurement_algo)
 {
+    if (measurement_algo != measurement_slot[slot_index].measurement.metadata.measurement_algo) {
+        /* The client hash algorithm is different from the current slot hash algorithm */
+        return true;
+    }
+
     if (is_signer_id_different(slot_index, signer_id)) {
         /* The client signer id is different from the current slot signer id */
-        if (measurement_slot[slot_index].is_common) {
-            /* This slot holds common measurement and must be accessible to
-             * all
-             */
-            return false;
-        } else {
-            /* Check for read/extend permissions; deny access for now */
+        if (!measurement_slot[slot_index].is_common) {
+            /* This slot does NOT hold common measurements */
             return true;
         }
     }
 
-    /* The client signer id is same as the current slot signer id; hence it
-     * must be allowed full access
+    /* The client signer id and hash algo is same as the current slot signer id
+     * and hash algo respectively; hence it must be allowed full access
      */
     return false;
 }
@@ -313,11 +314,6 @@ psa_status_t measured_boot_extend_measurement(uint8_t index,
                            measurement_value, measurement_value_size,
                            lock_measurement);
 
-    if (is_slot_access_prohibited(index, signer_id)) {
-        status = PSA_ERROR_NOT_PERMITTED;
-        goto error;
-    }
-
     if (is_measurement_slot_locked(index)) {
         /* Cannot write to measurement slot once locked */
         status = PSA_ERROR_BAD_STATE;
@@ -326,6 +322,11 @@ psa_status_t measured_boot_extend_measurement(uint8_t index,
 
     /* Check how metadata needs updating for the requested slot */
     if (is_measurement_slot_populated(index)) {
+        if (is_slot_access_prohibited(index, signer_id, measurement_algo)) {
+            status = PSA_ERROR_NOT_PERMITTED;
+            goto error;
+        }
+
         /* Extend metadata */
         extend_metadata(index);
     } else {
