@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -421,6 +421,7 @@ void tfm_measured_boot_test_common_013(struct test_result_t *ret)
     psa_status_t status;
     struct measurement_t measurement;
     uint8_t slot_index = TEST_1013_SLOT_INDEX;
+    uint8_t temp_valid_data;
 
     /* Load test measurement and metadata values */
     load_default_valid_test_data(&measurement);
@@ -432,6 +433,7 @@ void tfm_measured_boot_test_common_013(struct test_result_t *ret)
     }
 
     /* Try to extend using different value of signer id for same slot */
+    temp_valid_data = measurement.metadata.signer_id[0];
     measurement.metadata.signer_id[0] = 0xFF;
     status = extend_measurement(slot_index, &measurement, false);
     if (status != PSA_ERROR_NOT_PERMITTED) {
@@ -439,4 +441,53 @@ void tfm_measured_boot_test_common_013(struct test_result_t *ret)
                   "signer id");
         return;
     }
+
+    /* Revert back to valid data and test for side effects */
+    measurement.metadata.signer_id[0] = temp_valid_data;
+    status = extend_measurement(slot_index, &measurement, false);
+    if (status != PSA_SUCCESS) {
+        TEST_FAIL("Extend measurement should not fail");
+        return;
+    }
 }
+
+/*
+ * Public function. See measured_boot_tests_common.h
+ */
+void tfm_measured_boot_test_common_014(struct test_result_t *ret)
+{
+    psa_status_t status;
+    struct measurement_t measurement;
+    uint8_t slot_index = TEST_1014_SLOT_INDEX;
+    uint32_t temp_valid_data;
+
+    /* Load test measurement and metadata values */
+    load_default_valid_test_data(&measurement);
+
+    status = extend_measurement(slot_index, &measurement, false);
+    if (status != PSA_SUCCESS) {
+        TEST_FAIL("Extend measurement should not fail");
+        return;
+    }
+
+    /* Try to extend using different value of measurement algorithm for
+     * same slot
+     */
+    temp_valid_data = measurement.metadata.measurement_algo;
+    measurement.metadata.measurement_algo += 1;
+    status = extend_measurement(slot_index, &measurement, false);
+    if (status != PSA_ERROR_NOT_PERMITTED) {
+        TEST_FAIL("Extend measurement should fail with different "
+                  "measurement algorithm");
+        return;
+    }
+
+    /* Revert back to valid data and test for side effects */
+    measurement.metadata.measurement_algo = temp_valid_data;
+    status = extend_measurement(slot_index, &measurement, false);
+    if (status != PSA_SUCCESS) {
+        TEST_FAIL("Extend measurement should not fail");
+        return;
+    }
+}
+

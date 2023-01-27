@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -132,6 +132,15 @@ void tfm_measured_boot_test_common_012(struct test_result_t *ret);
  * \param[out] ret        Test result
  */
 void tfm_measured_boot_test_common_013(struct test_result_t *ret);
+
+/**
+ * \brief Interface test: Test Extend Measurement API with different hash algo
+ *                        and it should return
+ *                        PSA_ERROR_NOT_PERMITTED.
+ *
+ * \param[out] ret        Test result
+ */
+void tfm_measured_boot_test_common_014(struct test_result_t *ret);
 
 #ifdef __cplusplus
 }

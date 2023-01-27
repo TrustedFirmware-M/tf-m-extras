@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
  * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
  * or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
  *
@@ -37,7 +37,9 @@ static struct test_t tfm_measured_boot_ns_tests[] = {
     {&tfm_measured_boot_test_common_012, "TFM_NS_MEASURED_BOOT_TEST_1012",
      "Extend Measurement - NS unlock test"},
     {&tfm_measured_boot_test_common_013, "TFM_NS_MEASURED_BOOT_TEST_1013",
-     "Extend Measurement - different signer id"}
+     "Extend Measurement - different signer id"},
+    {&tfm_measured_boot_test_common_014, "TFM_NS_MEASURED_BOOT_TEST_1014",
+     "Extend Measurement - different measurement algorithm"}
 };
 
 void register_testsuite_extra_ns_interface(struct test_suite_t *p_test_suite)
