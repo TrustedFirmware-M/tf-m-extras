@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2021-2022, Arm Limited. All rights reserved.
+# Copyright (c) 2021-2023, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -66,7 +66,7 @@ target_sources(tfm_ns
         # CLCD files
         clcd_lib/clcd_mps3_lib.c
         clcd_lib/clcd_mps3_drv.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/common/native_drivers/systimer_armv8-m_drv.c
+        ${TFM_SRC_DIR}/platform/ext/target/arm/drivers/timer/armv8m/systimer_armv8-m_drv.c
 
         # DMA350 unprivileged-specific files
         dma350_lib/dma350_lib_unprivileged.c
