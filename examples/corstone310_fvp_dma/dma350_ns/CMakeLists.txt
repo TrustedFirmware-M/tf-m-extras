@@ -101,6 +101,7 @@ target_include_directories(tfm_ns
         freertos-config/
         amazon-freertos/
         ${INTERFACE_INC_DIR}/
+        ${TFM_SRC_DIR}/platform/ext/target/arm/drivers/timer/armv8m/
         # freeRTOS kernel
         ${FREERTOS_SRC_PATH}/include/
         ${FREERTOS_SRC_PATH}/portable/GCC/ARM_CM85_NTZ/non_secure/
@@ -149,7 +150,7 @@ target_sources(tfm_api_ns PRIVATE
 
 target_sources(tfm_api_ns PRIVATE
     ${INTERFACE_SRC_DIR}/tfm_psa_ns_api.c
-    ${TFM_TEST_REPO_PATH}/app/tfm_ns_interface.c
+    ${INTERFACE_SRC_DIR}/os_wrapper/tfm_ns_interface_rtos.c
 )
 
 target_include_directories(tfm_api_ns PUBLIC

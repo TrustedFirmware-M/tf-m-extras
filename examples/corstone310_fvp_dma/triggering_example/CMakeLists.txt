@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2022, Arm Limited. All rights reserved.
+# Copyright (c) 2022-2023, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -35,6 +35,8 @@ add_executable(tfm_ns)
 
 target_include_directories(tfm_ns
     PRIVATE
+        ${TFM_SRC_DIR}/platform/ext/target/arm/drivers/usart/cmsdk
+
         # DMA350
         ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers
         ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/libraries

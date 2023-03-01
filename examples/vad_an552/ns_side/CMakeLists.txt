@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2021-2022 Arm Limited. All rights reserved.
+# Copyright (c) 2021-2023 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -350,7 +350,7 @@ target_sources(tfm_api_ns PRIVATE
 
 target_sources(tfm_api_ns PRIVATE
     ${INTERFACE_SRC_DIR}/tfm_psa_ns_api.c
-    ${TFM_TEST_REPO_PATH}/app/tfm_ns_interface.c
+    ${INTERFACE_SRC_DIR}/os_wrapper/tfm_ns_interface_rtos.c
 )
 
 target_include_directories(tfm_api_ns PRIVATE
