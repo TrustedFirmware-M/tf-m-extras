@@ -71,7 +71,7 @@ extern "C" {
 #define TEST_VALUE_SW_VERSION                         \
     (struct test_buf_t) {                             \
      (uint8_t[]){SW_VERSION_TEST_0},                  \
-     VERSION_MAX_SIZE                                 \
+     (VERSION_MAX_SIZE - 1)                           \
     }
 
 #define SW_MEASUREMENT_DESC_TEST_0                    \
@@ -82,7 +82,7 @@ extern "C" {
 #define TEST_VALUE_SW_MEASUREMENT_DESC                \
     (struct test_buf_t) {                             \
      (uint8_t[]){SW_MEASUREMENT_DESC_TEST_0},         \
-     SW_TYPE_MAX_SIZE                                 \
+     (SW_TYPE_MAX_SIZE - 1)                           \
     }
 
 #define TEST_VALUE_ZERO                               \
