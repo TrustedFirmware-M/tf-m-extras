@@ -1,0 +1,43 @@
+From ec070d022985a460e81ea79ba29251fac257d0c7 Mon Sep 17 00:00:00 2001
+From: Bence Balogh <bence.balogh@arm.com>
+Date: Tue, 21 Mar 2023 11:41:54 +0100
+Subject: [PATCH 1/1] Check every defines separately
+
+The temporary solution caused problems with newer
+freertos-kernel versions.
+
+Signed-off-by: Bence Balogh <bence.balogh@arm.com>
+---
+ include/FreeRTOS_IP.h | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/include/FreeRTOS_IP.h b/include/FreeRTOS_IP.h
+index 3354d6a..0f22589 100644
+--- a/libraries/freertos_plus/standard/freertos_plus_tcp/include/FreeRTOS_IP.h
++++ b/libraries/freertos_plus/standard/freertos_plus_tcp/include/FreeRTOS_IP.h
+@@ -274,12 +274,21 @@
+     #define pdMS_TO_MIN_TICKS( xTimeInMs )    ipMS_TO_MIN_TICKS( xTimeInMs )
+ 
+     #ifndef pdTRUE_SIGNED
+-        /* Temporary solution: eventually the defines below will appear in 'Source\include\projdefs.h' */
+         #define pdTRUE_SIGNED       pdTRUE
++    #endif
++    #ifndef pdFALSE_SIGNED
+         #define pdFALSE_SIGNED      pdFALSE
++    #endif
++    #ifndef pdTRUE_UNSIGNED
+         #define pdTRUE_UNSIGNED     ( 1U )
++    #endif
++    #ifndef pdFALSE_UNSIGNED
+         #define pdFALSE_UNSIGNED    ( 0U )
++    #endif
++    #ifndef ipTRUE_BOOL
+         #define ipTRUE_BOOL         ( 1 == 1 )
++    #endif
++    #ifndef ipFALSE_BOOL
+         #define ipFALSE_BOOL        ( 1 == 2 )
+     #endif
+ 
+-- 
+2.25.1
+

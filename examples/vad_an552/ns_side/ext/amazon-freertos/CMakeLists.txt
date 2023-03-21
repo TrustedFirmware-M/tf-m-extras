@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2021-2022, Arm Limited. All rights reserved.
+# Copyright (c) 2021-2023, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -14,6 +14,7 @@ endif()
 
 if ("${AMAZON_FREERTOS_SRC_PATH}" STREQUAL "DOWNLOAD")
     find_package(Git)
+    file(GLOB PATCH_FILES *.patch)
 
     FetchContent_Declare(amazon_freertos
         GIT_REPOSITORY https://github.com/aws/amazon-freertos.git
@@ -24,6 +25,7 @@ if ("${AMAZON_FREERTOS_SRC_PATH}" STREQUAL "DOWNLOAD")
                         libraries/abstractions/backoff_algorithm
                         libraries/abstractions/pkcs11/corePKCS11
                         libraries/3rdparty/mbedtls"
+        PATCH_COMMAND ${GIT_EXECUTABLE} apply ${PATCH_FILES}
     )
     FetchContent_GetProperties(amazon_freertos)
     if (NOT amazon_freertos)
