@@ -1,0 +1,29 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "description": "DICE Protection Environment partition manifest",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "description": "DICE Protection Environment Partition",
+      "manifest": "tfm_dpe.yaml",
+      "output_path": "secure_fw/partitions/dice_protection_environment",
+      "conditional": "TFM_PARTITION_DPE",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 278,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_dpe.*"
+        ]
+      }
+    }
+  ]
+}
