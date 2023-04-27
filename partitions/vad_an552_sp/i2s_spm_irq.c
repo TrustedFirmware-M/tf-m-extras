@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #include "cmsis.h"
-#include "ffm/interrupt.h"
+#include "interrupt.h"
 #include "load/interrupt_defs.h"
 #include "tfm_peripherals_def.h"
 
