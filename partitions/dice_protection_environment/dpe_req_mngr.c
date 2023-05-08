@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -10,6 +10,7 @@
 #include "dpe_boot_data.h"
 #include "dpe_cmd_decode.h"
 #include "dpe_context_mngr.h"
+#include "dpe_plat.h"
 #include "psa/service.h"
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -40,7 +41,9 @@ psa_status_t tfm_dpe_init(void)
     }
 #endif
 
-    /* TODO: share context handle */
+    if (dpe_plat_share_context_with_ap(context_handle) != 0) {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
 
     return PSA_SUCCESS;
 }
