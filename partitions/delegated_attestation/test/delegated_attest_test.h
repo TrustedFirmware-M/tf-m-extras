@@ -25,7 +25,7 @@ extern "C" {
  *
  * \brief Size of platform attestation token buffer in bytes.
  */
-#define PLATFORM_TOKEN_BUFF_SIZE    (PSA_INITIAL_ATTEST_TOKEN_MAX_SIZE)
+#define PLATFORM_TOKEN_BUFF_SIZE    (PSA_INITIAL_ATTEST_MAX_TOKEN_SIZE)
 
 /**
  * \def DELEGATED_ATTEST_KEY_MAX_SIZE

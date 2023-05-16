@@ -20,7 +20,7 @@
 /* Buffer to store the derived delegated attestation key. */
 static uint8_t dak_buf[DELEGATED_ATTEST_KEY_MAX_SIZE];
 /* Buffer to store the created platform attestation token. */
-static uint8_t token_buf[PSA_INITIAL_ATTEST_TOKEN_MAX_SIZE];
+static uint8_t token_buf[PSA_INITIAL_ATTEST_MAX_TOKEN_SIZE];
 
 static psa_status_t get_delegated_attestation_key(const psa_msg_t *msg)
 {
