@@ -11,23 +11,6 @@
 
 #include "dpe_log.h"
 
-dpe_error_t dpe_derive_child_impl(int context_handle,
-                                  bool retain_parent_context,
-                                  bool allow_child_to_derive,
-                                  bool create_certificate,
-                                  const DiceInputValues *dice_inputs,
-                                  int *child_context_handle,
-                                  int *new_context_handle)
-{
-    log_derive_child(context_handle, retain_parent_context,
-                     allow_child_to_derive, create_certificate, dice_inputs);
-
-    *child_context_handle = 123;
-    *new_context_handle = 456;
-
-    return DPE_NO_ERROR;
-}
-
 dpe_error_t dpe_certify_key_impl(int context_handle,
                                  bool retain_context,
                                  const uint8_t *public_key,

@@ -18,14 +18,21 @@
 extern "C" {
 #endif
 
+/* Additional defines for max size limit */
+#define DICE_AUTHORITY_DESCRIPTOR_MAX_SIZE  64
+#define DICE_CONFIG_DESCRIPTOR_MAX_SIZE     64
+/* The theoretical maximum image version is: "255.255.65535\0" */
+#define DICE_CODE_DESCRIPTOR_MAX_SIZE 14
+
 typedef int32_t dpe_error_t;
 
-#define DPE_NO_ERROR               ((dpe_error_t)0)
-#define DPE_INTERNAL_ERROR         ((dpe_error_t)1)
-#define DPE_INVALID_COMMAND        ((dpe_error_t)2)
-#define DPE_INVALID_ARGUMENT       ((dpe_error_t)3)
-#define DPE_ARGUMENT_NOT_SUPPORTED ((dpe_error_t)4)
-#define DPE_SESSION_EXHAUSTED      ((dpe_error_t)5)
+#define DPE_NO_ERROR                  ((dpe_error_t)0)
+#define DPE_INTERNAL_ERROR            ((dpe_error_t)1)
+#define DPE_INVALID_COMMAND           ((dpe_error_t)2)
+#define DPE_INVALID_ARGUMENT          ((dpe_error_t)3)
+#define DPE_ARGUMENT_NOT_SUPPORTED    ((dpe_error_t)4)
+#define DPE_SESSION_EXHAUSTED         ((dpe_error_t)5)
+#define DPE_INSUFFICIENT_MEMORY       ((dpe_error_t)128)
 
 /**
  * \brief Performs the DICE computation to derive a child context and optionally

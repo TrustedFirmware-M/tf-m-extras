@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "dpe_cmd_decode.h"
+#include "dpe_context_mngr.h"
 #include "psa/service.h"
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -18,6 +19,8 @@ static char cmd_buf[DPE_CMD_MAX_SIZE];
 
 psa_status_t tfm_dpe_init(void)
 {
+    initialise_all_dpe_contexts();
+
     return PSA_SUCCESS;
 }
 

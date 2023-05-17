@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "dpe_client.h"
+#include "dpe_context_mngr.h"
 #include "dpe_impl.h"
 #include "qcbor/qcbor_encode.h"
 #include "qcbor/qcbor_decode.h"
@@ -103,7 +104,8 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
 }
 
 static dpe_error_t decode_derive_child(QCBORDecodeContext *decode_ctx,
-                                       QCBOREncodeContext *encode_ctx)
+                                       QCBOREncodeContext *encode_ctx,
+                                       int32_t client_id)
 {
     dpe_error_t dpe_err;
     QCBORError qcbor_err;
@@ -151,10 +153,11 @@ static dpe_error_t decode_derive_child(QCBORDecodeContext *decode_ctx,
         return DPE_INVALID_COMMAND;
     }
 
-    dpe_err = dpe_derive_child_impl(context_handle, retain_parent_context,
-                                    allow_child_to_derive, create_certificate,
-                                    &dice_inputs, &new_child_context_handle,
-                                    &new_parent_context_handle);
+    dpe_err = derive_child_request(context_handle, retain_parent_context,
+                                   allow_child_to_derive, create_certificate,
+                                   &dice_inputs, client_id,
+                                   &new_child_context_handle,
+                                   &new_parent_context_handle);
     if (dpe_err != DPE_NO_ERROR) {
         return dpe_err;
     }
@@ -305,7 +308,7 @@ int32_t dpe_command_decode(int32_t client_id,
     if (qcbor_err == QCBOR_SUCCESS) {
         switch (command_id) {
         case DPE_DERIVE_CHILD:
-            dpe_err = decode_derive_child(&decode_ctx, &encode_ctx);
+            dpe_err = decode_derive_child(&decode_ctx, &encode_ctx, client_id);
             break;
         case DPE_CERTIFY_KEY:
             dpe_err = decode_certify_key(&decode_ctx, &encode_ctx);

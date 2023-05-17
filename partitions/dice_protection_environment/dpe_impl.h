@@ -28,15 +28,6 @@ extern "C" {
  */
 #define DPE_CERTIFICATE_CHAIN_MAX_SIZE 2048
 
-/* Internal DPE service implementation of dpe_derive_child() */
-dpe_error_t dpe_derive_child_impl(int context_handle,
-                                  bool retain_parent_context,
-                                  bool allow_child_to_derive,
-                                  bool create_certificate,
-                                  const DiceInputValues *dice_inputs,
-                                  int *child_context_handle,
-                                  int *new_context_handle);
-
 /* Internal DPE service implementation of dpe_certify_key() */
 dpe_error_t dpe_certify_key_impl(int context_handle,
                                  bool retain_context,

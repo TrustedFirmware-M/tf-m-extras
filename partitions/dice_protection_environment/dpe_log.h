@@ -18,13 +18,19 @@ extern "C" {
 #if (TFM_PARTITION_LOG_LEVEL >= TFM_PARTITION_LOG_LEVEL_DEBUG)
 
 /**
+ * \brief Log the derive rot context command parameters.
+ */
+void log_derive_rot_context(const DiceInputValues *dice_inputs);
+
+/**
  * \brief Log the derive child command parameters.
  */
 void log_derive_child(int context_handle,
                       bool retain_parent_context,
                       bool allow_child_to_derive,
                       bool create_certificate,
-                      const DiceInputValues *dice_inputs);
+                      const DiceInputValues *dice_inputs,
+                      int32_t client_id);
 
 /**
  * \brief Log the certify key command parameters.
@@ -38,6 +44,7 @@ void log_certify_key(int context_handle,
 
 #else /* TFM_PARTITION_LOG_LEVEL */
 
+#define log_derive_rot_context(...)
 #define log_derive_child(...)
 #define log_certify_key(...)
 

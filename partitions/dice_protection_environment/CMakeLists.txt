@@ -20,6 +20,7 @@ add_library(tfm_app_rot_partition_dpe STATIC)
 target_sources(tfm_app_rot_partition_dpe
     PRIVATE
         dpe_cmd_decode.c
+        dpe_context_mngr.c
         dpe_impl.c
         dpe_log.c
         dpe_req_mngr.c
@@ -43,6 +44,11 @@ target_include_directories(tfm_app_rot_partition_dpe
         ${CMAKE_CURRENT_SOURCE_DIR}
     PUBLIC
         ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/dice_protection_environment
+)
+
+target_compile_definitions(tfm_app_rot_partition_dpe
+    PRIVATE
+        $<$<BOOL:${TFM_S_REG_TEST}>:TFM_S_REG_TEST>
 )
 
 target_link_libraries(tfm_app_rot_partition_dpe
