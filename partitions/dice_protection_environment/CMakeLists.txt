@@ -21,6 +21,7 @@ target_sources(tfm_app_rot_partition_dpe
     PRIVATE
         dpe_cmd_decode.c
         dpe_impl.c
+        dpe_log.c
         dpe_req_mngr.c
 )
 
