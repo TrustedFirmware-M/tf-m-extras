@@ -10,6 +10,8 @@ cmake_policy(SET CMP0079 NEW)
 target_sources(tfm_test_suite_extra_s
     PRIVATE
         ../dpe_test.c
+        ../dpe_derive_child_test.c
+        ../dpe_test_data.c
         dpe_s_interface_testsuite.c
 )
 

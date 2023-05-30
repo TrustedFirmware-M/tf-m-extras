@@ -6,49 +6,9 @@
  */
 
 #include "dpe_test.h"
-
 #include "dice_protection_environment.h"
 
-void dpe_test_1001(struct test_result_t *ret)
-{
-    dpe_error_t dpe_err;
-    int context_handle = 42;
-    bool retain_parent_context = false;
-    bool allow_child_to_derive = false;
-    bool create_certificate = false;
-    DiceInputValues dice_inputs = {
-        { 0xC0, 0xDE },
-        (uint8_t[]){ 0xC0, 0xDE, 0xDE, 0x5C },
-        sizeof((uint8_t[]){ 0xC0, 0xDE, 0xDE, 0x5C }),
-        kDiceConfigTypeDescriptor,
-        { 0xC0, 0x9F, 0x16 },
-        (uint8_t[]){ 0xC0, 0x9F, 0xDE, 0x5C },
-        sizeof((uint8_t[]){ 0xC0, 0x9F, 0xDE, 0x5C }),
-        { 0x47, 0x07 },
-        (uint8_t[]){ 0x47, 0x07, 0xDE, 0x5C },
-        sizeof((uint8_t[]){ 0x47, 0x07, 0xDE, 0x5C }),
-        kDiceModeDebug,
-        { 0x81, 0xDE },
-    };
-    int child_context_handle;
-    int new_context_handle;
-
-    dpe_err = dpe_derive_child(context_handle, retain_parent_context,
-                               allow_child_to_derive, create_certificate,
-                               &dice_inputs, &child_context_handle,
-                               &new_context_handle);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DeriveChild call failed");
-        return;
-    }
-
-    TEST_LOG("child_context_handle = %d\r\n", child_context_handle);
-    TEST_LOG("new_context_handle = %d\r\n", new_context_handle);
-
-    ret->val = TEST_PASSED;
-}
-
-void dpe_test_1002(struct test_result_t *ret)
+void certify_key_api_test(struct test_result_t *ret)
 {
     dpe_error_t dpe_err;
     int context_handle = 4;

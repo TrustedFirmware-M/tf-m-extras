@@ -15,6 +15,15 @@
 #include "dpe_plat.h"
 #include "psa/crypto.h"
 
+#ifdef DPE_TEST_MODE
+#define TEST_ROT_CDI_VAL {                                                  \
+                            0xD2, 0x90, 0x66, 0x07, 0x2A, 0x2D, 0x2A, 0x00, \
+                            0x91, 0x9D, 0xD9, 0x15, 0x14, 0xBE, 0x2D, 0xCC, \
+                            0xA3, 0x9F, 0xDE, 0xC3, 0x35, 0x75, 0x84, 0x6E, \
+                            0x4C, 0xB9, 0x28, 0xAC, 0x7A, 0x4E, 0X00, 0x7F  \
+                         }
+#endif /* DPE_TEST_MODE */
+
 #define CONTEXT_DATA_MAX_SIZE sizeof(struct component_context_data_t)
 
 static struct component_context_t component_ctx_array[MAX_NUM_OF_COMPONENTS];
@@ -411,9 +420,13 @@ static dpe_error_t assign_layer_to_context(struct component_context_t *new_ctx)
  */
 static dpe_error_t create_rot_context(int *rot_ctx_handle)
 {
+#ifdef DPE_TEST_MODE
+    uint8_t rot_cdi_input[DICE_CDI_SIZE] = TEST_ROT_CDI_VAL;
+#else
     int ret;
-    psa_status_t status;
     uint8_t rot_cdi_input[DICE_CDI_SIZE];
+#endif /* DPE_TEST_MODE */
+    psa_status_t status;
     struct component_context_t *rot_comp_ctx = &component_ctx_array[0];
     struct layer_context_t *rot_layer_ctx = &layer_ctx_array[DPE_ROT_LAYER_IDX];
 
@@ -422,12 +435,14 @@ static dpe_error_t create_rot_context(int *rot_ctx_handle)
     /* Parent is same as child for RoT layer */
     rot_layer_ctx->parent_layer_idx = DPE_ROT_LAYER_IDX;
 
+#ifndef DPE_TEST_MODE
     /* Get the RoT CDI input for the RoT layer */
     ret = dpe_plat_get_rot_cdi(&rot_cdi_input[0],
                                sizeof(rot_cdi_input));
     if (ret != 0) {
         return DPE_INTERNAL_ERROR;
     }
+#endif /* DPE_TEST_MODE */
 
     /* Import the CDI key for the RoT layer */
     status = create_layer_cdi_key(&layer_ctx_array[DPE_ROT_LAYER_IDX],
@@ -445,7 +460,6 @@ static dpe_error_t create_rot_context(int *rot_ctx_handle)
     /* Link context to RoT Layer */
     rot_comp_ctx->linked_layer_idx = DPE_ROT_LAYER_IDX;
     rot_comp_ctx->expected_mhu_id = 0;
-
     *rot_ctx_handle = 0; /* index = 0, nonce = 0 */
 
     return DPE_NO_ERROR;
@@ -482,6 +496,16 @@ dpe_error_t derive_child_request(int input_ctx_handle,
     log_derive_child(input_ctx_handle, retain_parent_context,
                      allow_child_to_derive, create_certificate, dice_inputs,
                      client_id);
+
+#ifdef DPE_TEST_MODE
+    if (input_ctx_handle == 0) {
+        /* Deriving RoT context for tests */
+        err = create_rot_context(&input_ctx_handle);
+        if (err != DPE_NO_ERROR) {
+            return err;
+        }
+    }
+#endif /* DPE_TEST_MODE */
 
     /* Validate dice inputs */
     if (!is_dice_input_valid(dice_inputs)) {
