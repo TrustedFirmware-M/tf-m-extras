@@ -11,9 +11,9 @@
 #include "psa/client.h"
 #include "psa/crypto.h"
 #include "psa/error.h"
+#include "psa/initial_attestation.h"
 #include "psa/service.h"
 #include "psa_manifest/tfm_delegated_attestation.h"
-#include "region_defs.h"
 #include "tfm_delegated_attest_defs.h"
 
 #define DELEGATED_ATTEST_KEY_MAX_SIZE PSA_KEY_EXPORT_ECC_KEY_PAIR_MAX_SIZE(521)
