@@ -38,7 +38,7 @@ target_include_directories(tfm_ns_interface
 # It can be replaced by NS side configurations later.
 target_link_libraries(tfm_ns_interface
     INTERFACE
-        tfm_partition_defs
+        tfm_config
 )
 
 ############################# TFM NS app #######################################

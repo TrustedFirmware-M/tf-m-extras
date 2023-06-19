@@ -105,7 +105,7 @@ target_link_libraries(tfm_partitions
         tfm_psa_rot_partition_measured_boot
 )
 
-target_compile_definitions(tfm_partition_defs
+target_compile_definitions(tfm_config
     INTERFACE
         TFM_PARTITION_MEASURED_BOOT
         MEASUREMENT_HASH_ALGO_NAME="${MEASUREMENT_HASH_ALGO_NAME}"
