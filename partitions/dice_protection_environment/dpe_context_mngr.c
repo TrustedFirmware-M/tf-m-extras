@@ -9,8 +9,20 @@
 #include <assert.h>
 #include <string.h>
 #include "dice_protection_environment.h"
+#include "dpe_crypto_interface.h"
 #include "dpe_log.h"
 #include "psa/crypto.h"
+
+#ifdef TFM_S_REG_TEST
+#define TEST_ROT_CDI_VAL {                                                  \
+                            0xD2, 0x90, 0x66, 0x07, 0x2A, 0x2D, 0x2A, 0x00, \
+                            0x91, 0x9D, 0xD9, 0x15, 0x14, 0xBE, 0x2D, 0xCC, \
+                            0xA3, 0x9F, 0xDE, 0xC3, 0x35, 0x75, 0x84, 0x6E, \
+                            0x4C, 0xB9, 0x28, 0xAC, 0x7A, 0x4E, 0X00, 0x7F  \
+                         }
+#endif /* TFM_S_REG_TEST */
+
+#define CONTEXT_DATA_MAX_SIZE sizeof(struct component_context_data_t)
 
 static struct component_context_t component_ctx_array[MAX_NUM_OF_COMPONENTS];
 static struct layer_context_t layer_ctx_array[MAX_NUM_OF_LAYERS];
@@ -80,6 +92,8 @@ static void invalidate_layer(int i)
 {
     layer_ctx_array[i].state = LAYER_STATE_CLOSED;
     layer_ctx_array[i].parent_layer_idx = INVALID_LAYER_IDX;
+    (void)psa_destroy_key(layer_ctx_array[i].data.cdi_key_id);
+    (void)psa_destroy_key(layer_ctx_array[i].data.attest_key_id);
     (void)memset(&layer_ctx_array[i].data, 0, sizeof(struct layer_context_data_t));
 }
 
@@ -177,11 +191,143 @@ static bool is_input_handle_valid(int input_context_handle)
     return false;
 }
 
-static dpe_error_t derive_child_create_certificate(uint16_t curr_idx)
+/* Attest_CDI Input requires {measurement_value, config, authority, mode, hidden} in
+ * same order
+ */
+static psa_status_t get_component_data_for_attest_cdi(uint8_t *dest_buf,
+                                                      size_t max_size,
+                                                      size_t *dest_size,
+                                                      const struct component_context_t *comp_ctx)
 {
-    //TODO: Implementation pending
+    size_t out_size = 0;
+
+    if ((DICE_HASH_SIZE + DICE_INLINE_CONFIG_SIZE + DICE_HASH_SIZE +
+         sizeof(comp_ctx->data.mode) + DICE_HIDDEN_SIZE > max_size )) {
+        return PSA_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    memcpy(&dest_buf[out_size], comp_ctx->data.measurement_value, DICE_HASH_SIZE);
+    out_size += DICE_HASH_SIZE;
+
+    memcpy(&dest_buf[out_size], comp_ctx->data.config_value, DICE_INLINE_CONFIG_SIZE);
+    out_size += DICE_INLINE_CONFIG_SIZE;
+
+    memcpy(&dest_buf[out_size], comp_ctx->data.signer_id, DICE_HASH_SIZE);
+    out_size += DICE_HASH_SIZE;
+
+    memcpy(&dest_buf[out_size], &comp_ctx->data.mode, sizeof(comp_ctx->data.mode));
+    out_size += sizeof(comp_ctx->data.mode);
+
+    memcpy(&dest_buf[out_size], comp_ctx->data.hidden, DICE_HIDDEN_SIZE);
+    out_size += DICE_HIDDEN_SIZE;
+
+    *dest_size = out_size;
+
+    return PSA_SUCCESS;
+}
+
+static psa_status_t compute_layer_cdi_attest_input(uint16_t curr_layer_idx)
+{
+    psa_status_t status;
+    uint8_t component_ctx_data[CONTEXT_DATA_MAX_SIZE];
+    size_t ctx_data_size, hash_len;
+    int idx;
+
+    psa_hash_operation_t hash_op = psa_hash_operation_init();
+    status = psa_hash_setup(&hash_op, DPE_HASH_ALG);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    //TODO:
+    /* How to combine measurements of multiple SW components into a single hash
+     * is not yet defined by the Open DICE profile. This implementation
+     * concatenates the data of all SW components which belong to the same layer
+     * and hash it.
+     */
+    for (idx = 0; idx < MAX_NUM_OF_COMPONENTS; idx++) {
+        if (component_ctx_array[idx].linked_layer_idx == curr_layer_idx) {
+            /* This component belongs to current layer */
+            /* Concatenate all context data for this component */
+            status = get_component_data_for_attest_cdi(component_ctx_data,
+                                                       sizeof(component_ctx_data),
+                                                       &ctx_data_size,
+                                                       &component_ctx_array[idx]);
+            if (status != PSA_SUCCESS) {
+                return status;
+            }
+
+            status = psa_hash_update(&hash_op,
+                                     component_ctx_data,
+                                     ctx_data_size);
+            if (status != PSA_SUCCESS) {
+                return status;
+            }
+        }
+    }
+
+    status = psa_hash_finish(&hash_op,
+                             &layer_ctx_array[curr_layer_idx].attest_cdi_hash_input[0],
+                             sizeof(layer_ctx_array[curr_layer_idx].attest_cdi_hash_input),
+                             &hash_len);
+
+    assert(hash_len == DPE_HASH_ALG_SIZE);
+
+    return status;
+}
+
+static dpe_error_t derive_child_create_certificate(uint16_t layer_idx)
+{
+    uint16_t parent_idx;
+    psa_status_t status;
+
+    assert(layer_idx < MAX_NUM_OF_LAYERS);
     /* Finalise the layer */
-    layer_ctx_array[curr_idx].state = LAYER_STATE_FINALISED;
+    layer_ctx_array[layer_idx].state = LAYER_STATE_FINALISED;
+
+    /* For RoT Layer, CDI values are calculated by BL1_1 */
+    if (layer_idx != DPE_ROT_LAYER_IDX) {
+
+        parent_idx = layer_ctx_array[layer_idx].parent_layer_idx;
+        assert(parent_idx < MAX_NUM_OF_LAYERS);
+
+        status = compute_layer_cdi_attest_input(layer_idx);
+        if (status != PSA_SUCCESS) {
+            return DPE_INTERNAL_ERROR;
+        }
+
+        status = derive_attestation_cdi(&layer_ctx_array[layer_idx],
+                                        &layer_ctx_array[parent_idx]);
+        if (status != PSA_SUCCESS) {
+            return DPE_INTERNAL_ERROR;
+        }
+
+        status = derive_sealing_cdi(&layer_ctx_array[layer_idx]);
+        if (status != PSA_SUCCESS) {
+            return DPE_INTERNAL_ERROR;
+        }
+    }
+
+    status = derive_wrapping_key(&layer_ctx_array[layer_idx]);
+    if (status != PSA_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    status = derive_attestation_key(&layer_ctx_array[layer_idx]);
+    if (status != PSA_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    status = create_layer_certificate(&layer_ctx_array[layer_idx]);
+    if (status != PSA_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    status = store_layer_certificate(&layer_ctx_array[layer_idx]);
+    if (status != PSA_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+
     return DPE_NO_ERROR;
 }
 
@@ -304,12 +450,24 @@ dpe_error_t derive_child_request(int input_ctx_handle,
                                  int *new_child_ctx_handle,
                                  int *new_parent_ctx_handle)
 {
-    dpe_error_t status;
+    dpe_error_t err;
     struct component_context_t *child_ctx, *parent_ctx, *new_ctx;
     uint16_t input_child_idx, input_parent_idx;
 
 #ifdef TFM_S_REG_TEST
+    //TODO: Remove this TEST_ROT_CDI_VAL CDI once actual CDI is calculated by BL1_1
+    psa_status_t status;
+    uint8_t dpe_rot_cdi[DICE_CDI_SIZE] = TEST_ROT_CDI_VAL;
+
     if (layer_ctx_array[DPE_ROT_LAYER_IDX].state != LAYER_STATE_FINALISED) {
+
+        status = create_layer_cdi_key(&layer_ctx_array[DPE_ROT_LAYER_IDX],
+                                      &dpe_rot_cdi[0],
+                                      sizeof(dpe_rot_cdi));
+        if (status != PSA_SUCCESS) {
+            return status;
+        }
+
         return derive_rot_context(dice_inputs,
                                   new_child_ctx_handle,
                                   new_parent_ctx_handle);
@@ -348,15 +506,15 @@ dpe_error_t derive_child_request(int input_ctx_handle,
     }
 
     /* Copy dice input to the child component context */
-    status = copy_dice_input(child_ctx, dice_inputs);
-    if (status != DPE_NO_ERROR) {
-        return status;
+    err = copy_dice_input(child_ctx, dice_inputs);
+    if (err != DPE_NO_ERROR) {
+        return err;
     }
 
     if (create_certificate) {
-        status = derive_child_create_certificate(child_ctx->linked_layer_idx);
-        if (status != DPE_NO_ERROR) {
-            return status;
+        err = derive_child_create_certificate(child_ctx->linked_layer_idx);
+        if (err != DPE_NO_ERROR) {
+            return err;
         }
     }
 

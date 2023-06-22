@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "dice_protection_environment.h"
+#include "dpe_crypto_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,9 +67,10 @@ struct component_context_t {
 };
 
 struct layer_context_data_t {
-    uint8_t cdi_attest[DICE_CDI_SIZE];
+    psa_key_id_t cdi_key_id;
     uint8_t cdi_seal[DICE_CDI_SIZE];
     uint8_t wrapping_key[DICE_WRAPPING_KEY_SIZE];
+    psa_key_id_t attest_key_id;
     uint8_t cert_buf[DICE_CERT_SIZE];
     size_t cert_buf_size;
 };
@@ -82,6 +84,7 @@ enum layer_state_t {
 struct layer_context_t {
     struct layer_context_data_t data;
     uint16_t parent_layer_idx;
+    uint8_t attest_cdi_hash_input[DPE_HASH_ALG_SIZE];
     enum layer_state_t state;
 };
 
