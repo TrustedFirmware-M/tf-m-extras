@@ -34,7 +34,7 @@ The UART overrun interrupt is turned off to prevent lock-up, but there might be 
 
 .. code-block::
 
- ./VHT_Corstone_SSE-310 -a cpu0*="bl2.axf" --data "tfm_s_ns_signed.bin"@0x11040000 -C mps3_board.uart1_adapter_tx.ENABLE=true  -C mps3_board.uart0_adapter_rx.ENABLE=true -C mps3_board.uart0.rx_overrun_mode=0
+ ./VHT_Corstone_SSE-310 -a cpu0*="bl2.axf" --data "tfm_s_ns_signed.bin"@0x38000000 -C mps3_board.uart1_adapter_tx.ENABLE=true  -C mps3_board.uart0_adapter_rx.ENABLE=true -C mps3_board.uart0.rx_overrun_mode=0
 
 
 2. After the FVP starts the following message will be shown in the FVP telnetterminal0:
