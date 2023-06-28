@@ -181,6 +181,52 @@ static dpe_error_t decode_derive_child(QCBORDecodeContext *decode_ctx,
     return DPE_NO_ERROR;
 }
 
+static dpe_error_t decode_destroy_context(QCBORDecodeContext *decode_ctx,
+                                          QCBOREncodeContext *encode_ctx)
+{
+    dpe_error_t dpe_err;
+    QCBORError qcbor_err;
+    UsefulBufC out;
+    int context_handle;
+    bool destroy_recursively;
+
+    /* Decode Destroy context command */
+    QCBORDecode_EnterMap(decode_ctx, NULL);
+
+    QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_DESTROY_CONTEXT_HANDLE,
+                                    &out);
+    if (out.len != sizeof(context_handle)) {
+        return DPE_INVALID_COMMAND;
+    }
+    memcpy(&context_handle, out.ptr, out.len);
+
+    QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DESTROY_CONTEXT_RECURSIVELY,
+                              &destroy_recursively);
+
+    QCBORDecode_ExitMap(decode_ctx);
+
+    /* Exit top level array */
+    QCBORDecode_ExitArray(decode_ctx);
+
+    /* Finish and check for errors before using decoded values */
+    qcbor_err = QCBORDecode_Finish(decode_ctx);
+    if (qcbor_err != QCBOR_SUCCESS) {
+        return DPE_INVALID_COMMAND;
+    }
+
+    dpe_err = destroy_context_request(context_handle, destroy_recursively);
+    if (dpe_err != DPE_NO_ERROR) {
+        return dpe_err;
+    }
+
+    /* Encode response */
+    QCBOREncode_OpenArray(encode_ctx);
+    QCBOREncode_AddInt64(encode_ctx, DPE_NO_ERROR);
+    QCBOREncode_CloseArray(encode_ctx);
+
+    return DPE_NO_ERROR;
+}
+
 static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
                                       QCBOREncodeContext *encode_ctx)
 {
@@ -312,6 +358,9 @@ int32_t dpe_command_decode(int32_t client_id,
             break;
         case DPE_CERTIFY_KEY:
             dpe_err = decode_certify_key(&decode_ctx, &encode_ctx);
+            break;
+        case DPE_DESTROY_CONTEXT:
+            dpe_err = decode_destroy_context(&decode_ctx, &encode_ctx);
             break;
         default:
             dpe_err = DPE_INVALID_COMMAND;

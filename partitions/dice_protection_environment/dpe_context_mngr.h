@@ -23,10 +23,16 @@ extern "C" {
 #define INVALID_HANDLE 0xFFFFFFFF
 #define INVALID_COMPONENT_IDX 0xFFFF
 #define INVALID_NONCE_VALUE  0xFFFF
-#define MAX_NUM_OF_COMPONENTS 30
-#define DPE_ROT_LAYER_IDX 0
-#define MAX_NUM_OF_LAYERS 10
 #define INVALID_LAYER_IDX 65535
+#define DPE_ROT_LAYER_IDX 0
+
+/* Below configuration defines are platform dependant */
+#define MAX_NUM_OF_COMPONENTS 30
+#define MAX_NUM_OF_LAYERS 10
+#define DPE_PLATFORM_LAYER_IDX 1
+#define DPE_SECURE_WORLD_AND_HYPERVISOR_LAYER_IDX 2
+/* Below threshold defines the threshold below which a context cannot be destroyed */
+#define DPE_DESTROY_CONTEXT_THRESHOLD_LAYER_IDX DPE_SECURE_WORLD_AND_HYPERVISOR_LAYER_IDX
 
 /* Most significant 16 bits represent nonce & remaining 16 bits represent component index */
 #define GET_IDX(handle) ((handle) & 0xffff)
@@ -121,6 +127,19 @@ dpe_error_t derive_child_request(int input_context_handle,
                                  int32_t client_id,
                                  int *new_child_context_handle,
                                  int *new_parent_context_handle);
+
+/**
+ * \brief Destroys a component context and optionally depending on argument
+ *        destroy_recursively, destroys all its child context too.
+ *
+ * \param[in]  input_context_handle      Input handle to child component context
+ * \param[in]  destroy_recursively       Flag to indicate if all derived contexts
+ *                                       should also be destroyed recursively.
+ *
+ * \return Returns error code of type dpe_error_t
+ */
+dpe_error_t destroy_context_request(int input_ctx_handle,
+                                    bool destroy_recursively);
 
 /**
  * \brief Initialise all DPE Layer and component contexts

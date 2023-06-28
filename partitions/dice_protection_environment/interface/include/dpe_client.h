@@ -59,6 +59,11 @@ enum dpe_derive_child_input_labels_t {
     DPE_DERIVE_CHILD_INTERNAL_INPUTS = 8,
 };
 
+enum dpe_destroy_context_input_labels_t {
+    DPE_DESTROY_CONTEXT_HANDLE = 1,
+    DPE_DESTROY_CONTEXT_RECURSIVELY = 2,
+};
+
 enum dpe_derive_child_output_labels_t {
     DPE_DERIVE_CHILD_NEW_CONTEXT_HANDLE = 1,
     DPE_DERIVE_CHILD_NEW_SESSION_RESPONDER_HANDSHAKE = 2,

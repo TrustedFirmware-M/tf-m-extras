@@ -67,6 +67,20 @@ dpe_derive_child(int                    context_handle,
                  int                   *new_parent_context_handle);
 
 /**
+ * \brief Destroys a DPE context.
+ *
+ * \param[in] context_handle       Input context handle for the DPE context to
+ *                                 be destroyed.
+ * \param[in] destroy_recursively  Flag to indicate whether all derived contexts
+ *                                 should also be destroyed recursively.
+ *
+ * \return Returns error code of type dpe_error_t
+ */
+dpe_error_t
+dpe_destroy_context(int context_handle,
+                    bool destroy_recursively);
+
+/**
  * \brief Certifies an attestation key with a new leaf certificate and returns
  *        the certificate chain containing all certificates up to and including
  *        the new leaf certificate.

@@ -74,6 +74,14 @@ void log_derive_child(int context_handle,
     LOG_DBGFMT(" - client_id = %d\r\n", client_id);
 }
 
+void log_destroy_context(int context_handle, bool destroy_recursively)
+{
+    LOG_DBGFMT("DPE DestroyContext:\r\n");
+    LOG_DBGFMT(" - context_handle index = %d\r\n", GET_IDX(context_handle));
+    LOG_DBGFMT(" - context_handle nonce = %d\r\n", GET_NONCE(context_handle));
+    LOG_DBGFMT(" - destroy_recursively = %d\r\n", destroy_recursively);
+}
+
 void log_certify_key(int context_handle,
                      bool retain_context,
                      const uint8_t *public_key,

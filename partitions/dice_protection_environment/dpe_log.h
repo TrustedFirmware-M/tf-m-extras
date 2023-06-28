@@ -33,6 +33,12 @@ void log_derive_child(int context_handle,
                       int32_t client_id);
 
 /**
+ * \brief Log the destroy context command parameters.
+ */
+void log_destroy_context(int context_handle,
+                         bool destroy_recursively);
+
+/**
  * \brief Log the certify key command parameters.
  */
 void log_certify_key(int context_handle,
@@ -46,6 +52,7 @@ void log_certify_key(int context_handle,
 
 #define log_derive_rot_context(...)
 #define log_derive_child(...)
+#define log_destroy_context(...)
 #define log_certify_key(...)
 
 #endif /* TFM_PARTITION_LOG_LEVEL */

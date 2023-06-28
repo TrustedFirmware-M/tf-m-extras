@@ -25,6 +25,11 @@ struct derive_child_output_t {
     int new_parent_context_handle;
 };
 
+struct destroy_context_input_t {
+    int context_handle;
+    bool destroy_recursively;
+};
+
 struct certify_key_input_t {
     int context_handle;
     bool retain_context;
@@ -120,6 +125,31 @@ static QCBORError encode_derive_child(const struct derive_child_input_t *args,
     return QCBOREncode_Finish(&encode_ctx, encoded_buf);
 }
 
+static QCBORError encode_destroy_context(const struct destroy_context_input_t *args,
+                                         UsefulBuf buf,
+                                         UsefulBufC *encoded_buf)
+{
+    QCBOREncodeContext encode_ctx;
+
+    QCBOREncode_Init(&encode_ctx, buf);
+
+    QCBOREncode_OpenArray(&encode_ctx);
+    QCBOREncode_AddUInt64(&encode_ctx, DPE_DESTROY_CONTEXT);
+
+    /* Encode DestroyContext command */
+    QCBOREncode_OpenMap(&encode_ctx);
+    QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_DESTROY_CONTEXT_HANDLE,
+                               (UsefulBufC){ &args->context_handle,
+                                             sizeof(args->context_handle) });
+    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DESTROY_CONTEXT_RECURSIVELY,
+                              args->destroy_recursively);
+    QCBOREncode_CloseMap(&encode_ctx);
+
+    QCBOREncode_CloseArray(&encode_ctx);
+
+    return QCBOREncode_Finish(&encode_ctx, encoded_buf);
+}
+
 static QCBORError decode_derive_child_response(UsefulBufC encoded_buf,
                                                struct derive_child_output_t *args,
                                                dpe_error_t *dpe_err)
@@ -158,6 +188,25 @@ static QCBORError decode_derive_child_response(UsefulBufC encoded_buf,
 
         QCBORDecode_ExitMap(&decode_ctx);
     }
+
+    QCBORDecode_ExitArray(&decode_ctx);
+
+    return QCBORDecode_Finish(&decode_ctx);
+}
+
+static QCBORError decode_destroy_context_response(UsefulBufC encoded_buf,
+                                                  dpe_error_t *dpe_err)
+{
+    QCBORDecodeContext decode_ctx;
+    int64_t response_dpe_err;
+
+    QCBORDecode_Init(&decode_ctx, encoded_buf, QCBOR_DECODE_MODE_NORMAL);
+
+    QCBORDecode_EnterArray(&decode_ctx, NULL);
+
+    /* Get the error code from the response */
+    QCBORDecode_GetInt64(&decode_ctx, &response_dpe_err);
+    *dpe_err = (dpe_error_t)response_dpe_err;
 
     QCBORDecode_ExitArray(&decode_ctx);
 
@@ -287,6 +336,41 @@ dpe_error_t dpe_derive_child(int context_handle,
     /* Copy returned values into caller's memory */
     *new_child_context_handle = out_args.new_child_context_handle;
     *new_parent_context_handle = out_args.new_parent_context_handle;
+
+    return DPE_NO_ERROR;
+}
+
+dpe_error_t dpe_destroy_context(int context_handle, bool destroy_recursively)
+{
+    int32_t service_err;
+    dpe_error_t dpe_err;
+    QCBORError qcbor_err;
+    UsefulBufC encoded_buf;
+    UsefulBuf_MAKE_STACK_UB(cmd_buf, 12);
+
+    const struct destroy_context_input_t in_args = {
+        context_handle,
+        destroy_recursively
+    };
+
+    qcbor_err = encode_destroy_context(&in_args, cmd_buf, &encoded_buf);
+    if (qcbor_err != QCBOR_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    service_err = dpe_client_call(encoded_buf.ptr, encoded_buf.len,
+                                  cmd_buf.ptr, &cmd_buf.len);
+    if (service_err != 0) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    qcbor_err = decode_destroy_context_response(UsefulBuf_Const(cmd_buf),
+                                                &dpe_err);
+    if (qcbor_err != QCBOR_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    } else if (dpe_err != DPE_NO_ERROR) {
+        return dpe_err;
+    }
 
     return DPE_NO_ERROR;
 }

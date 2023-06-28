@@ -410,3 +410,62 @@ dpe_error_t derive_child_request(int input_ctx_handle,
 
     return DPE_NO_ERROR;
 }
+
+dpe_error_t destroy_context_request(int input_ctx_handle,
+                                    bool destroy_recursively)
+{
+    uint16_t input_ctx_idx, linked_layer_idx;
+    int i;
+    bool is_layer_empty;
+
+    log_destroy_context(input_ctx_handle, destroy_recursively);
+
+    /* Get child component index and linked layer from the input handle */
+    input_ctx_idx = GET_IDX(input_ctx_handle);
+
+#ifdef TFM_S_REG_TEST
+    if (input_ctx_idx == 0) {
+        invalidate_layer(DPE_ROT_LAYER_IDX);
+        set_context_to_default(0);
+        return DPE_NO_ERROR;
+    }
+#endif /* TFM_S_REG_TEST */
+
+    /* Validate input handle */
+    if (!is_input_handle_valid(input_ctx_handle)) {
+        return DPE_INVALID_ARGUMENT;
+    }
+    linked_layer_idx = component_ctx_array[input_ctx_idx].linked_layer_idx;
+
+#ifndef TFM_S_REG_TEST
+    if (linked_layer_idx <= DPE_DESTROY_CONTEXT_THRESHOLD_LAYER_IDX) {
+        /* All layers till hypervisor cannot be destroyed dynamically */
+        return DPE_INVALID_ARGUMENT;
+    }
+#endif /* !TFM_S_REG_TEST */
+
+
+    if (!destroy_recursively) {
+        set_context_to_default(input_ctx_idx);
+    } else {
+        //TODO: To be implemented
+    }
+
+    assert(linked_layer_idx < MAX_NUM_OF_LAYERS);
+
+    /* Close the layer if all of its contexts are destroyed */
+    is_layer_empty = true;
+    for (i = 0; i < MAX_NUM_OF_COMPONENTS; i++) {
+        if (component_ctx_array[i].linked_layer_idx == linked_layer_idx) {
+            /* There are active component context in the layer */
+            is_layer_empty = false;
+            break;
+        }
+    }
+
+    if (is_layer_empty) {
+        invalidate_layer(linked_layer_idx);
+    }
+
+    return DPE_NO_ERROR;
+}
