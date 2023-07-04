@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -14,6 +14,8 @@
 #include "psa_manifest/pid.h"
 #include "psa/crypto.h"
 #include "psa_manifest/tfm_measured_boot.h"
+
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 /* TODO: This info will be used later on as input to decide access control */
 static int32_t g_measured_boot_caller_id;
@@ -32,8 +34,9 @@ static psa_status_t read_measurements(const psa_msg_t *msg)
     /* store the client ID here for later use in service */
     g_measured_boot_caller_id = msg->client_id;
 
-    signer_id_size = msg->out_size[1];
-    measurement_value_size = msg->out_size[2];
+    /* Limit requested sizes to the size of the local buffers */
+    signer_id_size = MIN(msg->out_size[1], sizeof(signer_id));
+    measurement_value_size = MIN(msg->out_size[2], sizeof(measurement_value));
 
     /* Check input parameter */
     if ((msg->in_size[0] != sizeof(struct measured_boot_read_iovec_in_t)) ||
