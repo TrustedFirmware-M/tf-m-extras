@@ -29,6 +29,11 @@ target_link_libraries(tfm_ns_interface
         tfm_config
 )
 
+###################### TF-M NS interface api (NS lib) ##########################
+# TF-M NS interface api is needed even if there's no communication
+# between the S and NS sides.
+add_library(tfm_api_ns INTERFACE)
+
 ############################# TFM NS app #######################################
 
 add_executable(tfm_ns)
