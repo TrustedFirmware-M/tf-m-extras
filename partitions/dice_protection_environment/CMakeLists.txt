@@ -19,6 +19,7 @@ add_library(tfm_app_rot_partition_dpe STATIC)
 
 target_sources(tfm_app_rot_partition_dpe
     PRIVATE
+        dpe_certificate.c
         dpe_cmd_decode.c
         dpe_context_mngr.c
         dpe_crypto_interface.c
@@ -56,6 +57,7 @@ target_link_libraries(tfm_app_rot_partition_dpe
     PRIVATE
         tfm_sprt
         qcbor
+        tfm_t_cose_s
 )
 
 ############################ Secure API ########################################

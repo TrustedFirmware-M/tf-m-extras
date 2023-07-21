@@ -6,6 +6,7 @@
  */
 
 #include "dpe_crypto_interface.h"
+#include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 #include "dpe_context_mngr.h"
@@ -15,7 +16,9 @@
 
 static const char attest_cdi_label[] = DPE_ATTEST_CDI_LABEL;
 static const char attest_key_pair_label[] = DPE_ATTEST_KEY_PAIR_LABEL;
+static const char id_label[] = DPE_ID_LABEL;
 static const uint8_t attest_key_salt[] = DPE_ATTEST_KEY_SALT;
+static const uint8_t id_salt[] = DPE_ID_SALT;
 
 static psa_status_t perform_derivation(psa_key_id_t base_key,
                                        const psa_key_attributes_t *key_attr,
@@ -100,6 +103,7 @@ psa_status_t derive_attestation_cdi(struct layer_context_t *layer_ctx,
 
 psa_status_t derive_attestation_key(struct layer_context_t *layer_ctx)
 {
+    psa_status_t status;
     psa_key_attributes_t attest_key_attr = PSA_KEY_ATTRIBUTES_INIT;
 
     /* Set key attributes for Attest key pair derivation */
@@ -109,13 +113,21 @@ psa_status_t derive_attestation_key(struct layer_context_t *layer_ctx)
     psa_set_key_usage_flags(&attest_key_attr, DPE_ATTEST_KEY_USAGE);
 
     /* Perform key pair derivation */
-    return perform_derivation(layer_ctx->data.cdi_key_id,
-                              &attest_key_attr,
-                              (uint8_t *)&attest_key_pair_label[0],
-                              sizeof(attest_key_pair_label),
-                              attest_key_salt,
-                              sizeof(attest_key_salt),
-                              &layer_ctx->data.attest_key_id);
+    status = perform_derivation(layer_ctx->data.cdi_key_id,
+                                &attest_key_attr,
+                                (uint8_t *)&attest_key_pair_label[0],
+                                sizeof(attest_key_pair_label),
+                                attest_key_salt,
+                                sizeof(attest_key_salt),
+                                &layer_ctx->data.attest_key_id);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    return psa_export_public_key(layer_ctx->data.attest_key_id,
+                                 &layer_ctx->data.attest_pub_key[0],
+                                 sizeof(layer_ctx->data.attest_pub_key),
+                                 &layer_ctx->data.attest_pub_key_len);
 }
 
 psa_status_t create_layer_cdi_key(struct layer_context_t *layer_ctx,
@@ -150,16 +162,56 @@ psa_status_t derive_wrapping_key(struct layer_context_t *layer_ctx)
     return PSA_SUCCESS;
 }
 
-psa_status_t create_layer_certificate(struct layer_context_t *layer_ctx)
+psa_status_t derive_id_from_public_key(struct layer_context_t *layer_ctx)
 {
-    //TODO:
-    (void)layer_ctx;
-    return PSA_SUCCESS;
-}
+    psa_status_t status;
+    psa_key_attributes_t derive_key_attr = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_attributes_t base_attr = PSA_KEY_ATTRIBUTES_INIT;
+    size_t output_id_len;
 
-psa_status_t store_layer_certificate(struct layer_context_t *layer_ctx)
-{
-    //TODO:
-    (void)layer_ctx;
-    return PSA_SUCCESS;
+    psa_key_id_t base_key = PSA_KEY_ID_NULL;
+    psa_key_id_t derived_key_id = PSA_KEY_ID_NULL;
+
+    psa_set_key_type(&base_attr, PSA_KEY_TYPE_DERIVE);
+    psa_set_key_algorithm(&base_attr, PSA_ALG_HKDF(PSA_ALG_SHA_256));
+    psa_set_key_bits(&base_attr, PSA_BYTES_TO_BITS(layer_ctx->data.attest_pub_key_len));
+    psa_set_key_usage_flags(&base_attr, PSA_KEY_USAGE_DERIVE);
+
+    status = psa_import_key(&base_attr,
+                            &layer_ctx->data.attest_pub_key[0],
+                            layer_ctx->data.attest_pub_key_len,
+                            &base_key);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    /* Derive Key attributes same as CDI attributes except the label */
+    psa_set_key_type(&derive_key_attr, PSA_KEY_TYPE_RAW_DATA);
+    psa_set_key_algorithm(&derive_key_attr, PSA_ALG_HKDF(PSA_ALG_SHA_256));
+    psa_set_key_bits(&derive_key_attr, PSA_BYTES_TO_BITS(DICE_ID_SIZE));
+    psa_set_key_usage_flags(&derive_key_attr, PSA_KEY_USAGE_EXPORT);
+
+    /* Perform ID derivation */
+    /* Supply the ID label as an input to the key derivation */
+    status = perform_derivation(base_key,
+                                &derive_key_attr,
+                                (uint8_t *) &id_label[0],
+                                sizeof(id_label),
+                                id_salt,
+                                sizeof(id_salt),
+                                &derived_key_id);
+    if (status != PSA_SUCCESS) {
+        goto err_destroy_base_key;
+    }
+    status = psa_export_key(derived_key_id,
+                            &layer_ctx->data.cdi_id[0],
+                            sizeof(layer_ctx->data.cdi_id),
+                            &output_id_len);
+
+    (void)psa_destroy_key(derived_key_id);
+
+err_destroy_base_key:
+    (void)psa_destroy_key(base_key);
+
+    return status;
 }

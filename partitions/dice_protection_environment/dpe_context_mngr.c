@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <string.h>
 #include "dice_protection_environment.h"
+#include "dpe_certificate.h"
 #include "dpe_crypto_interface.h"
 #include "dpe_log.h"
 #include "psa/crypto.h"
@@ -20,6 +21,14 @@
                             0xA3, 0x9F, 0xDE, 0xC3, 0x35, 0x75, 0x84, 0x6E, \
                             0x4C, 0xB9, 0x28, 0xAC, 0x7A, 0x4E, 0X00, 0x7F  \
                          }
+
+#define TEST_ROT_ISSUER_SEED {                                                  \
+                                0xD2, 0x90, 0x66, 0x07, 0x2A, 0x2D, 0x2A, 0x00, \
+                                0x91, 0x9D, 0xD9, 0x15, 0x14, 0xBE, 0x2D, 0xCC, \
+                                0xA3, 0x9F, 0xDE, 0xC3, 0x35, 0x75, 0x84, 0x6E, \
+                                0x4C, 0xB9, 0x28, 0xAC, 0x7A, 0x4E, 0X00, 0x7F  \
+                             }
+
 #endif /* TFM_S_REG_TEST */
 
 #define CONTEXT_DATA_MAX_SIZE sizeof(struct component_context_data_t)
@@ -145,7 +154,7 @@ static dpe_error_t copy_dice_input(struct component_context_t *dest_ctx,
         dest_ctx->data.config_descriptor_size = dice_inputs->config_descriptor_size;
 
         /* Calculate config value as hash of input config descriptor */
-        status = psa_hash_compute(PSA_ALG_SHA_256,
+        status = psa_hash_compute(DPE_HASH_ALG,
                                   dice_inputs->config_descriptor,
                                   dice_inputs->config_descriptor_size,
                                   dest_ctx->data.config_value,
@@ -276,20 +285,22 @@ static psa_status_t compute_layer_cdi_attest_input(uint16_t curr_layer_idx)
     return status;
 }
 
+
 static dpe_error_t derive_child_create_certificate(uint16_t layer_idx)
 {
-    uint16_t parent_idx;
+    uint16_t parent_layer_idx;
     psa_status_t status;
+    dpe_error_t err;
 
     assert(layer_idx < MAX_NUM_OF_LAYERS);
     /* Finalise the layer */
     layer_ctx_array[layer_idx].state = LAYER_STATE_FINALISED;
 
-    /* For RoT Layer, CDI values are calculated by BL1_1 */
+    /* For RoT Layer, CDI and issuer seed values are calculated by BL1_1 */
     if (layer_idx != DPE_ROT_LAYER_IDX) {
 
-        parent_idx = layer_ctx_array[layer_idx].parent_layer_idx;
-        assert(parent_idx < MAX_NUM_OF_LAYERS);
+        parent_layer_idx = layer_ctx_array[layer_idx].parent_layer_idx;
+        assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
 
         status = compute_layer_cdi_attest_input(layer_idx);
         if (status != PSA_SUCCESS) {
@@ -297,7 +308,7 @@ static dpe_error_t derive_child_create_certificate(uint16_t layer_idx)
         }
 
         status = derive_attestation_cdi(&layer_ctx_array[layer_idx],
-                                        &layer_ctx_array[parent_idx]);
+                                        &layer_ctx_array[parent_layer_idx]);
         if (status != PSA_SUCCESS) {
             return DPE_INTERNAL_ERROR;
         }
@@ -306,6 +317,9 @@ static dpe_error_t derive_child_create_certificate(uint16_t layer_idx)
         if (status != PSA_SUCCESS) {
             return DPE_INTERNAL_ERROR;
         }
+    } else {
+        /* There is no parent for RoT layer */
+        parent_layer_idx = 0;
     }
 
     status = derive_wrapping_key(&layer_ctx_array[layer_idx]);
@@ -318,17 +332,23 @@ static dpe_error_t derive_child_create_certificate(uint16_t layer_idx)
         return DPE_INTERNAL_ERROR;
     }
 
-    status = create_layer_certificate(&layer_ctx_array[layer_idx]);
+    status = derive_id_from_public_key(&layer_ctx_array[layer_idx]);
     if (status != PSA_SUCCESS) {
         return DPE_INTERNAL_ERROR;
     }
 
-    status = store_layer_certificate(&layer_ctx_array[layer_idx]);
-    if (status != PSA_SUCCESS) {
-        return DPE_INTERNAL_ERROR;
+    err = encode_layer_certificate(layer_idx,
+                                   &layer_ctx_array[layer_idx],
+                                   &layer_ctx_array[parent_layer_idx]);
+    if (err != DPE_NO_ERROR) {
+        return err;
     }
 
-    return DPE_NO_ERROR;
+    log_intermediate_certificate(layer_idx,
+                                 &layer_ctx_array[layer_idx].data.cert_buf[0],
+                                 layer_ctx_array[layer_idx].data.cert_buf_len);
+
+    return store_layer_certificate(&layer_ctx_array[layer_idx]);
 }
 
 static uint16_t open_new_layer(void)
@@ -342,7 +362,18 @@ static uint16_t open_new_layer(void)
         }
     }
 
-    return INVALID_LAYER_IDX;
+    //TODO: There is an open issue of layer creation as described below.
+    /* This is causing extra unintended layers to open. Since each layer
+     * has some context data and certificate buffer of 3k, it is
+     * causing RAM overflow. Hence until resoluton is reached, once all
+     * layers are opened, link new compenents to the last layer.
+     * ISSUE DESCRIPTION: We derive AP_BL31 as child of AP BL2 with create_certificate
+     * as true. Hence we finalize Platform layer. Then we derive AP_SPM as child of
+     * AP BL2, but since AP BL2 is finalised, we open new layer (Hypervisor layer).
+     * Then we derive AP SPx as child of AP BL2. Again, since AP BL2 is finalised,
+     * we open new layer! Here AP SPx should belong to same layer as AP SPM.
+     */
+    return MAX_NUM_OF_LAYERS - 1;
 }
 
 static inline void link_layer(uint16_t child_layer, uint16_t parent_layer)
@@ -416,7 +447,7 @@ static inline bool is_input_client_id_valid(int32_t client_id)
     return true;
 }
 
-static void assign_layer_to_context(struct component_context_t *new_ctx)
+static dpe_error_t assign_layer_to_context(struct component_context_t *new_ctx)
 {
     uint16_t new_layer_idx, parent_layer_idx;
 
@@ -428,6 +459,9 @@ static void assign_layer_to_context(struct component_context_t *new_ctx)
     if (layer_ctx_array[parent_layer_idx].state == LAYER_STATE_FINALISED) {
         /* Parent comp's layer of new child is finalised; open a new layer */
         new_layer_idx = open_new_layer();
+        if (new_layer_idx == INVALID_LAYER_IDX) {
+            return DPE_INTERNAL_ERROR;
+        }
         /* Link this context to the new layer */
         new_ctx->linked_layer_idx = new_layer_idx;
         /* New layer's parent is current layer */
@@ -439,6 +473,8 @@ static void assign_layer_to_context(struct component_context_t *new_ctx)
          */
         new_ctx->linked_layer_idx = parent_layer_idx;
     }
+
+    return DPE_NO_ERROR;
 }
 
 dpe_error_t derive_child_request(int input_ctx_handle,
@@ -531,8 +567,10 @@ dpe_error_t derive_child_request(int input_ctx_handle,
         new_ctx->parent_idx = input_child_idx;
         /* Mark new child component index as in use */
         new_ctx->in_use = true;
-        assign_layer_to_context(new_ctx);
-
+        status = assign_layer_to_context(new_ctx);
+        if (status != DPE_NO_ERROR) {
+            return status;
+        }
     } else {
         /* Child not deriving any children */
         /* Tag this component as a leaf */
@@ -556,8 +594,10 @@ dpe_error_t derive_child_request(int input_ctx_handle,
         new_ctx->parent_idx = input_parent_idx;
         /* Mark new child component index as in use */
         new_ctx->in_use = true;
-        assign_layer_to_context(new_ctx);
-
+        status = assign_layer_to_context(new_ctx);
+        if (status != DPE_NO_ERROR) {
+            return status;
+        }
     } else {
         /* Parent not deriving any more children */
         /* No need to return parent handle */
@@ -627,3 +667,19 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
 
     return DPE_NO_ERROR;
 }
+
+struct component_context_t* get_component_if_linked_to_layer(uint16_t layer_idx,
+                                                             uint16_t component_idx)
+{
+    /* Safety case */
+    if (component_idx >= MAX_NUM_OF_COMPONENTS) {
+        return NULL;
+    }
+
+    if (component_ctx_array[component_idx].linked_layer_idx == layer_idx) {
+        return &component_ctx_array[component_idx];
+    } else {
+        return NULL;
+    }
+}
+

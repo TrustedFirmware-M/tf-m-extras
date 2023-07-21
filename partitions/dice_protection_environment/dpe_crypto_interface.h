@@ -59,6 +59,15 @@ psa_status_t derive_attestation_cdi(struct layer_context_t *layer_ctx,
 psa_status_t derive_sealing_cdi(struct layer_context_t *layer_ctx);
 
 /**
+ * \brief Derives certificate id from the layer's attestation public key
+ *
+ * \param[in] layer_ctx  Pointer to current layer context.
+ *
+ * \return Returns error code as specified in \ref psa_status_t
+ */
+psa_status_t derive_id_from_public_key(struct layer_context_t *layer_ctx);
+
+/**
  * \brief Derives wrapping key pair for a layer
  *
  * \param[in] layer_ctx  Pointer to current layer context.
@@ -66,24 +75,6 @@ psa_status_t derive_sealing_cdi(struct layer_context_t *layer_ctx);
  * \return Returns error code as specified in \ref psa_status_t
  */
 psa_status_t derive_wrapping_key(struct layer_context_t *layer_ctx);
-
-/**
- * \brief Create and sign the certificate for a layer
- *
- * \param[in] layer_ctx  Pointer to current layer context.
- *
- * \return Returns error code as specified in \ref psa_status_t
- */
-psa_status_t create_layer_certificate(struct layer_context_t *layer_ctx);
-
-/**
- * \brief Stores signed certificate for a layer
- *
- * \param[in] layer_ctx  Pointer to current layer context.
- *
- * \return Returns error code as specified in \ref psa_status_t
- */
-psa_status_t store_layer_certificate(struct layer_context_t *layer_ctx);
 
 #ifdef __cplusplus
 }

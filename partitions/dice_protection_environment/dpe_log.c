@@ -99,4 +99,14 @@ void log_certify_key(int context_handle,
     print_byte_array(label, label_size);
 }
 
+void log_intermediate_certificate(uint16_t layer_idx,
+                                  const uint8_t *cert_buf,
+                                  size_t cert_buf_size)
+{
+    LOG_DBGFMT("DPE Intermediate Certificate:\r\n");
+    LOG_DBGFMT(" - layer index = %d\r\n", layer_idx);
+    LOG_DBGFMT(" - certificate =");
+    print_byte_array(cert_buf, cert_buf_size);
+}
+
 #endif /* TFM_PARTITION_LOG_LEVEL */

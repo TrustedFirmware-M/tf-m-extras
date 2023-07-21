@@ -18,8 +18,7 @@
 extern "C" {
 #endif
 
-#define DICE_WRAPPING_KEY_SIZE  32
-#define DICE_CERT_SIZE  1024
+#define DICE_CERT_SIZE  3072
 
 #define INVALID_HANDLE 0xFFFFFFFF
 #define INVALID_COMPONENT_IDX 0xFFFF
@@ -29,7 +28,7 @@ extern "C" {
 
 /* Below configuration defines are platform dependant */
 #define MAX_NUM_OF_COMPONENTS 30
-#define MAX_NUM_OF_LAYERS 10
+#define MAX_NUM_OF_LAYERS 6
 #define DPE_PLATFORM_LAYER_IDX 1
 #define DPE_SECURE_WORLD_AND_HYPERVISOR_LAYER_IDX 2
 /* Below threshold defines the threshold below which a context cannot be destroyed */
@@ -69,10 +68,12 @@ struct component_context_t {
 struct layer_context_data_t {
     psa_key_id_t cdi_key_id;
     uint8_t cdi_seal[DICE_CDI_SIZE];
-    uint8_t wrapping_key[DICE_WRAPPING_KEY_SIZE];
+    uint8_t cdi_id[DICE_ID_SIZE];
     psa_key_id_t attest_key_id;
+    uint8_t attest_pub_key[DPE_ATTEST_PUB_KEY_SIZE];
+    size_t attest_pub_key_len;
     uint8_t cert_buf[DICE_CERT_SIZE];
-    size_t cert_buf_size;
+    size_t cert_buf_len;
 };
 
 enum layer_state_t {
@@ -149,6 +150,18 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
  *
  */
 void initialise_all_dpe_contexts(void);
+
+/**
+ * \brief  Function to get the pointer to a component context if linked to a layer
+ *
+ * \param[in] layer_idx      Index of the linked layer
+ * \param[in] component_idx  Index of the component context in the array
+ *
+ * \return Returns pointer to the component context if it is linked to the input
+ *         layer else returns NULL
+ */
+struct component_context_t* get_component_if_linked_to_layer(uint16_t layer_idx,
+                                                             uint16_t component_idx);
 
 #ifdef __cplusplus
 }

@@ -48,12 +48,20 @@ void log_certify_key(int context_handle,
                      const uint8_t *label,
                      size_t label_size);
 
+/**
+ * \brief Log intermediate layer certificate contents.
+ */
+void log_intermediate_certificate(uint16_t layer_idx,
+                                  const uint8_t *cert_buf,
+                                  size_t cert_buf_size);
+
 #else /* TFM_PARTITION_LOG_LEVEL */
 
 #define log_derive_rot_context(...)
 #define log_derive_child(...)
 #define log_destroy_context(...)
 #define log_certify_key(...)
+#define log_intermediate_certificate(...)
 
 #endif /* TFM_PARTITION_LOG_LEVEL */
 

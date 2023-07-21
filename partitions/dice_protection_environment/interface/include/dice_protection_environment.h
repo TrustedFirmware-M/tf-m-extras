@@ -33,6 +33,7 @@ typedef int32_t dpe_error_t;
 #define DPE_ARGUMENT_NOT_SUPPORTED    ((dpe_error_t)4)
 #define DPE_SESSION_EXHAUSTED         ((dpe_error_t)5)
 #define DPE_INSUFFICIENT_MEMORY       ((dpe_error_t)128)
+#define DPE_ERR_CBOR_FORMATTING       ((dpe_error_t)129)
 
 /**
  * \brief Performs the DICE computation to derive a child context and optionally
