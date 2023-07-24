@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #define TEMP_BUFFER_SIZE (MEASUREMENT_VALUE_SIZE + MEASUREMENT_VALUE_MAX_SIZE)
 
@@ -399,6 +400,8 @@ psa_status_t collect_shared_measurements(void)
     uint8_t claim;
     psa_status_t status = PSA_ERROR_GENERIC_ERROR;
     int32_t rc;
+    uint8_t version[VERSION_MAX_SIZE];
+    int version_size;
 
     /* Collect the measurements from the shared data area and store them. */
     rc = tfm_core_get_boot_data(TLV_MAJOR_MBS,
@@ -453,14 +456,25 @@ psa_status_t collect_shared_measurements(void)
                 break;
             }
 
+            /* Format the version into a string "major.minor.revision+build" */
+            version_size = snprintf((char *)version, sizeof(version),
+                                    "%u.%u.%u+%u",
+                                    metadata_ptr->sw_version.major,
+                                    metadata_ptr->sw_version.minor,
+                                    metadata_ptr->sw_version.revision,
+                                    metadata_ptr->sw_version.build_num);
+            if (version_size < 0 || version_size >= sizeof(version)) {
+                status = PSA_ERROR_GENERIC_ERROR;
+                break;
+            }
+
             /* Store the measurement and associated metadata. */
             status = measured_boot_extend_measurement(
                     (uint8_t)GET_MBS_SLOT(tlv_entry.tlv_type),
                     metadata_ptr->signer_id,
                     metadata_ptr->signer_id_size,
-                    (const uint8_t*)metadata_ptr->sw_version,
-                    tfm_strnlen(metadata_ptr->sw_version,
-                                sizeof(metadata_ptr->sw_version)),
+                    version,
+                    version_size,
                     metadata_ptr->measurement_type,
                     (const uint8_t*)metadata_ptr->sw_type,
                     tfm_strnlen(metadata_ptr->sw_type,
