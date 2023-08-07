@@ -18,7 +18,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 #define TEMP_BUFFER_SIZE (MEASUREMENT_VALUE_SIZE + MEASUREMENT_VALUE_MAX_SIZE)
 
@@ -391,6 +390,82 @@ void initialise_all_measurements(void)
 }
 
 #ifdef CONFIG_TFM_BOOT_STORE_MEASUREMENTS
+/**
+ * \brief Format an unsigned integer value into the pointed-to string.
+ *
+ * \param[out] str  Pointer to string
+ * \param[in]  end  Pointer to end of string
+ * \param[in]  val  Unsigned integer value
+ *
+ * \return Number of characters written (or would be written).
+ */
+static size_t format_uint(uint8_t **str, const uint8_t *const end, uint32_t val)
+{
+    size_t num = 0;
+
+    do {
+        if (*str < end) {
+            *(*str)++ = '0' + val % 10;
+        }
+        val /= 10;
+        num++;
+    } while (val > 0);
+
+    return num;
+}
+
+/**
+ * \brief Format the version into a string "major.minor.revision+build".
+ *
+ * \param[out] str       Version string
+ * \param[in]  size      Size of version string
+ * \param[in]  major     Major version
+ * \param[in]  minor     Minor version
+ * \param[in]  revision  Revison version
+ * \param[in]  build     Build number
+ *
+ * \return Number of characters written (or would be written, if size is too
+ *         small), excluding the NULL terminator.
+ */
+static size_t format_version_string(uint8_t *str, size_t size,
+                                    uint8_t major, uint8_t minor,
+                                    uint16_t revision, uint32_t build)
+{
+    const uint8_t *const end = str + size;
+    size_t num = 0;
+
+    num += format_uint(&str, end, major);
+
+    if (str < end) {
+        *str++ = '.';
+    }
+    num++;
+
+    num += format_uint(&str, end, minor);
+
+    if (str < end) {
+        *str++ = '.';
+    }
+    num++;
+
+    num += format_uint(&str, end, revision);
+
+    if (str < end) {
+        *str++ = '+';
+    }
+    num++;
+
+    num += format_uint(&str, end, build);
+
+    if (str < end) {
+        *str = '\0';
+    } else if (size > 0) {
+        str[size - 1] = '\0';
+    }
+
+    return num;
+}
+
 psa_status_t collect_shared_measurements(void)
 {
     struct shared_data_tlv_entry tlv_entry;
@@ -401,7 +476,7 @@ psa_status_t collect_shared_measurements(void)
     psa_status_t status = PSA_ERROR_GENERIC_ERROR;
     int32_t rc;
     uint8_t version[VERSION_MAX_SIZE];
-    int version_size;
+    size_t version_size;
 
     /* Collect the measurements from the shared data area and store them. */
     rc = tfm_core_get_boot_data(TLV_MAJOR_MBS,
@@ -456,14 +531,12 @@ psa_status_t collect_shared_measurements(void)
                 break;
             }
 
-            /* Format the version into a string "major.minor.revision+build" */
-            version_size = snprintf((char *)version, sizeof(version),
-                                    "%u.%u.%u+%u",
-                                    metadata_ptr->sw_version.major,
-                                    metadata_ptr->sw_version.minor,
-                                    metadata_ptr->sw_version.revision,
-                                    metadata_ptr->sw_version.build_num);
-            if (version_size < 0 || version_size >= sizeof(version)) {
+            version_size = format_version_string(version, sizeof(version),
+                                                 metadata_ptr->sw_version.major,
+                                                 metadata_ptr->sw_version.minor,
+                                                 metadata_ptr->sw_version.revision,
+                                                 metadata_ptr->sw_version.build_num);
+            if (version_size >= sizeof(version)) {
                 status = PSA_ERROR_GENERIC_ERROR;
                 break;
             }
