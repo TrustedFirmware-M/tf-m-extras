@@ -9,7 +9,6 @@
 #include "measured_boot_utils.h"
 #include "measured_boot_api.h"
 #include "psa/crypto.h"
-#include "tfm_api.h"
 #include "tfm_boot_status.h"
 #include "boot_hal.h"
 #include "service_api.h"
@@ -474,15 +473,14 @@ psa_status_t collect_shared_measurements(void)
     uint8_t *tlv_curr;
     uint8_t claim;
     psa_status_t status = PSA_ERROR_GENERIC_ERROR;
-    int32_t rc;
     uint8_t version[VERSION_MAX_SIZE];
     size_t version_size;
 
     /* Collect the measurements from the shared data area and store them. */
-    rc = tfm_core_get_boot_data(TLV_MAJOR_MBS,
-                                (struct tfm_boot_data *)&boot_measurements,
-                                sizeof(boot_measurements));
-    if (rc != (int32_t)TFM_SUCCESS) {
+    status = tfm_core_get_boot_data(TLV_MAJOR_MBS,
+                                    (struct tfm_boot_data *)&boot_measurements,
+                                    sizeof(boot_measurements));
+    if (status != PSA_SUCCESS) {
         return PSA_ERROR_GENERIC_ERROR;
     }
 
