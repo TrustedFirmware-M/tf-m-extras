@@ -72,6 +72,8 @@ struct layer_context_data_t {
     psa_key_id_t attest_key_id;
     uint8_t attest_pub_key[DPE_ATTEST_PUB_KEY_SIZE];
     size_t attest_pub_key_len;
+    uint8_t attest_key_label[DPE_EXTERNAL_LABEL_MAX_SIZE];
+    size_t attest_key_label_len;
     uint8_t cert_buf[DICE_CERT_SIZE];
     size_t cert_buf_len;
 };
@@ -87,6 +89,7 @@ struct layer_context_t {
     uint16_t parent_layer_idx;
     uint8_t attest_cdi_hash_input[DPE_HASH_ALG_SIZE];
     enum layer_state_t state;
+    bool is_external_pub_key_provided;
 };
 
 /**
@@ -162,6 +165,94 @@ void initialise_all_dpe_contexts(void);
  */
 struct component_context_t* get_component_if_linked_to_layer(uint16_t layer_idx,
                                                              uint16_t component_idx);
+
+/**
+ * \brief  Function to get the pointer to a layer context
+ *
+ * \param[in] layer_idx      Index of the layer in the layer context array
+ *                           for which pointer is required
+ *
+ * \return Returns pointer to the layer context if input index is valid
+ *         else returns NULL
+ */
+struct layer_context_t* get_layer_ctx_ptr(uint16_t layer_idx);
+
+/**
+ * \brief Generates a leaf certificate and returns all the certificate chain
+ *        leading to it. This command functionality depends on whether:
+ *        - last layer is finalised
+ *        - public key is supplied to the command
+ *        - label is supplied to the command
+ *
+ *  +---------------+------------+------------+----------------+
+ *  |               | pub_key    | no pub_key |                |
+ *  +---------------+------------+------------+----------------+
+ *  |               |            | see Note C | label          |
+ *  | finalized     + see Note A +------------+----------------+
+ *  |               |            | see Note D | no label       |
+ *  +---------------+------------+------------+----------------+
+ *  |               |            | see Note E | label          |
+ *  | not finalized + see Note B +------------+----------------+
+ *  |               |            | see Note F | no label       |
+ *  +---------------+------------+------------+----------------+
+ *
+ *  A - Opens a new layer (if not opened), creates a leaf certificate which
+ *      includes supplied key and generates certificate chain.
+ *  B - Creates certificate for current (existing) layer, which includes supplied
+ *      key and generates certificate chain.
+ *  C - Opens a new layer (if not opened), performs derivation which includes
+ *      supplied label, creates leaf certificate (including supplied label as a
+ *      claim) and generates certificate chain.
+ *  D - Opens a new layer (if not opened), performs standard derivation,
+ *      creates a leaf certificate and generates certificate chain.
+ *  E - Performs derivation (which includes supplied label) for current/existing layer,
+ *      creates certificate which includes supplied label as a claim, and generates
+ *      certificate chain.
+ *  F - Performs standard derivation for current/existing layer, creates certificate
+ *      and generates certificate chain.
+ *
+ * \param[in]  input_ctx_handle                Input handle to component context.
+ * \param[in]  retain_context                  Flag to indicate if context needs
+ *                                             to be retained. TRUE only if a client
+ *                                             is calling DPE commands multiple times.
+ * \param[in]  public_key                      The public key to certify. If omitted,
+ *                                             key pair is deterministically derived
+ *                                             from the context and label argument.
+ * \param[in]  public_key_size                 Size of the input public key.
+ * \param[in]  label                           Additional input to the key derivation
+ *                                             from the context. If public key is
+ *                                             already provided, this argument is
+ *                                             ignored.
+ * \param[in]  label_size                      Size of the input label.
+ * \param[out] certificate_chain_buf           Pointer to the buffer where
+ *                                             certificate chain will be stored.
+ * \param[in]  certificate_chain_buf_size      Size of the allocated buffer for
+ *                                             certificate chain.
+ * \param[out] certificate_chain_actual_size   Actual size of the certificate
+ *                                             chain.
+ * \param[out] derived_public_key_buf          Pointer to the buffer where
+ *                                             derived public key will be stored.
+ * \param[in]  derived_public_key_buf_size     Size of the allocated buffer for
+ *                                             derived public key.
+ * \param[out] derived_public_key_actual_size  Actual size of the derived public
+ *                                             key.
+ * \param[out] new_context_handle              A renewed handle for same context.
+ *
+ * \return Returns error code of type dpe_error_t
+ */
+dpe_error_t certify_key_request(int input_ctx_handle,
+                                bool retain_context,
+                                const uint8_t *public_key,
+                                size_t public_key_size,
+                                const uint8_t *label,
+                                size_t label_size,
+                                uint8_t *certificate_chain_buf,
+                                size_t certificate_chain_buf_size,
+                                size_t *certificate_chain_actual_size,
+                                uint8_t *derived_public_key_buf,
+                                size_t derived_public_key_buf_size,
+                                size_t *derived_public_key_actual_size,
+                                int *new_context_handle);
 
 #ifdef __cplusplus
 }

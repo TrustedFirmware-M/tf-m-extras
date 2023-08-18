@@ -38,6 +38,8 @@ extern "C" {
 #define DPE_ATTEST_PUB_KEY_SIZE   PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(DPE_ATTEST_KEY_BITS)
 
 #define DPE_ATTEST_KEY_PAIR_LABEL "Key Pair"
+#define DPE_EXTERNAL_LABEL_MAX_SIZE                  (20)
+
 #define DPE_ATTEST_KEY_SALT {                                         \
     0x63, 0xB6, 0xA0, 0x4D, 0x2C, 0x07, 0x7F, 0xC1, 0x0F, 0x63, 0x9F, \
     0x21, 0xDA, 0x79, 0x38, 0x44, 0x35, 0x6C, 0xC2, 0xB0, 0xB4, 0x41, \

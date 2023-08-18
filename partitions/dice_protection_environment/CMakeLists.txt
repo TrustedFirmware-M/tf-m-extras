@@ -23,7 +23,6 @@ target_sources(tfm_app_rot_partition_dpe
         dpe_cmd_decode.c
         dpe_context_mngr.c
         dpe_crypto_interface.c
-        dpe_impl.c
         dpe_log.c
         dpe_req_mngr.c
 )

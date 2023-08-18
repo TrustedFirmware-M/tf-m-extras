@@ -109,4 +109,12 @@ void log_intermediate_certificate(uint16_t layer_idx,
     print_byte_array(cert_buf, cert_buf_size);
 }
 
+void log_certificate_chain(const uint8_t *certificate_chain_buf,
+                           size_t certificate_chain_size)
+{
+    LOG_DBGFMT("DPE Certificate Chain:\r\n");
+    LOG_DBGFMT(" - size = %d\r\n", certificate_chain_size);
+    print_byte_array(certificate_chain_buf, certificate_chain_size);
+}
+
 #endif /* TFM_PARTITION_LOG_LEVEL */

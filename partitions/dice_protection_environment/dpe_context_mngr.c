@@ -101,6 +101,8 @@ static void invalidate_layer(int i)
 {
     layer_ctx_array[i].state = LAYER_STATE_CLOSED;
     layer_ctx_array[i].parent_layer_idx = INVALID_LAYER_IDX;
+    (void)memset(&layer_ctx_array[i].attest_cdi_hash_input, 0,
+                 sizeof(layer_ctx_array[i].attest_cdi_hash_input));
     (void)psa_destroy_key(layer_ctx_array[i].data.cdi_key_id);
     (void)psa_destroy_key(layer_ctx_array[i].data.attest_key_id);
     (void)memset(&layer_ctx_array[i].data, 0, sizeof(struct layer_context_data_t));
@@ -275,6 +277,16 @@ static psa_status_t compute_layer_cdi_attest_input(uint16_t curr_layer_idx)
         }
     }
 
+    if (layer_ctx_array[curr_layer_idx].data.attest_key_label_len != 0) {
+
+        status = psa_hash_update(&hash_op,
+                                 &layer_ctx_array[curr_layer_idx].data.attest_key_label[0],
+                                 layer_ctx_array[curr_layer_idx].data.attest_key_label_len);
+        if (status != PSA_SUCCESS) {
+            return status;
+        }
+    }
+
     status = psa_hash_finish(&hash_op,
                              &layer_ctx_array[curr_layer_idx].attest_cdi_hash_input[0],
                              sizeof(layer_ctx_array[curr_layer_idx].attest_cdi_hash_input),
@@ -285,70 +297,72 @@ static psa_status_t compute_layer_cdi_attest_input(uint16_t curr_layer_idx)
     return status;
 }
 
-
-static dpe_error_t derive_child_create_certificate(uint16_t layer_idx)
+static dpe_error_t create_layer_certificate(uint16_t layer_idx)
 {
     uint16_t parent_layer_idx;
     psa_status_t status;
     dpe_error_t err;
+    struct layer_context_t *layer_ctx, *parent_layer_ctx;
 
     assert(layer_idx < MAX_NUM_OF_LAYERS);
-    /* Finalise the layer */
-    layer_ctx_array[layer_idx].state = LAYER_STATE_FINALISED;
+    layer_ctx = &layer_ctx_array[layer_idx];
+   /* Finalise the layer */
+    layer_ctx->state = LAYER_STATE_FINALISED;
+    parent_layer_idx = layer_ctx->parent_layer_idx;
+    assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
+    parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
 
     /* For RoT Layer, CDI and issuer seed values are calculated by BL1_1 */
-    if (layer_idx != DPE_ROT_LAYER_IDX) {
+    if ((layer_idx != DPE_ROT_LAYER_IDX) &&
+        (!layer_ctx->is_external_pub_key_provided)) {
 
-        parent_layer_idx = layer_ctx_array[layer_idx].parent_layer_idx;
-        assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
+        /* Except for RoT Layer with no external public key supplied */
 
         status = compute_layer_cdi_attest_input(layer_idx);
         if (status != PSA_SUCCESS) {
             return DPE_INTERNAL_ERROR;
         }
 
-        status = derive_attestation_cdi(&layer_ctx_array[layer_idx],
-                                        &layer_ctx_array[parent_layer_idx]);
+        status = derive_attestation_cdi(layer_ctx, parent_layer_ctx);
         if (status != PSA_SUCCESS) {
             return DPE_INTERNAL_ERROR;
         }
 
-        status = derive_sealing_cdi(&layer_ctx_array[layer_idx]);
+        status = derive_sealing_cdi(layer_ctx);
         if (status != PSA_SUCCESS) {
             return DPE_INTERNAL_ERROR;
         }
-    } else {
-        /* There is no parent for RoT layer */
-        parent_layer_idx = 0;
     }
 
-    status = derive_wrapping_key(&layer_ctx_array[layer_idx]);
+    status = derive_wrapping_key(layer_ctx);
     if (status != PSA_SUCCESS) {
         return DPE_INTERNAL_ERROR;
     }
 
-    status = derive_attestation_key(&layer_ctx_array[layer_idx]);
-    if (status != PSA_SUCCESS) {
-        return DPE_INTERNAL_ERROR;
+    if (!layer_ctx->is_external_pub_key_provided) {
+        status = derive_attestation_key(layer_ctx);
+        if (status != PSA_SUCCESS) {
+            return DPE_INTERNAL_ERROR;
+        }
     }
 
-    status = derive_id_from_public_key(&layer_ctx_array[layer_idx]);
+    status = derive_id_from_public_key(layer_ctx);
     if (status != PSA_SUCCESS) {
         return DPE_INTERNAL_ERROR;
     }
 
     err = encode_layer_certificate(layer_idx,
-                                   &layer_ctx_array[layer_idx],
-                                   &layer_ctx_array[parent_layer_idx]);
+                                   layer_ctx,
+                                   parent_layer_ctx);
     if (err != DPE_NO_ERROR) {
         return err;
     }
 
     log_intermediate_certificate(layer_idx,
-                                 &layer_ctx_array[layer_idx].data.cert_buf[0],
-                                 layer_ctx_array[layer_idx].data.cert_buf_len);
+                                 &layer_ctx->data.cert_buf[0],
+                                 layer_ctx->data.cert_buf_len);
 
-    return store_layer_certificate(&layer_ctx_array[layer_idx]);
+    return store_layer_certificate(layer_ctx);
 }
 
 static uint16_t open_new_layer(void)
@@ -405,6 +419,9 @@ dpe_error_t derive_rot_context(const DiceInputValues *dice_inputs,
     child_comp_ctx->in_use = true;
     /* Link context to RoT Layer */
     child_comp_ctx->linked_layer_idx = DPE_ROT_LAYER_IDX;
+    /* There is no parent for RoT layer */
+    layer_ctx_array[DPE_ROT_LAYER_IDX].parent_layer_idx = 0;
+
     /* Parent is same as child for RoT context */
     child_comp_ctx->parent_idx = 0;
     /* Parent not deriving any more children */
@@ -412,7 +429,7 @@ dpe_error_t derive_rot_context(const DiceInputValues *dice_inputs,
 
     //TODO: Update expected_mhu_id of derived child
     /* Create certificate for RoT layer */
-    status = derive_child_create_certificate(DPE_ROT_LAYER_IDX);
+    status = create_layer_certificate(DPE_ROT_LAYER_IDX);
     if (status != DPE_NO_ERROR) {
         return status;
     }
@@ -548,7 +565,7 @@ dpe_error_t derive_child_request(int input_ctx_handle,
     }
 
     if (create_certificate) {
-        err = derive_child_create_certificate(child_ctx->linked_layer_idx);
+        err = create_layer_certificate(child_ctx->linked_layer_idx);
         if (err != DPE_NO_ERROR) {
             return err;
         }
@@ -683,3 +700,130 @@ struct component_context_t* get_component_if_linked_to_layer(uint16_t layer_idx,
     }
 }
 
+struct layer_context_t* get_layer_ctx_ptr(uint16_t layer_idx)
+{
+    /* Safety case */
+    if (layer_idx >= MAX_NUM_OF_LAYERS) {
+        return NULL;
+    }
+
+    return &layer_ctx_array[layer_idx];
+}
+
+dpe_error_t certify_key_request(int input_ctx_handle,
+                                bool retain_context,
+                                const uint8_t *public_key,
+                                size_t public_key_size,
+                                const uint8_t *label,
+                                size_t label_size,
+                                uint8_t *certificate_chain_buf,
+                                size_t certificate_chain_buf_size,
+                                size_t *certificate_chain_actual_size,
+                                uint8_t *derived_public_key_buf,
+                                size_t derived_public_key_buf_size,
+                                size_t *derived_public_key_actual_size,
+                                int *new_context_handle)
+{
+    uint16_t input_ctx_idx, input_layer_idx, parent_layer_idx;
+    dpe_error_t err;
+    psa_status_t status;
+    struct layer_context_t *parent_layer_ctx, *layer_ctx;
+
+    log_certify_key(input_ctx_handle, retain_context, public_key, public_key_size,
+                    label, label_size);
+
+    /* Validate input handle */
+    if (!is_input_handle_valid(input_ctx_handle)) {
+        return DPE_INVALID_ARGUMENT;
+    }
+
+    if (label_size > DPE_EXTERNAL_LABEL_MAX_SIZE) {
+        return DPE_INVALID_ARGUMENT;
+    }
+
+    /* Get component index from the input handle */
+    input_ctx_idx = GET_IDX(input_ctx_handle);
+    /* Get current linked layer idx */
+    input_layer_idx = component_ctx_array[input_ctx_idx].linked_layer_idx;
+    assert(input_layer_idx < MAX_NUM_OF_LAYERS);
+
+    layer_ctx = &layer_ctx_array[input_layer_idx];
+    if (public_key_size > sizeof(layer_ctx->data.attest_pub_key)) {
+        return DPE_INVALID_ARGUMENT;
+    }
+
+    if ((public_key_size > 0) && (public_key != NULL)) {
+        layer_ctx->is_external_pub_key_provided = true;
+        /* Copy the public key provided */
+        memcpy(&layer_ctx->data.attest_pub_key[0],
+               public_key,
+               public_key_size);
+        layer_ctx->data.attest_pub_key_len = public_key_size;
+
+        /* If public key is provided, then provided label (if any) is ignored */
+        layer_ctx->data.attest_key_label_len = 0;
+
+    } else {
+        /* No external public key is provided */
+        layer_ctx->is_external_pub_key_provided = false;
+
+        if ((label_size > 0) && (label != NULL)) {
+            /* Copy the label provided */
+            memcpy(&layer_ctx->data.attest_key_label[0],
+                   label,
+                   label_size);
+            layer_ctx->data.attest_key_label_len = label_size;
+
+        } else {
+            layer_ctx->data.attest_key_label_len = 0;
+        }
+    }
+
+    /* Correct layer should already be assigned in last call of
+     * derive child command
+     */
+    /* Finalise the current layer & create leaf certificate */
+    err = create_layer_certificate(input_layer_idx);
+    if (err != DPE_NO_ERROR) {
+        return err;
+    }
+
+    /* Get parent layer derived public key to verify the certificate signature */
+    parent_layer_idx = layer_ctx_array[input_layer_idx].parent_layer_idx;
+    assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
+    parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
+
+    if (derived_public_key_buf_size < sizeof(parent_layer_ctx->data.attest_pub_key)) {
+        return DPE_INVALID_ARGUMENT;
+    }
+
+    memcpy(derived_public_key_buf,
+           &parent_layer_ctx->data.attest_pub_key[0],
+           parent_layer_ctx->data.attest_pub_key_len);
+    *derived_public_key_actual_size = parent_layer_ctx->data.attest_pub_key_len;
+
+    /* Get certificate chain */
+    err = get_certificate_chain(input_layer_idx,
+                                certificate_chain_buf,
+                                certificate_chain_buf_size,
+                                certificate_chain_actual_size);
+    if (err != DPE_NO_ERROR) {
+        return err;
+    }
+
+    log_certificate_chain(certificate_chain_buf, *certificate_chain_actual_size);
+
+    /* Renew handle for the same context */
+    *new_context_handle = input_ctx_handle;
+    status = renew_nonce(new_context_handle);
+    if (status != PSA_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+    component_ctx_array[input_ctx_idx].nonce = GET_NONCE(*new_context_handle);
+
+    /* Clear the context label and key contents */
+    memset(&layer_ctx->data.attest_key_label[0], 0u, layer_ctx->data.attest_key_label_len);
+    memset(&layer_ctx->data.attest_pub_key[0], 0u, layer_ctx->data.attest_pub_key_len);
+
+    return DPE_NO_ERROR;
+}

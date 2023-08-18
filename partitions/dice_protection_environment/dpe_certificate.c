@@ -10,11 +10,13 @@
 #include "dpe_context_mngr.h"
 #include "dpe_crypto_config.h"
 #include "dpe_crypto_interface.h"
+#include "dpe_plat.h"
 #include "qcbor/qcbor_encode.h"
 #include "t_cose_common.h"
 #include "t_cose_sign1_sign.h"
 
 #define ID_HEX_SIZE (2 * DICE_ID_SIZE)      /* Size of CDI encoded to ascii hex */
+#define LABEL_HEX_SIZE (2 * DPE_EXTERNAL_LABEL_MAX_SIZE)
 
 struct dpe_cert_encode_ctx {
     QCBOREncodeContext           cbor_enc_ctx;
@@ -101,6 +103,27 @@ static void add_key_usage_claim(struct dpe_cert_encode_ctx *me)
                                              sizeof(key_usage) });
 }
 
+static void add_label_claim(struct dpe_cert_encode_ctx *me,
+                            const uint8_t *label,
+                            size_t label_size)
+{
+    char label_hex[LABEL_HEX_SIZE];
+
+    /* If label is supplied, add label claim, else skip */
+    if ((label != NULL) && (label_size != 0)) {
+        convert_to_ascii_hex(&label[0],
+                             label_size,
+                             &label_hex[0],
+                             sizeof(label_hex));
+
+        /* Encode label as text string */
+        QCBOREncode_AddTextToMapN(&me->cbor_enc_ctx,
+                                  DPE_CERT_LABEL_EXTERNAL_LABEL,
+                                  (UsefulBufC){ &label_hex[0],
+                                                label_size });
+    }
+}
+
 static void add_subject_claim(struct dpe_cert_encode_ctx *me,
                               struct layer_context_t *layer_ctx)
 {
@@ -135,19 +158,16 @@ static void add_issuer_claim(struct dpe_cert_encode_ctx *me,
                                             sizeof(cdi_id_hex) });
 }
 
-static void add_public_key_claim(struct dpe_cert_encode_ctx *me,
-                                 const struct layer_context_t *layer_ctx)
+static void encode_public_key(struct dpe_cert_encode_ctx *me,
+                              const uint8_t *pub_key,
+                              size_t pub_key_size)
 {
     /* As per RFC8152 */
     const int64_t cose_key_type_value = DPE_T_COSE_KEY_TYPE_VAL;
     const int64_t cose_key_ops_value = DPE_T_COSE_KEY_OPS_VAL;
     const int64_t cose_key_ec2_curve_value = DPE_T_COSE_KEY_EC2_CURVE_VAL;
     const int64_t cose_key_alg_value = DPE_T_COSE_KEY_ALG_VAL;
-    size_t pub_key_size = layer_ctx->data.attest_pub_key_len;
-    UsefulBufC wrapped;
 
-    /* Cose key is encoded as a map wrapped into a byte string */
-    QCBOREncode_BstrWrapInMapN(&me->cbor_enc_ctx, DPE_CERT_LABEL_SUBJECT_PUBLIC_KEY);
     QCBOREncode_OpenMap(&me->cbor_enc_ctx);
 
     /* Add the key type as int */
@@ -174,17 +194,42 @@ static void add_public_key_claim(struct dpe_cert_encode_ctx *me,
     /* Add the subject public key x and y coordinates */
     QCBOREncode_AddBytesToMapN(&me->cbor_enc_ctx,
                                DPE_CERT_LABEL_COSE_KEY_EC2_X,
-                               (UsefulBufC){ &layer_ctx->data.attest_pub_key[0],
-                                             pub_key_size/2 });
+                               (UsefulBufC){ &pub_key[0],
+                                             pub_key_size / 2 });
 
     QCBOREncode_AddBytesToMapN(&me->cbor_enc_ctx,
                                DPE_CERT_LABEL_COSE_KEY_EC2_Y,
-                               (UsefulBufC){ &layer_ctx->data.attest_pub_key[pub_key_size/2],
-                                             pub_key_size/2 });
+                               (UsefulBufC){ &pub_key[pub_key_size / 2],
+                                             pub_key_size / 2 });
 
     QCBOREncode_CloseMap(&me->cbor_enc_ctx);
-    QCBOREncode_CloseBstrWrap2(&me->cbor_enc_ctx, true, &wrapped);
 
+}
+
+static void add_public_key_claim(struct dpe_cert_encode_ctx *me,
+                                 const uint8_t *pub_key,
+                                 size_t pub_key_size)
+{
+    UsefulBufC wrapped;
+
+    /* Cose key is encoded as a map. This map is wrapped into the a
+     * byte string and it is further encoded as a map */
+    QCBOREncode_BstrWrapInMapN(&me->cbor_enc_ctx, DPE_CERT_LABEL_SUBJECT_PUBLIC_KEY);
+    encode_public_key(me, pub_key, pub_key_size);
+    QCBOREncode_CloseBstrWrap2(&me->cbor_enc_ctx, true, &wrapped);
+    assert(wrapped.len <= DICE_MAX_ENCODED_PUBLIC_KEY_SIZE);
+}
+
+static void add_public_key_to_certificate_chain(struct dpe_cert_encode_ctx *me,
+                                                const uint8_t *pub_key,
+                                                size_t pub_key_size)
+{
+    UsefulBufC wrapped;
+
+    /* Cose key is encoded as a map wrapped into a byte string */
+    QCBOREncode_BstrWrap(&me->cbor_enc_ctx);
+    encode_public_key(me, pub_key, pub_key_size);
+    QCBOREncode_CloseBstrWrap2(&me->cbor_enc_ctx, true, &wrapped);
     assert(wrapped.len <= DICE_MAX_ENCODED_PUBLIC_KEY_SIZE);
 }
 
@@ -314,6 +359,8 @@ dpe_error_t encode_layer_certificate(uint16_t layer_idx,
     UsefulBuf cert;
     UsefulBufC completed_cert;
 
+    //TODO: Update required below:
+    // For the RoT layer, certificate is signed by IAK
     psa_key_id_t attest_key_id = parent_layer_ctx->data.attest_key_id;
 
     /* Get started creating the certificate/token. This sets up the CBOR and
@@ -345,8 +392,15 @@ dpe_error_t encode_layer_certificate(uint16_t layer_idx,
      */
     encode_layer_sw_components_array(layer_idx, &dpe_cert_ctx);
 
+    /* Add label claim */
+    add_label_claim(&dpe_cert_ctx,
+                    &layer_ctx->data.attest_key_label[0],
+                    layer_ctx->data.attest_key_label_len);
+
     /* Add public key claim */
-    add_public_key_claim(&dpe_cert_ctx, layer_ctx);
+    add_public_key_claim(&dpe_cert_ctx,
+                         &layer_ctx->data.attest_pub_key[0],
+                         layer_ctx->data.attest_pub_key_len);
 
     /* Add key usage claim */
     add_key_usage_claim(&dpe_cert_ctx);
@@ -371,3 +425,120 @@ dpe_error_t store_layer_certificate(struct layer_context_t *layer_ctx)
     (void)layer_ctx;
     return DPE_NO_ERROR;
 }
+
+static void open_certificate_chain(struct dpe_cert_encode_ctx *me,
+                                   uint8_t *cert_chain_buf,
+                                   size_t cert_chain_buf_size)
+{
+    /* Set up encoding context with output buffer. */
+    QCBOREncode_Init(&me->cbor_enc_ctx,
+                     (UsefulBuf){ &cert_chain_buf[0],
+                                  cert_chain_buf_size });
+    QCBOREncode_OpenArray(&me->cbor_enc_ctx);
+}
+
+static void add_certificate_to_chain(struct dpe_cert_encode_ctx *me,
+                                     struct layer_context_t *layer_ctx)
+{
+    /* Add already encoded layers certificate to the chain */
+    QCBOREncode_AddEncoded(&me->cbor_enc_ctx,
+                           (UsefulBufC){ &layer_ctx->data.cert_buf[0],
+                                         layer_ctx->data.cert_buf_len });
+}
+
+static dpe_error_t close_certificate_chain(struct dpe_cert_encode_ctx *me,
+                                           size_t *cert_chain_actual_size)
+{
+    QCBORError encode_error;
+    UsefulBufC completed_cert_chain;
+
+    QCBOREncode_CloseArray(&me->cbor_enc_ctx);
+
+    encode_error = QCBOREncode_Finish(&me->cbor_enc_ctx,
+                                      &completed_cert_chain);
+
+    /* Check for any encoding errors. */
+    if (encode_error == QCBOR_ERR_BUFFER_TOO_SMALL) {
+        return DPE_INSUFFICIENT_MEMORY;
+    } else if (encode_error != QCBOR_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    *cert_chain_actual_size = completed_cert_chain.len;
+
+    return DPE_NO_ERROR;
+}
+
+static dpe_error_t add_root_attestation_public_key(struct dpe_cert_encode_ctx *me)
+{
+    psa_status_t status;
+    psa_key_id_t attest_key_id;
+    uint8_t attest_pub_key[DPE_ATTEST_PUB_KEY_SIZE];
+    size_t attest_pub_key_len;
+
+    attest_key_id = dpe_plat_get_root_attest_key_id();
+
+    status = psa_export_public_key(attest_key_id, attest_pub_key,
+                                   sizeof(attest_pub_key), &attest_pub_key_len);
+    if (status != PSA_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    add_public_key_to_certificate_chain(me, &attest_pub_key[0], attest_pub_key_len);
+
+    return DPE_NO_ERROR;
+}
+
+dpe_error_t get_certificate_chain(uint16_t layer_idx,
+                                  uint8_t *cert_chain_buf,
+                                  size_t cert_chain_buf_size,
+                                  size_t *cert_chain_actual_size)
+{
+    struct layer_context_t *layer_ctx;
+    struct dpe_cert_encode_ctx dpe_cert_chain_ctx;
+    dpe_error_t err;
+    int i;
+    uint16_t layer_chain[MAX_NUM_OF_LAYERS];
+    uint16_t layer_cnt = 0;
+
+    open_certificate_chain(&dpe_cert_chain_ctx,
+                           cert_chain_buf,
+                           cert_chain_buf_size);
+
+    /* Add DICE/Root public key (IAK public key) as the first entry of array */
+    err = add_root_attestation_public_key(&dpe_cert_chain_ctx);
+    if (err != DPE_NO_ERROR) {
+        return err;
+    }
+
+    /* Loop from leaf to the RoT layer & save all the linked layers in this chain */
+    while ((layer_idx >= DPE_ROT_LAYER_IDX) && (layer_cnt < MAX_NUM_OF_LAYERS)) {
+
+        /* Save layer idx */
+        layer_chain[layer_cnt++] = layer_idx;
+
+        if (layer_idx == DPE_ROT_LAYER_IDX) {
+            /* This is the end of chain */
+            break;
+        }
+
+        layer_ctx = get_layer_ctx_ptr(layer_idx);
+        assert(layer_ctx->parent_layer_idx < layer_idx);
+        /* Move to the parent layer */
+        layer_idx = layer_ctx->parent_layer_idx;
+    }
+
+    i = (layer_cnt > 0) ? layer_cnt - 1 : 0;
+
+    /* Add certificate from RoT to leaf layer order */
+    while (i >= DPE_ROT_LAYER_IDX) {
+        layer_ctx = get_layer_ctx_ptr(layer_chain[i]);
+        assert(layer_ctx != NULL);
+        add_certificate_to_chain(&dpe_cert_chain_ctx, layer_ctx);
+        i--;
+    }
+
+    return close_certificate_chain(&dpe_cert_chain_ctx,
+                                   cert_chain_actual_size);
+}
+

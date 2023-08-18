@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 /**
- * \brief Derives attestation key pair for a layer
+ * \brief Derives attestation key pair for a layer.
  *
  * \param[in] layer_ctx  Pointer to current layer context.
  *

@@ -43,17 +43,17 @@ extern "C" {
 
 /* Below label is custom and not specified in DICE profile */
 #define DPE_CERT_LABEL_SW_COMPONENTS             (DPE_CERT_LABEL_RANGE_BASE - 9)
+#define DPE_CERT_LABEL_EXTERNAL_LABEL            (DPE_CERT_LABEL_RANGE_BASE - 10)
 
 /* Key usage constant per RFC 5280 */
 #define DPE_CERT_KEY_USAGE_CERT_SIGN             (1 << 5);
 
-#define DICE_MAX_ENCODED_PUBLIC_KEY_SIZE (DPE_ATTEST_PUB_KEY_SIZE + 32)
-
+#define DICE_MAX_ENCODED_PUBLIC_KEY_SIZE         (DPE_ATTEST_PUB_KEY_SIZE + 32)
 /**
  * \brief Encodes and signs the certificate for a layer
  *
- * \param[in] layer_idx  Index of the current layer context.
- * \param[in] layer_ctx  Pointer to current layer context.
+ * \param[in] layer_idx         Index of the current layer context.
+ * \param[in] layer_ctx         Pointer to current layer context.
  * \param[in] parent_layer_ctx  Pointer to parent layer context.
  *
  * \return Returns error code of type dpe_error_t
@@ -70,6 +70,21 @@ dpe_error_t encode_layer_certificate(uint16_t layer_idx,
  * \return Returns error code of type dpe_error_t
  */
 dpe_error_t store_layer_certificate(struct layer_context_t *layer_ctx);
+
+/**
+ * \brief Returns the encoded certificate chain from leaf layer to the RoT layer.
+ *
+ * \param[in]  layer_idx               Index of the current leaf layer context.
+ * \param[out] cert_chain_buf          Pointer to certificate chain buffer.
+ * \param[in]  cert_chain_buf_size     Size of certificate chain buffer.
+ * \param[out] cert_chain_actual_size  Actual size of the chain.
+ *
+ * \return Returns error code of type dpe_error_t
+ */
+dpe_error_t get_certificate_chain(uint16_t layer_idx,
+                                  uint8_t *cert_chain_buf,
+                                  size_t cert_chain_buf_size,
+                                  size_t *cert_chain_actual_size);
 
 #ifdef __cplusplus
 }

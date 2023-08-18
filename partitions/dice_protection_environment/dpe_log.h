@@ -55,6 +55,12 @@ void log_intermediate_certificate(uint16_t layer_idx,
                                   const uint8_t *cert_buf,
                                   size_t cert_buf_size);
 
+/**
+ * \brief Log Certificate chain contents.
+ */
+void log_certificate_chain(const uint8_t *certificate_chain_buf,
+                           size_t certificate_chain_size);
+
 #else /* TFM_PARTITION_LOG_LEVEL */
 
 #define log_derive_rot_context(...)
@@ -62,6 +68,7 @@ void log_intermediate_certificate(uint16_t layer_idx,
 #define log_destroy_context(...)
 #define log_certify_key(...)
 #define log_intermediate_certificate(...)
+#define log_certificate_chain(...)
 
 #endif /* TFM_PARTITION_LOG_LEVEL */
 
