@@ -34,6 +34,9 @@ target_sources(tfm_partitions
         ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/measured_boot/auto_generated/load_info_tfm_measured_boot.c
 )
 
+# Add dependency to the manifest_tool
+add_dependencies(tfm_psa_rot_partition_measured_boot manifest_tool)
+
 # Set include directory
 target_include_directories(tfm_psa_rot_partition_measured_boot
     PRIVATE
@@ -42,10 +45,8 @@ target_include_directories(tfm_psa_rot_partition_measured_boot
         ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/measured_boot
 )
 
-
 target_link_libraries(tfm_psa_rot_partition_measured_boot
     PRIVATE
-        psa_interface
         platform_s
         tfm_sprt
 )

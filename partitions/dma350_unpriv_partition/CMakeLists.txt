@@ -28,6 +28,9 @@ target_sources(tfm_partitions
         ${CMAKE_BINARY_DIR}/generated/auto_generated/load_info_tfm_dma350_example_partition.c
 )
 
+# Add dependency to the manifest_tool
+add_dependencies(tfm_app_rot_partition_dma350_unpriv manifest_tool)
+
 target_include_directories(tfm_app_rot_partition_dma350_unpriv
     PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -38,7 +41,6 @@ target_include_directories(tfm_app_rot_partition_dma350_unpriv
 
 target_link_libraries(tfm_app_rot_partition_dma350_unpriv
     PRIVATE
-        psa_interface
         platform_s
         tfm_sprt
 )

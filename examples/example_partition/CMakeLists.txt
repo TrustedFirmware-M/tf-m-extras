@@ -35,6 +35,9 @@ target_sources(tfm_partitions
         ${CMAKE_BINARY_DIR}/generated/example_partition/auto_generated/load_info_tfm_example_partition.c
 )
 
+# Add dependency to the manifest_tool
+add_dependencies(tfm_app_rot_partition_example manifest_tool)
+
 target_include_directories(tfm_app_rot_partition_example
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -44,7 +47,6 @@ target_include_directories(tfm_app_rot_partition_example
 
 target_link_libraries(tfm_app_rot_partition_example
     PRIVATE
-        psa_interface
         tfm_sprt
 )
 

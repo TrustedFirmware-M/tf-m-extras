@@ -91,9 +91,11 @@ target_sources(tfm_partitions
         ${CMAKE_BINARY_DIR}/generated/auto_generated/load_info_vad_an552_sp.c
 )
 
+# Add dependency to the manifest_tool
+add_dependencies(tfm_app_rot_partition_vad_an552 manifest_tool)
+
 target_link_libraries(tfm_app_rot_partition_vad_an552
     PRIVATE
-        psa_interface
         platform_s
         tfm_sprt
 )

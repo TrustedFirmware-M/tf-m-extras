@@ -40,6 +40,9 @@ target_include_directories(tfm_app_rot_partition_delegated_attest
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Add dependency to the manifest_tool
+add_dependencies(tfm_app_rot_partition_delegated_attest manifest_tool)
+
 target_compile_definitions(tfm_app_rot_partition_delegated_attest
     PRIVATE
         $<$<BOOL:${DELEG_ATTEST_DUMP_TOKEN_AND_KEY}>:DELEG_ATTEST_DUMP_TOKEN_AND_KEY>
@@ -48,7 +51,6 @@ target_compile_definitions(tfm_app_rot_partition_delegated_attest
 target_link_libraries(tfm_app_rot_partition_delegated_attest
     PRIVATE
         platform_s
-        psa_interface
         tfm_sprt
         tfm_attestation_defs
         qcbor
