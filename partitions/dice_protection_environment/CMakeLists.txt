@@ -19,6 +19,7 @@ add_library(tfm_app_rot_partition_dpe STATIC)
 
 target_sources(tfm_app_rot_partition_dpe
     PRIVATE
+        dpe_boot_data.c
         dpe_certificate.c
         dpe_cmd_decode.c
         dpe_context_mngr.c
@@ -49,7 +50,7 @@ target_include_directories(tfm_app_rot_partition_dpe
 
 target_compile_definitions(tfm_app_rot_partition_dpe
     PRIVATE
-        $<$<BOOL:${TFM_S_REG_TEST}>:TFM_S_REG_TEST>
+        $<$<BOOL:${TFM_S_REG_TEST}>:DPE_TEST_MODE>
 )
 
 target_link_libraries(tfm_app_rot_partition_dpe
@@ -57,6 +58,7 @@ target_link_libraries(tfm_app_rot_partition_dpe
         tfm_sprt
         qcbor
         tfm_t_cose_s
+        platform_s
 )
 
 ############################ Secure API ########################################

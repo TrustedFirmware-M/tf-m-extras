@@ -12,24 +12,8 @@
 #include "dpe_certificate.h"
 #include "dpe_crypto_interface.h"
 #include "dpe_log.h"
+#include "dpe_plat.h"
 #include "psa/crypto.h"
-
-#ifdef TFM_S_REG_TEST
-#define TEST_ROT_CDI_VAL {                                                  \
-                            0xD2, 0x90, 0x66, 0x07, 0x2A, 0x2D, 0x2A, 0x00, \
-                            0x91, 0x9D, 0xD9, 0x15, 0x14, 0xBE, 0x2D, 0xCC, \
-                            0xA3, 0x9F, 0xDE, 0xC3, 0x35, 0x75, 0x84, 0x6E, \
-                            0x4C, 0xB9, 0x28, 0xAC, 0x7A, 0x4E, 0X00, 0x7F  \
-                         }
-
-#define TEST_ROT_ISSUER_SEED {                                                  \
-                                0xD2, 0x90, 0x66, 0x07, 0x2A, 0x2D, 0x2A, 0x00, \
-                                0x91, 0x9D, 0xD9, 0x15, 0x14, 0xBE, 0x2D, 0xCC, \
-                                0xA3, 0x9F, 0xDE, 0xC3, 0x35, 0x75, 0x84, 0x6E, \
-                                0x4C, 0xB9, 0x28, 0xAC, 0x7A, 0x4E, 0X00, 0x7F  \
-                             }
-
-#endif /* TFM_S_REG_TEST */
 
 #define CONTEXT_DATA_MAX_SIZE sizeof(struct component_context_data_t)
 
@@ -106,19 +90,6 @@ static void invalidate_layer(int i)
     (void)psa_destroy_key(layer_ctx_array[i].data.cdi_key_id);
     (void)psa_destroy_key(layer_ctx_array[i].data.attest_key_id);
     (void)memset(&layer_ctx_array[i].data, 0, sizeof(struct layer_context_data_t));
-}
-
-void initialise_all_dpe_contexts(void)
-{
-    int i;
-
-    for (i = 0; i < MAX_NUM_OF_COMPONENTS; i++) {
-        set_context_to_default(i);
-    }
-
-    for (i = 0; i < MAX_NUM_OF_LAYERS; i++) {
-        invalidate_layer(i);
-    }
 }
 
 static dpe_error_t copy_dice_input(struct component_context_t *dest_ctx,
@@ -395,69 +366,6 @@ static inline void link_layer(uint16_t child_layer, uint16_t parent_layer)
     layer_ctx_array[child_layer].parent_layer_idx = parent_layer;
 }
 
-dpe_error_t derive_rot_context(const DiceInputValues *dice_inputs,
-                               int *new_child_ctx_handle,
-                               int *new_parent_ctx_handle)
-{
-    int status;
-    struct component_context_t *child_comp_ctx, *new_child_ctx;
-    uint16_t new_layer_idx;
-
-    log_derive_rot_context(dice_inputs);
-
-    /* Validate dice inputs */
-    if (!is_dice_input_valid(dice_inputs)) {
-        return DPE_INVALID_ARGUMENT;
-    }
-
-    child_comp_ctx = &component_ctx_array[0];
-    status = copy_dice_input(child_comp_ctx, dice_inputs);
-    if (status != DPE_NO_ERROR) {
-        return status;
-    }
-
-    child_comp_ctx->in_use = true;
-    /* Link context to RoT Layer */
-    child_comp_ctx->linked_layer_idx = DPE_ROT_LAYER_IDX;
-    /* There is no parent for RoT layer */
-    layer_ctx_array[DPE_ROT_LAYER_IDX].parent_layer_idx = 0;
-
-    /* Parent is same as child for RoT context */
-    child_comp_ctx->parent_idx = 0;
-    /* Parent not deriving any more children */
-    invalidate_handle(new_parent_ctx_handle);
-
-    //TODO: Update expected_mhu_id of derived child
-    /* Create certificate for RoT layer */
-    status = create_layer_certificate(DPE_ROT_LAYER_IDX);
-    if (status != DPE_NO_ERROR) {
-        return status;
-    }
-
-    /* Generate new handle for child for subsequent requests */
-    if (generate_new_handle(new_child_ctx_handle) != DPE_NO_ERROR) {
-        return DPE_INTERNAL_ERROR;
-    }
-
-    /* Update the component context array element as pointed by newly generated handle */
-    new_child_ctx = &component_ctx_array[GET_IDX(*new_child_ctx_handle)];
-    new_child_ctx->nonce = GET_NONCE(*new_child_ctx_handle);
-    new_child_ctx->in_use = true;
-    /* New child's parent is current RoT component which is evaluated as 0 */
-    new_child_ctx->parent_idx = 0;
-
-    /* Open new layer since RoT layer is finalised and
-     * link the new child to this new layer
-     */
-    new_layer_idx = open_new_layer();
-    new_child_ctx->linked_layer_idx = new_layer_idx;
-
-    /* Link this new layer to the RoT Layer */
-    link_layer(new_layer_idx, DPE_ROT_LAYER_IDX);
-
-    return DPE_NO_ERROR;
-}
-
 static inline bool is_input_client_id_valid(int32_t client_id)
 {
     //TODO: Waiting for implementation
@@ -494,6 +402,70 @@ static dpe_error_t assign_layer_to_context(struct component_context_t *new_ctx)
     return DPE_NO_ERROR;
 }
 
+/**
+ * \brief Create a root of trust component context.
+ *
+ * \param[out] rot_ctx_handle  A new context handle for the RoT context.
+ *
+ * \return Returns error code of type dpe_error_t
+ */
+static dpe_error_t create_rot_context(int *rot_ctx_handle)
+{
+    int ret;
+    psa_status_t status;
+    uint8_t rot_cdi_input[DICE_CDI_SIZE];
+    struct component_context_t *rot_comp_ctx = &component_ctx_array[0];
+    struct layer_context_t *rot_layer_ctx = &layer_ctx_array[DPE_ROT_LAYER_IDX];
+
+    /* Open RoT layer */
+    rot_layer_ctx->state = LAYER_STATE_OPEN;
+    /* Parent is same as child for RoT layer */
+    rot_layer_ctx->parent_layer_idx = DPE_ROT_LAYER_IDX;
+
+    /* Get the RoT CDI input for the RoT layer */
+    ret = dpe_plat_get_rot_cdi(&rot_cdi_input[0],
+                               sizeof(rot_cdi_input));
+    if (ret != 0) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    /* Import the CDI key for the RoT layer */
+    status = create_layer_cdi_key(&layer_ctx_array[DPE_ROT_LAYER_IDX],
+                                  &rot_cdi_input[0],
+                                  sizeof(rot_cdi_input));
+    if (status != PSA_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    /* Init RoT context, ready to be derived in next call to DeriveChild */
+    rot_comp_ctx->in_use = true;
+    rot_comp_ctx->nonce = 0;
+    /* Parent is same as child for RoT context */
+    rot_comp_ctx->parent_idx = 0;
+    /* Link context to RoT Layer */
+    rot_comp_ctx->linked_layer_idx = DPE_ROT_LAYER_IDX;
+    rot_comp_ctx->expected_mhu_id = 0;
+
+    *rot_ctx_handle = 0; /* index = 0, nonce = 0 */
+
+    return DPE_NO_ERROR;
+}
+
+dpe_error_t initialise_context_mngr(int *rot_ctx_handle)
+{
+    int i;
+
+    for (i = 0; i < MAX_NUM_OF_COMPONENTS; i++) {
+        set_context_to_default(i);
+    }
+
+    for (i = 0; i < MAX_NUM_OF_LAYERS; i++) {
+        invalidate_layer(i);
+    }
+
+    return create_rot_context(rot_ctx_handle);
+}
+
 dpe_error_t derive_child_request(int input_ctx_handle,
                                  bool retain_parent_context,
                                  bool allow_child_to_derive,
@@ -506,26 +478,6 @@ dpe_error_t derive_child_request(int input_ctx_handle,
     dpe_error_t err;
     struct component_context_t *child_ctx, *parent_ctx, *new_ctx;
     uint16_t input_child_idx, input_parent_idx;
-
-#ifdef TFM_S_REG_TEST
-    //TODO: Remove this TEST_ROT_CDI_VAL CDI once actual CDI is calculated by BL1_1
-    psa_status_t status;
-    uint8_t dpe_rot_cdi[DICE_CDI_SIZE] = TEST_ROT_CDI_VAL;
-
-    if (layer_ctx_array[DPE_ROT_LAYER_IDX].state != LAYER_STATE_FINALISED) {
-
-        status = create_layer_cdi_key(&layer_ctx_array[DPE_ROT_LAYER_IDX],
-                                      &dpe_rot_cdi[0],
-                                      sizeof(dpe_rot_cdi));
-        if (status != PSA_SUCCESS) {
-            return status;
-        }
-
-        return derive_rot_context(dice_inputs,
-                                  new_child_ctx_handle,
-                                  new_parent_ctx_handle);
-    }
-#endif /* TFM_S_REG_TEST */
 
     log_derive_child(input_ctx_handle, retain_parent_context,
                      allow_child_to_derive, create_certificate, dice_inputs,
@@ -584,9 +536,9 @@ dpe_error_t derive_child_request(int input_ctx_handle,
         new_ctx->parent_idx = input_child_idx;
         /* Mark new child component index as in use */
         new_ctx->in_use = true;
-        status = assign_layer_to_context(new_ctx);
-        if (status != DPE_NO_ERROR) {
-            return status;
+        err = assign_layer_to_context(new_ctx);
+        if (err != DPE_NO_ERROR) {
+            return err;
         }
     } else {
         /* Child not deriving any children */
@@ -611,9 +563,9 @@ dpe_error_t derive_child_request(int input_ctx_handle,
         new_ctx->parent_idx = input_parent_idx;
         /* Mark new child component index as in use */
         new_ctx->in_use = true;
-        status = assign_layer_to_context(new_ctx);
-        if (status != DPE_NO_ERROR) {
-            return status;
+        err = assign_layer_to_context(new_ctx);
+        if (err != DPE_NO_ERROR) {
+            return err;
         }
     } else {
         /* Parent not deriving any more children */
@@ -638,26 +590,18 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
     /* Get child component index and linked layer from the input handle */
     input_ctx_idx = GET_IDX(input_ctx_handle);
 
-#ifdef TFM_S_REG_TEST
-    if (input_ctx_idx == 0) {
-        invalidate_layer(DPE_ROT_LAYER_IDX);
-        set_context_to_default(0);
-        return DPE_NO_ERROR;
-    }
-#endif /* TFM_S_REG_TEST */
-
     /* Validate input handle */
     if (!is_input_handle_valid(input_ctx_handle)) {
         return DPE_INVALID_ARGUMENT;
     }
     linked_layer_idx = component_ctx_array[input_ctx_idx].linked_layer_idx;
 
-#ifndef TFM_S_REG_TEST
+#ifndef DPE_TEST_MODE
     if (linked_layer_idx <= DPE_DESTROY_CONTEXT_THRESHOLD_LAYER_IDX) {
         /* All layers till hypervisor cannot be destroyed dynamically */
         return DPE_INVALID_ARGUMENT;
     }
-#endif /* !TFM_S_REG_TEST */
+#endif /* !DPE_TEST_MODE */
 
 
     if (!destroy_recursively) {

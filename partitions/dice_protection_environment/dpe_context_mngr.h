@@ -93,17 +93,13 @@ struct layer_context_t {
 };
 
 /**
- * \brief Derives a root of trust component context and creates certificate.
+ * \brief Initialise the DPE context manager.
  *
- * \param[in]  dice_inputs               Pointer to dice_input buffer.
- * \param[out] new_child_context_handle  A new handle for child context.
- * \param[out] new_parent_context_handle A new handle for parent context.
+ * \param[out] rot_ctx_handle  A new context handle for the RoT context.
  *
  * \return Returns error code of type dpe_error_t
  */
-dpe_error_t derive_rot_context(const DiceInputValues *dice_inputs,
-                               int *new_child_ctx_handle,
-                               int *new_parent_ctx_handle);
+dpe_error_t initialise_context_mngr(int *rot_ctx_handle);
 
 /**
  * \brief Derives a child component context and optionally creates certificate
@@ -147,12 +143,6 @@ dpe_error_t derive_child_request(int input_context_handle,
  */
 dpe_error_t destroy_context_request(int input_ctx_handle,
                                     bool destroy_recursively);
-
-/**
- * \brief Initialise all DPE Layer and component contexts
- *
- */
-void initialise_all_dpe_contexts(void);
 
 /**
  * \brief  Function to get the pointer to a component context if linked to a layer

@@ -7,6 +7,7 @@
 
 #include <string.h>
 
+#include "dpe_boot_data.h"
 #include "dpe_cmd_decode.h"
 #include "dpe_context_mngr.h"
 #include "psa/service.h"
@@ -19,7 +20,27 @@ static char cmd_buf[DPE_CMD_MAX_SIZE];
 
 psa_status_t tfm_dpe_init(void)
 {
-    initialise_all_dpe_contexts();
+    dpe_error_t err;
+    int context_handle;
+
+    err = initialise_context_mngr(&context_handle);
+    if (err != DPE_NO_ERROR) {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+
+#ifndef DPE_TEST_MODE
+    err = initialise_boot_data();
+    if (err != DPE_NO_ERROR) {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+
+    err = derive_boot_data_contexts(context_handle, &context_handle);
+    if (err != DPE_NO_ERROR) {
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+#endif
+
+    /* TODO: share context handle */
 
     return PSA_SUCCESS;
 }
