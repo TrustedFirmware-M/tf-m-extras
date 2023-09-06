@@ -155,36 +155,6 @@ static psa_status_t extend_measurement(const psa_msg_t *msg)
                                             extend_iov.lock_measurement);
 }
 
-static void measured_boot_signal_handle(psa_signal_t signal)
-{
-    psa_status_t status;
-    psa_msg_t msg;
-
-    /* Retrieve the message corresponding to the measured_boot service signal */
-    status = psa_get(signal, &msg);
-    if (status != PSA_SUCCESS) {
-        return;
-    }
-
-    /* Decode the message */
-    switch (msg.type) {
-    case TFM_MEASURED_BOOT_READ:
-        status = read_measurements(&msg);
-        /* Reply with the message result status to unblock the client */
-        psa_reply(msg.handle, status);
-        break;
-    case TFM_MEASURED_BOOT_EXTEND:
-        status = extend_measurement(&msg);
-        /* Reply with the message result status to unblock the client */
-        psa_reply(msg.handle, status);
-        break;
-    default:
-        /* Invalid message type */
-        status = PSA_ERROR_NOT_SUPPORTED;
-        break;
-    }
-}
-
 /**
  * \brief The measured_boot partition's entry function.
  */
@@ -202,18 +172,18 @@ psa_status_t tfm_measured_boot_init(void)
     status = collect_shared_measurements();
 #endif
 
-    if (status != PSA_SUCCESS) {
-        psa_panic();
-    }
+    return status;
+}
 
-    psa_signal_t signals = 0;
-
-    while (1) {
-        signals = psa_wait(PSA_WAIT_ANY, PSA_BLOCK);
-        if (signals & TFM_MEASURED_BOOT_SIGNAL) {
-            measured_boot_signal_handle(TFM_MEASURED_BOOT_SIGNAL);
-        } else {
-            psa_panic();
-        }
+psa_status_t tfm_measured_boot_sfn(const psa_msg_t *msg)
+{
+    switch (msg->type) {
+    case TFM_MEASURED_BOOT_READ:
+        return read_measurements(msg);
+    case TFM_MEASURED_BOOT_EXTEND:
+        return extend_measurement(msg);
+    default:
+        /* Invalid message type */
+        return PSA_ERROR_NOT_SUPPORTED;
     }
 }

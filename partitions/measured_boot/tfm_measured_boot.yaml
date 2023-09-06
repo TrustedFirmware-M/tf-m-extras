@@ -10,8 +10,8 @@
   "name": "TFM_SP_MEASURED_BOOT",
   "type": "PSA-ROT",
   "priority": "NORMAL",
-  "model": "IPC",
-  "entry_point": "tfm_measured_boot_init",
+  "model": "SFN",
+  "entry_init": "tfm_measured_boot_init",
   "stack_size": "0x400",
   "services": [
     {

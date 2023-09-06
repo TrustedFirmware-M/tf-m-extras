@@ -125,51 +125,15 @@ static psa_status_t get_platform_attestation_token(const psa_msg_t *msg)
     return status;
 }
 
-static void delegated_attestation_signal_handle(psa_signal_t signal)
+psa_status_t tfm_delegated_attestation_sfn(const psa_msg_t *msg)
 {
-    psa_status_t status;
-    psa_msg_t msg;
-
-    /* Retrieve the message corresponding to the
-     * Delegated Attestation service signal.
-     */
-    status = psa_get(signal, &msg);
-    if (status != PSA_SUCCESS) {
-        return;
-    }
-
-    switch (msg.type) {
+    switch (msg->type) {
     case DELEGATED_ATTEST_GET_DELEGATED_KEY:
-        status = get_delegated_attestation_key(&msg);
-        /* Reply with the message result status to unblock the client */
-        psa_reply(msg.handle, status);
-        break;
+        return get_delegated_attestation_key(msg);
     case DELEGATED_ATTEST_GET_PLATFORM_TOKEN:
-        status = get_platform_attestation_token(&msg);
-        /* Reply with the message result status to unblock the client */
-        psa_reply(msg.handle, status);
-        break;
+        return get_platform_attestation_token(msg);
     default:
         /* Invalid message type */
-        psa_panic();
-    }
-}
-
-void delegated_attest_partition_main(void)
-{
-    psa_signal_t signals = 0;
-
-    /* Delegated Attestation partition initialization.
-     * - Nothing to do -
-     */
-
-    while (1) {
-        signals = psa_wait(PSA_WAIT_ANY, PSA_BLOCK);
-        if (signals & TFM_DELEGATED_ATTESTATION_SIGNAL) {
-            delegated_attestation_signal_handle(TFM_DELEGATED_ATTESTATION_SIGNAL);
-        } else {
-            /* Should not come here */
-            psa_panic();
-        }
+        return PSA_ERROR_NOT_SUPPORTED;
     }
 }

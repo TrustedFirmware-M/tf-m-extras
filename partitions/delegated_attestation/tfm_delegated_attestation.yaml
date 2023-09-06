@@ -10,8 +10,7 @@
   "name": "TFM_SP_DELEGATED_ATTESTATION",
   "type": "APPLICATION-ROT",
   "priority": "NORMAL",
-  "model": "IPC",
-  "entry_point": "delegated_attest_partition_main",
+  "model": "SFN",
   "stack_size": "0x0500",
   "services": [
     {
