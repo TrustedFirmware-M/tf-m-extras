@@ -161,7 +161,7 @@ Running TF-M build
 For building TF-M's build system is used with the following mandatory CMAKE
 flags::
 
-    -DTFM_PLATFORM=arm/mps3/an552
+    -DTFM_PLATFORM=arm/mps3/corstone300/an552
     -DNS_EVALUATION_APP_PATH=<path-to-tf-m-extras-repo>/examples/vad_an552/ns_side
     -DTFM_EXTRA_PARTITION_PATHS=<path-to-tf-m-extras-repo>/partitions/vad_an552_sp/
     -DTFM_EXTRA_MANIFEST_LIST_FILES=<path-to-tf-m-extras-repo>/partitions/vad_an552_sp/extra_manifest_list.yaml
@@ -272,4 +272,4 @@ onto the serial console. That way the update can be verified.
 
 -------------
 
-*Copyright (c) 2021-2022, Arm Limited. All rights reserved.*
+*Copyright (c) 2021-2023, Arm Limited. All rights reserved.*

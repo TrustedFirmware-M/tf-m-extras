@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2021-2022, Arm Limited. All rights reserved.
+# Copyright (c) 2021-2023, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -24,7 +24,7 @@ target_sources(tfm_app_rot_partition_vad_an552
         Libraries/systimer_armv8-m_timeout.c
         native_drivers/i2c_sbcon_drv.c
         native_drivers/audio_i2s_mps3_drv.c
-        ${CMAKE_SOURCE_DIR}/platform/ext/target/arm/mps3/an552/native_drivers/systimer_armv8-m_drv.c
+        ${CMAKE_SOURCE_DIR}/platform/ext/target/arm/drivers/timer/armv8m/systimer_armv8-m_drv.c
         vad_an552_device_definition.c
         vad_an552_sp_main.c
 
