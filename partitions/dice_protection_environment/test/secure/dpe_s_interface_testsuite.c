@@ -30,7 +30,25 @@ static struct test_t dpe_s_tests[] = {
      "DPE DeriveChild - same handle"},
     {&derive_child_core_functionality_test, "DPE_S_TEST_1010",
      "DPE DeriveChild functionality"},
-    {&derive_child_with_parent_leaf_component_test, "DPE_S_TEST_1011",
+    //TODO: Below test will be enabled when contexts can be destroyed
+/*  {&certify_key_core_functionality_test, "DPE_S_TEST_1011",
+     "DPE CertifyKey functionality"},
+    {&certify_key_retain_context_test, "DPE_S_TEST_1012",
+     "DPE CertifyKey - retain context"},
+ */
+    {&certify_key_incorrect_handle_test, "DPE_S_TEST_1013",
+     "DPE CertifyKey - invalid handle"},
+    {&certify_key_supplied_pub_key_test, "DPE_S_TEST_1014",
+     "DPE CertifyKey - supplied public key"},
+    {&certify_key_supplied_label_test, "DPE_S_TEST_1015",
+     "DPE CertifyKey - supplied label"},
+    {&certify_key_smaller_cert_buffer_test, "DPE_S_TEST_1016",
+     "DPE CertifyKey - invalid certificate chain buffer size"},
+    {&certify_key_smaller_derived_pub_key_buffer_test, "DPE_S_TEST_1017",
+     "DPE CertifyKey - invalid public key buffer size"},
+    {&certify_key_invalid_cbor_encoded_input_test, "DPE_S_TEST_1018",
+     "DPE CertifyKey - invalid cbor encoded input"},
+    {&derive_child_with_parent_leaf_component_test, "DPE_S_TEST_1019",
      "DPE DeriveChild - Leaf component"},
 };
 

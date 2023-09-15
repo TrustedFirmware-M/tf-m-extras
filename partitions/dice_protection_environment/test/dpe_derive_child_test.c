@@ -11,8 +11,7 @@
 #include "dpe_test_data.h"
 
 extern struct dpe_derive_child_test_data_t derive_child_test_dataset_1[DERIVE_CHILD_TEST_DATA1_SIZE];
-
-static int last_retained_child_handle;
+extern int last_retained_child_handle;
 
 void derive_child_api_test(struct test_result_t *ret)
 {

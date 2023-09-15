@@ -393,7 +393,7 @@ dpe_error_t dpe_certify_key(int context_handle,
     dpe_error_t dpe_err;
     QCBORError qcbor_err;
     UsefulBufC encoded_buf;
-    UsefulBuf_MAKE_STACK_UB(cmd_buf, 2048);
+    UsefulBuf_MAKE_STACK_UB(cmd_buf, 2500);
 
     const struct certify_key_input_t in_args = {
         context_handle,

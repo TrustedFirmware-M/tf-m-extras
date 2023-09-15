@@ -15,6 +15,8 @@ extern "C" {
 #define MAX_NUM_OF_COMPONENTS 30
 
 #define DERIVE_CHILD_TEST_DATA1_SIZE 16
+#define DERIVE_CHILD_TEST_DATA2_SIZE 3
+#define DERIVE_CHILD_TEST_DATA3_SIZE 1
 
 #define DEFAULT_DICE_INPUT {                               \
         { 0xC0, 0xDE },                                    \

@@ -12,7 +12,7 @@
   "priority": "NORMAL",
   "model": "SFN",
   "entry_init": "tfm_dpe_init",
-  "stack_size": "0x1400",
+  "stack_size": "0x2600",
   "services" : [
     {
       "name": "TFM_DPE_SERVICE",
