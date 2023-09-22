@@ -76,6 +76,18 @@ psa_status_t derive_id_from_public_key(struct layer_context_t *layer_ctx);
  */
 psa_status_t derive_wrapping_key(struct layer_context_t *layer_ctx);
 
+/**
+ * \brief Derives CDI ID from attestation key.
+ *
+ * \param[in]  attest_key_id  Key ID of attestation key.
+ * \param[out] cdi_id         Buffer to write the CDI ID.
+ * \param[in]  cdi_id_size    Size of CDI ID to derive.
+ *
+ * \return Returns error code as specified in \ref psa_status_t
+ */
+psa_status_t derive_cdi_id(psa_key_id_t attest_key_id, uint8_t *cdi_id,
+                           size_t cdi_id_size);
+
 #ifdef __cplusplus
 }
 #endif

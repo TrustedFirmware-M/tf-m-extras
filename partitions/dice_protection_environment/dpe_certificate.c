@@ -140,14 +140,14 @@ static void add_subject_claim(struct dpe_cert_encode_ctx *me,
                                             sizeof(cdi_id_hex) });
 }
 
-static void add_issuer_claim(struct dpe_cert_encode_ctx *me,
-                             const struct layer_context_t *parent_layer_ctx)
+static void encode_issuer_claim(struct dpe_cert_encode_ctx *me,
+                                const uint8_t *issuer,
+                                size_t issuer_size)
 {
-
     char cdi_id_hex[ID_HEX_SIZE];
 
-    convert_to_ascii_hex(&parent_layer_ctx->data.cdi_id[0],
-                         sizeof(parent_layer_ctx->data.cdi_id),
+    convert_to_ascii_hex(issuer,
+                         issuer_size,
                          &cdi_id_hex[0],
                          sizeof(cdi_id_hex));
 
@@ -349,6 +349,31 @@ static void encode_layer_sw_components_array(uint16_t layer_idx,
     }
 }
 
+static dpe_error_t add_issuer_claim(struct dpe_cert_encode_ctx *me,
+                                    uint16_t layer_idx,
+                                    psa_key_id_t root_attest_key_id,
+                                    const struct layer_context_t *parent_layer_ctx)
+{
+    uint8_t rot_cdi_id[DICE_ID_SIZE];
+
+    if (layer_idx == DPE_ROT_LAYER_IDX) {
+        /* For the RoT layer, issuer id is derived from the root attestation key */
+        if (derive_cdi_id(root_attest_key_id, rot_cdi_id,
+                          sizeof(rot_cdi_id)) != PSA_SUCCESS) {
+            return DPE_INTERNAL_ERROR;
+        }
+
+        encode_issuer_claim(me,
+                            rot_cdi_id,
+                            sizeof(rot_cdi_id));
+    } else {
+        encode_issuer_claim(me,
+                            parent_layer_ctx->data.cdi_id,
+                            sizeof(parent_layer_ctx->data.cdi_id));
+    }
+
+    return DPE_NO_ERROR;
+}
 
 dpe_error_t encode_layer_certificate(uint16_t layer_idx,
                                      struct layer_context_t *layer_ctx,
@@ -358,10 +383,16 @@ dpe_error_t encode_layer_certificate(uint16_t layer_idx,
     struct dpe_cert_encode_ctx dpe_cert_ctx;
     UsefulBuf cert;
     UsefulBufC completed_cert;
+    psa_key_id_t attest_key_id;
 
-    //TODO: Update required below:
-    // For the RoT layer, certificate is signed by IAK
-    psa_key_id_t attest_key_id = parent_layer_ctx->data.attest_key_id;
+    /* The RoT layer certificate is signed by the provisioned attestation key,
+     * all other layers are signed by the parent layer's key.
+     */
+    if (layer_idx == DPE_ROT_LAYER_IDX) {
+        attest_key_id = dpe_plat_get_root_attest_key_id();
+    } else {
+        attest_key_id = parent_layer_ctx->data.attest_key_id;
+    }
 
     /* Get started creating the certificate/token. This sets up the CBOR and
      * COSE contexts which causes the COSE headers to be constructed.
@@ -378,7 +409,10 @@ dpe_error_t encode_layer_certificate(uint16_t layer_idx,
 
     /* Add all the required claims */
     /* Add issuer/authority claim */
-    add_issuer_claim(&dpe_cert_ctx, parent_layer_ctx);
+    err = add_issuer_claim(&dpe_cert_ctx, layer_idx, attest_key_id, parent_layer_ctx);
+    if (err != DPE_NO_ERROR) {
+        return err;
+    }
 
     /* Add subject claim */
     add_subject_claim(&dpe_cert_ctx, layer_ctx);
@@ -541,4 +575,3 @@ dpe_error_t get_certificate_chain(uint16_t layer_idx,
     return close_certificate_chain(&dpe_cert_chain_ctx,
                                    cert_chain_actual_size);
 }
-

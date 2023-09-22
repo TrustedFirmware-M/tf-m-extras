@@ -215,3 +215,54 @@ err_destroy_base_key:
 
     return status;
 }
+
+psa_status_t derive_cdi_id(psa_key_id_t attest_key_id, uint8_t *cdi_id,
+                           size_t cdi_id_size)
+{
+    psa_status_t status;
+    psa_key_derivation_operation_t op = PSA_KEY_DERIVATION_OPERATION_INIT;
+    uint8_t attest_pub_key[DPE_ATTEST_PUB_KEY_SIZE];
+    size_t attest_pub_key_len;
+
+    status = psa_export_public_key(attest_key_id, attest_pub_key,
+                                   sizeof(attest_pub_key), &attest_pub_key_len);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    status = psa_key_derivation_setup(&op, PSA_ALG_HKDF(PSA_ALG_SHA_256));
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    status = psa_key_derivation_input_bytes(&op, PSA_KEY_DERIVATION_INPUT_SALT,
+                                            id_salt, sizeof(id_salt));
+    if (status != PSA_SUCCESS) {
+        goto err_abort;
+    }
+
+    status = psa_key_derivation_input_bytes(&op,
+                                            PSA_KEY_DERIVATION_INPUT_SECRET,
+                                            attest_pub_key, attest_pub_key_len);
+    if (status != PSA_SUCCESS) {
+        goto err_abort;
+    }
+
+    status = psa_key_derivation_input_bytes(&op, PSA_KEY_DERIVATION_INPUT_INFO,
+                                            (const uint8_t *)id_label,
+                                            sizeof(id_label));
+    if (status != PSA_SUCCESS) {
+        goto err_abort;
+    }
+
+    status = psa_key_derivation_output_bytes(&op, cdi_id, cdi_id_size);
+    if (status != PSA_SUCCESS) {
+        goto err_abort;
+    }
+
+    return psa_key_derivation_abort(&op);
+
+err_abort:
+    (void)psa_key_derivation_abort(&op);
+    return status;
+}
