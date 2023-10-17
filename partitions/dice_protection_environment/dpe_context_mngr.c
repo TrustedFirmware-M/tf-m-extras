@@ -547,6 +547,9 @@ dpe_error_t derive_child_request(int input_ctx_handle,
         }
     }
 
+    /* Renew nonce of child context so it cannot be used again */
+    child_ctx->nonce = INVALID_NONCE_VALUE;
+
     if (allow_child_to_derive) {
         /* Generate new handle for child for subsequent requests */
         if (generate_new_handle(new_child_ctx_handle) != DPE_NO_ERROR) {
@@ -569,8 +572,6 @@ dpe_error_t derive_child_request(int input_ctx_handle,
         /* Tag this component as a leaf */
         child_ctx->is_leaf = true;
         invalidate_handle(new_child_ctx_handle);
-        /* Renew nonce of child context so it cannot be used again */
-        child_ctx->nonce = INVALID_NONCE_VALUE;
     }
 
     if (retain_parent_context) {
