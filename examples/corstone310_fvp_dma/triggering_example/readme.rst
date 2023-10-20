@@ -25,7 +25,7 @@ Build steps
 *********
 Run steps
 *********
-The example can run only with 11.18.29 or later versions of Corstone SSE-310 AVH.
+The example can run only with 11.22.35 or later versions of Corstone SSE-310 Arm Ecosystem FVP.
 The ``mps3_board.uart1_adapter_tx.ENABLE`` and ``mps3_board.uart0_adapter_rx.ENABLE`` parameters have to be set, to enable the triggering interface of the UARTs.
 The ``mps3_board.uart0.rx_overrun_mode=0`` parameter is needed. UART overrun can happen when the received data is not handled in time.
 The UART overrun interrupt is turned off to prevent lock-up, but there might be data loss when the user sends data during data processing or UART transmitting.
@@ -34,7 +34,7 @@ The UART overrun interrupt is turned off to prevent lock-up, but there might be 
 
 .. code-block::
 
- ./VHT_Corstone_SSE-310 -a cpu0*="bl2.axf" --data "tfm_s_ns_signed.bin"@0x38000000 -C mps3_board.uart1_adapter_tx.ENABLE=true  -C mps3_board.uart0_adapter_rx.ENABLE=true -C mps3_board.uart0.rx_overrun_mode=0
+ ./FVP_Corstone_SSE-310 -a cpu0*="bl2.axf" --data "tfm_s_ns_signed.bin"@0x38000000 -C mps3_board.uart1_adapter_tx.ENABLE=true  -C mps3_board.uart0_adapter_rx.ENABLE=true -C mps3_board.uart0.rx_overrun_mode=0
 
 
 2. After the FVP starts the following message will be shown in the FVP telnetterminal0:
@@ -51,4 +51,4 @@ The UART overrun interrupt is turned off to prevent lock-up, but there might be 
 
 Select the FVP telnetterminal0 and type in 10 characters. The 10 characters are going to be echoed back in reverse order to the FVP telnetterminal1.
 
-*Copyright (c) 2022, Arm Limited. All rights reserved.*
+*Copyright (c) 2022-2023, Arm Limited. All rights reserved.*
