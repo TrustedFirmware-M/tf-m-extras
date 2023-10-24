@@ -102,34 +102,34 @@ struct layer_context_t {
 dpe_error_t initialise_context_mngr(int *rot_ctx_handle);
 
 /**
- * \brief Derives a child component context and optionally creates certificate
+ * \brief Derives a component context and optionally creates certificate
  *        chain.
  *
- * \param[in]  input_context_handle      Input handle to child component context
- * \param[in]  retain_parent_context     Flag to indicate if parent context need
- *                                       to be retained. TRUE only if a client
- *                                       is calling DPE commands multiple times
- * \param[in]  allow_child_to_derive     Flag to indicate if requested child can
- *                                       derive further.
- * \param[in]  create_certificate        Flag to indicate if certificate needs
- *                                       to be created. TRUE only if it is the
- *                                       last component in the layer.
- * \param[in]  dice_inputs               Pointer to dice_input buffer.
- * \param[in]  client_id                 Identifier of the client calling the
- *                                       service.
- * \param[out] new_child_context_handle  A new handle for child context.
- * \param[out] new_parent_context_handle A new handle for parent context.
+ * \param[in]  input_context_handle        Input handle to parent component context
+ * \param[in]  retain_parent_context       Flag to indicate if parent context need
+ *                                         to be retained. TRUE only if a client
+ *                                         is calling DPE commands multiple times
+ * \param[in]  allow_new_context_to_derive Flag to indicate if derived context can
+ *                                         derive further.
+ * \param[in]  create_certificate          Flag to indicate if certificate needs
+ *                                         to be created. TRUE only if it is the
+ *                                         last component in the layer.
+ * \param[in]  dice_inputs                 Pointer to dice_input buffer.
+ * \param[in]  client_id                   Identifier of the client calling the
+ *                                         service.
+ * \param[out] new_context_handle          A new handle for derived context.
+ * \param[out] new_parent_context_handle   A new handle for parent context.
  *
  * \return Returns error code of type dpe_error_t
  */
-dpe_error_t derive_child_request(int input_context_handle,
-                                 bool retain_parent_context,
-                                 bool allow_child_to_derive,
-                                 bool create_certificate,
-                                 const DiceInputValues *dice_inputs,
-                                 int32_t client_id,
-                                 int *new_child_context_handle,
-                                 int *new_parent_context_handle);
+dpe_error_t derive_context_request(int input_context_handle,
+                                   bool retain_parent_context,
+                                   bool allow_new_context_to_derive,
+                                   bool create_certificate,
+                                   const DiceInputValues *dice_inputs,
+                                   int32_t client_id,
+                                   int *new_context_handle,
+                                   int *new_parent_context_handle);
 
 /**
  * \brief Destroys a component context and optionally depending on argument

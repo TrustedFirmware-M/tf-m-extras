@@ -57,18 +57,18 @@ void log_derive_rot_context(const DiceInputValues *dice_inputs)
     log_dice_inputs(dice_inputs);
 }
 
-void log_derive_child(int context_handle,
-                      bool retain_parent_context,
-                      bool allow_child_to_derive,
-                      bool create_certificate,
-                      const DiceInputValues *dice_inputs,
-                      int32_t client_id)
+void log_derive_context(int context_handle,
+                        bool retain_parent_context,
+                        bool allow_new_context_to_derive,
+                        bool create_certificate,
+                        const DiceInputValues *dice_inputs,
+                        int32_t client_id)
 {
-    LOG_DBGFMT("DPE DeriveChild:\r\n");
+    LOG_DBGFMT("DPE DeriveContext:\r\n");
     LOG_DBGFMT(" - context_handle index = %d\r\n", GET_IDX(context_handle));
     LOG_DBGFMT(" - context_handle nonce = %d\r\n", GET_NONCE(context_handle));
     LOG_DBGFMT(" - retain_parent_context = %d\r\n", retain_parent_context);
-    LOG_DBGFMT(" - allow_child_to_derive = %d\r\n", allow_child_to_derive);
+    LOG_DBGFMT(" - allow_new_context_to_derive = %d\r\n", allow_new_context_to_derive);
     LOG_DBGFMT(" - create_certificate = %d\r\n", create_certificate);
     log_dice_inputs(dice_inputs);
     LOG_DBGFMT(" - client_id = %d\r\n", client_id);

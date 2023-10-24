@@ -277,7 +277,7 @@ static bool ap_cond(uint8_t slot)
 }
 
 dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
-                                      int *child_ctx_handle)
+                                      int *new_ctx_handle)
 {
     int ret;
     dpe_error_t err;
@@ -295,14 +295,14 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
     }
 
     /* Derive RoT layer */
-    err = derive_child_request(rot_ctx_handle,
-                               false,
-                               true,
-                               true, /* create certificate */
-                               &dice_inputs,
-                               0,
-                               &plat_ctx_handle,
-                               &invalid_ctx_handle);
+    err = derive_context_request(rot_ctx_handle,
+                                 false,
+                                 true,
+                                 true, /* create certificate */
+                                 &dice_inputs,
+                                 0,
+                                 &plat_ctx_handle,
+                                 &invalid_ctx_handle);
     if (err != DPE_NO_ERROR) {
         return err;
     }
@@ -316,14 +316,14 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
     }
 
     /* Derive BL2 context */
-    err = derive_child_request(plat_ctx_handle,
-                               false, /* close parent context */
-                               true, /* allow BL2 child to derive further */
-                               false,
-                               &dice_inputs,
-                               0,
-                               &plat_ctx_handle,
-                               &invalid_ctx_handle);
+    err = derive_context_request(plat_ctx_handle,
+                                 false, /* close parent context */
+                                 true, /* allow BL2 to derive further */
+                                 false,
+                                 &dice_inputs,
+                                 0,
+                                 &plat_ctx_handle,
+                                 &invalid_ctx_handle);
     if (err != DPE_NO_ERROR) {
         return err;
     }
@@ -333,14 +333,14 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
     while ((ret = get_measurement_for_slot_cond(&plat_cond, &itr,
                                                 &dice_inputs)) == 1) {
         /* Derive rest of platform contexts from retained BL2 context */
-        err = derive_child_request(plat_ctx_handle,
-                                   true, /* retain parent context */
-                                   false, /* do not allow child to derive */
-                                   false,
-                                   &dice_inputs,
-                                   0,
-                                   &invalid_ctx_handle,
-                                   &plat_ctx_handle);
+        err = derive_context_request(plat_ctx_handle,
+                                     true, /* retain parent context */
+                                     false, /* do not allow derived context to derive */
+                                     false,
+                                     &dice_inputs,
+                                     0,
+                                     &invalid_ctx_handle,
+                                     &plat_ctx_handle);
         if (err != DPE_NO_ERROR) {
             return err;
         }
@@ -359,15 +359,15 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
         return DPE_INTERNAL_ERROR;
     }
 
-    /* Derive AP context, with the new child context handle returned to the
-     * caller in the child_ctx_handle output parameter.
+    /* Derive AP context, with the new derived context handle returned to the
+     * caller in the new_ctx_handle output parameter.
      */
-    return derive_child_request(plat_ctx_handle,
-                                false, /* close parent context */
-                                true, /* allow AP to derive */
-                                false,
-                                &dice_inputs,
-                                0,
-                                child_ctx_handle,
-                                &invalid_ctx_handle);
+    return derive_context_request(plat_ctx_handle,
+                                  false, /* close parent context */
+                                  true, /* allow AP to derive */
+                                  false,
+                                  &dice_inputs,
+                                  0,
+                                  new_ctx_handle,
+                                  &invalid_ctx_handle);
 }

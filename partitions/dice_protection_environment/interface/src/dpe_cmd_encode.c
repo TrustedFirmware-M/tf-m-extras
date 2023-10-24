@@ -12,16 +12,16 @@
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
 
-struct derive_child_input_t {
+struct derive_context_input_t {
     int context_handle;
     bool retain_parent_context;
-    bool allow_child_to_derive;
+    bool allow_new_context_to_derive;
     bool create_certificate;
     const DiceInputValues *dice_inputs;
 };
 
-struct derive_child_output_t {
-    int new_child_context_handle;
+struct derive_context_output_t {
+    int new_context_handle;
     int new_parent_context_handle;
 };
 
@@ -51,7 +51,7 @@ static void encode_dice_inputs(QCBOREncodeContext *encode_ctx,
                                const DiceInputValues *input)
 {
     /* Wrap the DICE inputs into a byte string */
-    QCBOREncode_BstrWrapInMapN(encode_ctx, DPE_DERIVE_CHILD_INPUT_DATA);
+    QCBOREncode_BstrWrapInMapN(encode_ctx, DPE_DERIVE_CONTEXT_INPUT_DATA);
 
     /* Inside the byte string the DICE inputs are encoded as a map */
     QCBOREncode_OpenMap(encode_ctx);
@@ -95,27 +95,27 @@ static void encode_dice_inputs(QCBOREncodeContext *encode_ctx,
     QCBOREncode_CloseBstrWrap2(encode_ctx, true, NULL);
 }
 
-static QCBORError encode_derive_child(const struct derive_child_input_t *args,
-                                      UsefulBuf buf,
-                                      UsefulBufC *encoded_buf)
+static QCBORError encode_derive_context(const struct derive_context_input_t *args,
+                                        UsefulBuf buf,
+                                        UsefulBufC *encoded_buf)
 {
     QCBOREncodeContext encode_ctx;
 
     QCBOREncode_Init(&encode_ctx, buf);
 
     QCBOREncode_OpenArray(&encode_ctx);
-    QCBOREncode_AddUInt64(&encode_ctx, DPE_DERIVE_CHILD);
+    QCBOREncode_AddUInt64(&encode_ctx, DPE_DERIVE_CONTEXT);
 
-    /* Encode DeriveChild command */
+    /* Encode DeriveContext command */
     QCBOREncode_OpenMap(&encode_ctx);
-    QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_DERIVE_CHILD_CONTEXT_HANDLE,
+    QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_CONTEXT_HANDLE,
                                (UsefulBufC){ &args->context_handle,
                                              sizeof(args->context_handle) });
-    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CHILD_RETAIN_PARENT_CONTEXT,
+    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_RETAIN_PARENT_CONTEXT,
                               args->retain_parent_context);
-    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CHILD_ALLOW_CHILD_TO_DERIVE,
-                              args->allow_child_to_derive);
-    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CHILD_CREATE_CERTIFICATE,
+    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_ALLOW_NEW_CONTEXT_TO_DERIVE,
+                              args->allow_new_context_to_derive);
+    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_CREATE_CERTIFICATE,
                               args->create_certificate);
     encode_dice_inputs(&encode_ctx, args->dice_inputs);
     QCBOREncode_CloseMap(&encode_ctx);
@@ -150,9 +150,9 @@ static QCBORError encode_destroy_context(const struct destroy_context_input_t *a
     return QCBOREncode_Finish(&encode_ctx, encoded_buf);
 }
 
-static QCBORError decode_derive_child_response(UsefulBufC encoded_buf,
-                                               struct derive_child_output_t *args,
-                                               dpe_error_t *dpe_err)
+static QCBORError decode_derive_context_response(UsefulBufC encoded_buf,
+                                                 struct derive_context_output_t *args,
+                                                 dpe_error_t *dpe_err)
 {
     QCBORDecodeContext decode_ctx;
     UsefulBufC out;
@@ -166,20 +166,20 @@ static QCBORError decode_derive_child_response(UsefulBufC encoded_buf,
     QCBORDecode_GetInt64(&decode_ctx, &response_dpe_err);
     *dpe_err = (dpe_error_t)response_dpe_err;
 
-    /* Decode DeriveChild response if successful */
+    /* Decode DeriveContext response if successful */
     if (*dpe_err == DPE_NO_ERROR) {
         QCBORDecode_EnterMap(&decode_ctx, NULL);
 
         QCBORDecode_GetByteStringInMapN(&decode_ctx,
-                                        DPE_DERIVE_CHILD_NEW_CONTEXT_HANDLE,
+                                        DPE_DERIVE_CONTEXT_NEW_CONTEXT_HANDLE,
                                         &out);
-        if (out.len != sizeof(args->new_child_context_handle)) {
+        if (out.len != sizeof(args->new_context_handle)) {
             return QCBORDecode_Finish(&decode_ctx);
         }
-        memcpy(&args->new_child_context_handle, out.ptr, out.len);
+        memcpy(&args->new_context_handle, out.ptr, out.len);
 
         QCBORDecode_GetByteStringInMapN(&decode_ctx,
-                                        DPE_DERIVE_CHILD_PARENT_CONTEXT_HANDLE,
+                                        DPE_DERIVE_CONTEXT_PARENT_CONTEXT_HANDLE,
                                         &out);
         if (out.len != sizeof(args->new_parent_context_handle)) {
             return QCBORDecode_Finish(&decode_ctx);
@@ -291,13 +291,13 @@ static QCBORError decode_certify_key_response(UsefulBufC encoded_buf,
     return QCBORDecode_Finish(&decode_ctx);
 }
 
-dpe_error_t dpe_derive_child(int context_handle,
-                             bool retain_parent_context,
-                             bool allow_child_to_derive,
-                             bool create_certificate,
-                             const DiceInputValues *dice_inputs,
-                             int *new_child_context_handle,
-                             int *new_parent_context_handle)
+dpe_error_t dpe_derive_context(int context_handle,
+                               bool retain_parent_context,
+                               bool allow_new_context_to_derive,
+                               bool create_certificate,
+                               const DiceInputValues *dice_inputs,
+                               int *new_context_handle,
+                               int *new_parent_context_handle)
 {
     int32_t service_err;
     dpe_error_t dpe_err;
@@ -305,16 +305,16 @@ dpe_error_t dpe_derive_child(int context_handle,
     UsefulBufC encoded_buf;
     UsefulBuf_MAKE_STACK_UB(cmd_buf, 512);
 
-    const struct derive_child_input_t in_args = {
+    const struct derive_context_input_t in_args = {
         context_handle,
         retain_parent_context,
-        allow_child_to_derive,
+        allow_new_context_to_derive,
         create_certificate,
         dice_inputs,
     };
-    struct derive_child_output_t out_args;
+    struct derive_context_output_t out_args;
 
-    qcbor_err = encode_derive_child(&in_args, cmd_buf, &encoded_buf);
+    qcbor_err = encode_derive_context(&in_args, cmd_buf, &encoded_buf);
     if (qcbor_err != QCBOR_SUCCESS) {
         return DPE_INTERNAL_ERROR;
     }
@@ -325,8 +325,8 @@ dpe_error_t dpe_derive_child(int context_handle,
         return DPE_INTERNAL_ERROR;
     }
 
-    qcbor_err = decode_derive_child_response(UsefulBuf_Const(cmd_buf),
-                                             &out_args, &dpe_err);
+    qcbor_err = decode_derive_context_response(UsefulBuf_Const(cmd_buf),
+                                               &out_args, &dpe_err);
     if (qcbor_err != QCBOR_SUCCESS) {
         return DPE_INTERNAL_ERROR;
     } else if (dpe_err != DPE_NO_ERROR) {
@@ -334,7 +334,7 @@ dpe_error_t dpe_derive_child(int context_handle,
     }
 
     /* Copy returned values into caller's memory */
-    *new_child_context_handle = out_args.new_child_context_handle;
+    *new_context_handle = out_args.new_context_handle;
     *new_parent_context_handle = out_args.new_parent_context_handle;
 
     return DPE_NO_ERROR;

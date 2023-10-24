@@ -47,11 +47,6 @@ static int get_free_component_context_index(void)
     return i;
 }
 
-static inline void invalidate_handle(int *handle)
-{
-    *handle = INVALID_HANDLE;
-}
-
 static dpe_error_t renew_nonce(int *handle)
 {
     uint16_t nonce;
@@ -63,19 +58,6 @@ static dpe_error_t renew_nonce(int *handle)
     *handle = SET_NONCE(*handle, nonce);
 
     return DPE_NO_ERROR;
-}
-
-static dpe_error_t generate_new_handle(int *out_handle)
-{
-    /* Find the free component array element */
-    int free_component_idx = get_free_component_context_index();
-    if (free_component_idx < 0) {
-        return DPE_INSUFFICIENT_MEMORY;
-    }
-
-    *out_handle = SET_IDX(*out_handle, free_component_idx);
-
-    return renew_nonce(out_handle);
 }
 
 static void set_context_to_default(int i)
@@ -361,18 +343,18 @@ static uint16_t open_new_layer(void)
      * has some context data and certificate buffer of 3k, it is
      * causing RAM overflow. Hence until resoluton is reached, once all
      * layers are opened, link new compenents to the last layer.
-     * ISSUE DESCRIPTION: We derive AP_BL31 as child of AP BL2 with create_certificate
-     * as true. Hence we finalize Platform layer. Then we derive AP_SPM as child of
-     * AP BL2, but since AP BL2 is finalised, we open new layer (Hypervisor layer).
-     * Then we derive AP SPx as child of AP BL2. Again, since AP BL2 is finalised,
+     * ISSUE DESCRIPTION: AP BL2 derives AP_BL31 with create_certificate
+     * as true. Hence we finalize Platform layer. Then AP BL2 derives AP_SPM,
+     * but since AP BL2 is finalised, we open new layer (Hypervisor layer).
+     * AP BL2 further derives AP SPx. Again, since AP BL2 is finalised,
      * we open new layer! Here AP SPx should belong to same layer as AP SPM.
      */
     return MAX_NUM_OF_LAYERS - 1;
 }
 
-static inline void link_layer(uint16_t child_layer, uint16_t parent_layer)
+static inline void link_layer(uint16_t derived_ctx_layer, uint16_t parent_ctx_layer)
 {
-    layer_ctx_array[child_layer].parent_layer_idx = parent_layer;
+    layer_ctx_array[derived_ctx_layer].parent_layer_idx = parent_ctx_layer;
 }
 
 static inline bool is_input_client_id_valid(int32_t client_id)
@@ -391,7 +373,7 @@ static dpe_error_t assign_layer_to_context(struct component_context_t *new_ctx)
     assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
 
     if (layer_ctx_array[parent_layer_idx].state == LAYER_STATE_FINALISED) {
-        /* Parent comp's layer of new child is finalised; open a new layer */
+        /* Parent comp's layer of new derived context is finalised; open a new layer */
         new_layer_idx = open_new_layer();
         if (new_layer_idx == INVALID_LAYER_IDX) {
             return DPE_INTERNAL_ERROR;
@@ -432,7 +414,7 @@ static dpe_error_t create_rot_context(int *rot_ctx_handle)
 
     /* Open RoT layer */
     rot_layer_ctx->state = LAYER_STATE_OPEN;
-    /* Parent is same as child for RoT layer */
+    /* Parent layer for RoT context's layer is same */
     rot_layer_ctx->parent_layer_idx = DPE_ROT_LAYER_IDX;
 
 #ifndef DPE_TEST_MODE
@@ -452,10 +434,9 @@ static dpe_error_t create_rot_context(int *rot_ctx_handle)
         return DPE_INTERNAL_ERROR;
     }
 
-    /* Init RoT context, ready to be derived in next call to DeriveChild */
-    rot_comp_ctx->in_use = true;
+    /* Init RoT context, ready to be derived in next call to DeriveContext */
     rot_comp_ctx->nonce = 0;
-    /* Parent is same as child for RoT context */
+    /* Parent component index for derived RoT context is same */
     rot_comp_ctx->parent_idx = 0;
     /* Link context to RoT Layer */
     rot_comp_ctx->linked_layer_idx = DPE_ROT_LAYER_IDX;
@@ -480,25 +461,27 @@ dpe_error_t initialise_context_mngr(int *rot_ctx_handle)
     return create_rot_context(rot_ctx_handle);
 }
 
-dpe_error_t derive_child_request(int input_ctx_handle,
-                                 bool retain_parent_context,
-                                 bool allow_child_to_derive,
-                                 bool create_certificate,
-                                 const DiceInputValues *dice_inputs,
-                                 int32_t client_id,
-                                 int *new_child_ctx_handle,
-                                 int *new_parent_ctx_handle)
+dpe_error_t derive_context_request(int input_ctx_handle,
+                                   bool retain_parent_context,
+                                   bool allow_new_context_to_derive,
+                                   bool create_certificate,
+                                   const DiceInputValues *dice_inputs,
+                                   int32_t client_id,
+                                   int *new_context_handle,
+                                   int *new_parent_context_handle)
 {
     dpe_error_t err;
-    struct component_context_t *child_ctx, *parent_ctx, *new_ctx;
-    uint16_t input_child_idx, input_parent_idx;
+    struct component_context_t *parent_ctx, *derived_ctx;
+    uint16_t parent_ctx_idx;
+    int free_component_idx;
 
-    log_derive_child(input_ctx_handle, retain_parent_context,
-                     allow_child_to_derive, create_certificate, dice_inputs,
-                     client_id);
+    log_derive_context(input_ctx_handle, retain_parent_context,
+                       allow_new_context_to_derive, create_certificate, dice_inputs,
+                       client_id);
 
 #ifdef DPE_TEST_MODE
-    if (input_ctx_handle == 0) {
+    if ((input_ctx_handle == 0) &&
+        (layer_ctx_array[DPE_ROT_LAYER_IDX].state != LAYER_STATE_FINALISED)) {
         /* Deriving RoT context for tests */
         err = create_rot_context(&input_ctx_handle);
         if (err != DPE_NO_ERROR) {
@@ -516,88 +499,79 @@ dpe_error_t derive_child_request(int input_ctx_handle,
     if (!is_input_handle_valid(input_ctx_handle)) {
         return DPE_INVALID_ARGUMENT;
     }
-    /* Get child component index from the input handle */
-    input_child_idx = GET_IDX(input_ctx_handle);
-    /* Get parent index of input referenced child component */
-    input_parent_idx = component_ctx_array[input_child_idx].parent_idx;
+    /* Get parent component index from the input handle */
+    parent_ctx_idx = GET_IDX(input_ctx_handle);
 
     /* Below check is for safety only; It should not happen
-     * input_child_idx is already checked above in is_input_handle_valid()
+     * parent_ctx_idx is already checked above in is_input_handle_valid()
      */
-    assert(input_parent_idx < MAX_NUM_OF_COMPONENTS);
+    assert(parent_ctx_idx < MAX_NUM_OF_COMPONENTS);
 
-    child_ctx = &component_ctx_array[input_child_idx];
-    parent_ctx = &component_ctx_array[input_parent_idx];
+    parent_ctx = &component_ctx_array[parent_ctx_idx];
 
     //TODO:  Question: how to get mhu id of incoming request?
     if (!is_input_client_id_valid(client_id)) {
         return DPE_INVALID_ARGUMENT;
     }
 
-    /* Copy dice input to the child component context */
-    err = copy_dice_input(child_ctx, dice_inputs);
+    /* Get next free component index to add new derived context */
+    free_component_idx = get_free_component_context_index();
+    if (free_component_idx < 0) {
+        return DPE_INSUFFICIENT_MEMORY;
+    }
+
+    derived_ctx = &component_ctx_array[free_component_idx];
+    /* Copy dice input to the new derived component context */
+    err = copy_dice_input(derived_ctx, dice_inputs);
     if (err != DPE_NO_ERROR) {
         return err;
     }
 
-    if (create_certificate) {
-        err = create_layer_certificate(child_ctx->linked_layer_idx);
-        if (err != DPE_NO_ERROR) {
-            return err;
-        }
-    }
-
-    /* Renew nonce of child context so it cannot be used again */
-    child_ctx->nonce = INVALID_NONCE_VALUE;
-
-    if (allow_child_to_derive) {
-        /* Generate new handle for child for subsequent requests */
-        if (generate_new_handle(new_child_ctx_handle) != DPE_NO_ERROR) {
-            return DPE_INTERNAL_ERROR;
-        }
-        /* Update the component context array element as pointed by newly generated handle */
-        new_ctx = &component_ctx_array[GET_IDX(*new_child_ctx_handle)];
-        /* Update nonce in new child component context */
-        new_ctx->nonce = GET_NONCE(*new_child_ctx_handle);
-        /* Update parent idx in new child component context */
-        new_ctx->parent_idx = input_child_idx;
-        /* Mark new child component index as in use */
-        new_ctx->in_use = true;
-        err = assign_layer_to_context(new_ctx);
-        if (err != DPE_NO_ERROR) {
-            return err;
-        }
-    } else {
-        /* Child not deriving any children */
-        /* Tag this component as a leaf */
-        child_ctx->is_leaf = true;
-        invalidate_handle(new_child_ctx_handle);
+    /* Update parent idx in new derived component context */
+    derived_ctx->parent_idx = parent_ctx_idx;
+    /* Mark new derived component index as in use */
+    derived_ctx->in_use = true;
+    err = assign_layer_to_context(derived_ctx);
+    if (err != DPE_NO_ERROR) {
+        return err;
     }
 
     if (retain_parent_context) {
-        /* Parent deriving multiple children */
-        /* Generate new handle for child for the same parent for subsequent requests */
-        if (generate_new_handle(new_parent_ctx_handle) != DPE_NO_ERROR) {
-            return DPE_INTERNAL_ERROR;
-        }
-        /* Update the component context array element as pointed by newly generated handle */
-        new_ctx = &component_ctx_array[GET_IDX(*new_parent_ctx_handle)];
-        /* Update nonce in new child component context */
-        new_ctx->nonce = GET_NONCE(*new_parent_ctx_handle);
-        /* Update parent idx in new child component context */
-        new_ctx->parent_idx = input_parent_idx;
-        /* Mark new child component index as in use */
-        new_ctx->in_use = true;
-        err = assign_layer_to_context(new_ctx);
+        /* Retain and return parent handle with renewed nonce */
+        *new_parent_context_handle = input_ctx_handle;
+        err = renew_nonce(new_parent_context_handle);
         if (err != DPE_NO_ERROR) {
             return err;
         }
+        parent_ctx->nonce = GET_NONCE(*new_parent_context_handle);
+
     } else {
-        /* Parent not deriving any more children */
-        /* No need to return parent handle */
-        invalidate_handle(new_parent_ctx_handle);
-        /* Renew nonce of parent context so it cannot be used again */
+        /* Return invalid handle */
+        *new_parent_context_handle = INVALID_HANDLE;
         parent_ctx->nonce = INVALID_NONCE_VALUE;
+    }
+
+    if (allow_new_context_to_derive) {
+        /* Return handle to derived context */
+        *new_context_handle = SET_IDX(*new_context_handle, free_component_idx);
+        err = renew_nonce(new_context_handle);
+        if (err != DPE_NO_ERROR) {
+            return err;
+        }
+        /* Update nonce in new derived component context */
+        derived_ctx->nonce = GET_NONCE(*new_context_handle);
+
+    } else {
+        /* Return invalid handle */
+        *new_context_handle = INVALID_HANDLE;
+        derived_ctx->nonce = INVALID_NONCE_VALUE;
+    }
+
+    if (create_certificate) {
+        err = create_layer_certificate(derived_ctx->linked_layer_idx);
+        if (err != DPE_NO_ERROR) {
+            return err;
+        }
     }
 
     return DPE_NO_ERROR;
@@ -612,7 +586,7 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
 
     log_destroy_context(input_ctx_handle, destroy_recursively);
 
-    /* Get child component index and linked layer from the input handle */
+    /* Get component index and linked layer from the input handle */
     input_ctx_idx = GET_IDX(input_ctx_handle);
 
     /* Validate input handle */
@@ -749,7 +723,7 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     }
 
     /* Correct layer should already be assigned in last call of
-     * derive child command
+     * derive context command
      */
     /* Finalise the current layer & create leaf certificate */
     err = create_layer_certificate(input_layer_idx);

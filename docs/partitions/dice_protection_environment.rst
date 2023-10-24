@@ -78,8 +78,8 @@ coupling to TF-M partition specifics.
 The DPE commands themselves are CBOR-encoded objects that the DPE decode layer
 decodes into calls to one of the following supported DICE functions.
 
-DeriveChild
------------
+DeriveContext
+-------------
 
 Adds a component context to the layer, consisting of:
 
@@ -120,7 +120,7 @@ it. If a public key is supplied, then it certifies the key.
 
 - Adds label (if supplied) to list of measurements.
 
-- Finalizes the layer (as for DeriveChild above).
+- Finalizes the layer (as for DeriveContext above).
 
 - Returns the certificate chain (collection of individual certificates) as a
   CBOR array with format [+COSE_Sign1, COSE_Key]. The (pre-provisioned) root

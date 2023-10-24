@@ -36,36 +36,36 @@ typedef int32_t dpe_error_t;
 #define DPE_ERR_CBOR_FORMATTING       ((dpe_error_t)129)
 
 /**
- * \brief Performs the DICE computation to derive a child context and optionally
+ * \brief Performs the DICE computation to derive a new context and optionally
  *        creates an intermediate certificate. Software component measurement
  *        must be provided in dice_inputs.
  *
- * \param[in]  context_handle             Input context handle for the DPE
- *                                        context.
- * \param[in]  retain_parent_context      Flag to indicate whether to retain the
- *                                        parent context. True only if a client
- *                                        will call further DPE commands on the
- *                                        same context.
- * \param[in]  allow_child_to_derive      Flag to indicate whether child context
- *                                        can derive further. True only if the
- *                                        child will load further components.
- * \param[in]  create_certificate         Flag to indicate whether to create an
- *                                        intermediate certificate. True only if
- *                                        it is the last component in the layer.
- * \param[in]  dice_inputs                DICE input values.
- * \param[out] new_child_context_handle   New handle for the child context.
- * \param[out] new_parent_context_handle  New handle for the parent context.
+ * \param[in]  context_handle              Input context handle for the DPE
+ *                                         context.
+ * \param[in]  retain_parent_context       Flag to indicate whether to retain the
+ *                                         parent context. True only if a client
+ *                                         will call further DPE commands on the
+ *                                         same context.
+ * \param[in]  allow_new_context_to_derive Flag to indicate whether derived context
+ *                                         can derive further. True only if the
+ *                                         new context will load further components.
+ * \param[in]  create_certificate          Flag to indicate whether to create an
+ *                                         intermediate certificate. True only if
+ *                                         it is the last component in the layer.
+ * \param[in]  dice_inputs                 DICE input values.
+ * \param[out] new_context_handle          New handle for the derived context.
+ * \param[out] new_parent_context_handle   New handle for the parent context.
  *
  * \return Returns error code of type dpe_error_t
  */
 dpe_error_t
-dpe_derive_child(int                    context_handle,
-                 bool                   retain_parent_context,
-                 bool                   allow_child_to_derive,
-                 bool                   create_certificate,
-                 const DiceInputValues *dice_inputs,
-                 int                   *new_child_context_handle,
-                 int                   *new_parent_context_handle);
+dpe_derive_context(int                    context_handle,
+                   bool                   retain_parent_context,
+                   bool                   allow_new_context_to_derive,
+                   bool                   create_certificate,
+                   const DiceInputValues *dice_inputs,
+                   int                   *new_context_handle,
+                   int                   *new_parent_context_handle);
 
 /**
  * \brief Destroys a DPE context.

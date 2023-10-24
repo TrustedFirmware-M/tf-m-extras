@@ -23,14 +23,14 @@ extern "C" {
 void log_derive_rot_context(const DiceInputValues *dice_inputs);
 
 /**
- * \brief Log the derive child command parameters.
+ * \brief Log the derive context command parameters.
  */
-void log_derive_child(int context_handle,
-                      bool retain_parent_context,
-                      bool allow_child_to_derive,
-                      bool create_certificate,
-                      const DiceInputValues *dice_inputs,
-                      int32_t client_id);
+void log_derive_context(int context_handle,
+                        bool retain_parent_context,
+                        bool allow_new_context_to_derive,
+                        bool create_certificate,
+                        const DiceInputValues *dice_inputs,
+                        int32_t client_id);
 
 /**
  * \brief Log the destroy context command parameters.
@@ -64,7 +64,7 @@ void log_certificate_chain(const uint8_t *certificate_chain_buf,
 #else /* TFM_PARTITION_LOG_LEVEL */
 
 #define log_derive_rot_context(...)
-#define log_derive_child(...)
+#define log_derive_context(...)
 #define log_destroy_context(...)
 #define log_certify_key(...)
 #define log_intermediate_certificate(...)
