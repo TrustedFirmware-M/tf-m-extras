@@ -1,6 +1,8 @@
-#########################
+################################
 Trusted Firmware-M Extras
-#########################
+################################
+
+.. raw:: html
 
 The Trusted Firmware-M (TF-M) Extras repository is the extension of the TF-M
 main repository to host the examples, demonstrations, third-party modules,
@@ -28,7 +30,7 @@ Folder Structure
 Contribute to this repository
 *****************************
 
-Refer to `contributing process <https://tf-m-user-guide.trustedfirmware.org/docs/contributing/contributing_process.html>`_
+Refer to `contributing process <https://trustedfirmware-m.readthedocs.io/en/latest/contributing/contributing_process.html>`_
 for the TF-M general contribution guideline.
 
 Please contact `TF-M development mailing list <https://lists.trustedfirmware.org/mailman3/lists/tf-m.lists.trustedfirmware.org>`_
@@ -78,6 +80,21 @@ Additional requirements
         Optional. Specify the TF-M version/commit ID if it is not integrated or
         test with latest TF-M release.
 
------------------------
+.. toctree::
+  :caption: Overview
+  :maxdepth: 1
+  :hidden:
+
+  Partitions <partitions/index>
+  Examples <examples/index>
+
+.. toctree::
+  :caption: Links
+  :maxdepth: 1
+  :hidden:
+
+  Trusted Firmware-M <https://trustedfirmware-m.readthedocs.io/en/latest/>
+
+--------------
 
 *Copyright (c) 2021-2022, Arm Limited. All rights reserved.*

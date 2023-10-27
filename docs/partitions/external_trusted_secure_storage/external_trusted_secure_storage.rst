@@ -1,5 +1,5 @@
 ###############################
-external trusted secure storage
+External Trusted Secure Storage
 ###############################
 
 ********
@@ -12,6 +12,7 @@ Storage(ETSS) partition and the corresponding design proposal.
 ************
 Introduction
 ************
+
 A secure storage solution is very important when storage is external to MCU.
 Macronix and other Flash memory suppliers have developed several security memory
 products, and three major products are RPMC, Authentication Flash, and a more
@@ -55,6 +56,7 @@ the secure memory architectures in emerging electronic systems.
 **************
 Design concept
 **************
+
 Overview
 ========
 An ETSS partition is developed as a PSA RoT secure partition to provide external
@@ -273,7 +275,7 @@ Besises, the following works are underway:
  - Add access rights management features to secure Flash filesystem.
 
 References
-----------
+==========
 
 .. [1] `ArmorFlash product instruction <https://www.mxic.com.tw/en-us/products/Pages/ArmorFlash.aspx>`_
 
@@ -283,4 +285,3 @@ References
 
 *Copyright (c) 2021-2022, Macronix International Co. LTD. All rights reserved.*
 *SPDX-License-Identifier: BSD-3-Clause*
-

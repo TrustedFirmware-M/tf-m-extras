@@ -55,9 +55,9 @@ By default it is required to create an IoT thing in AWS to run the application,
 but this can be skipped if ``-DVAD_AN552_NO_CONNECTIVITY=ON`` is added for
 cmake.
 
-###################################
+-----------------------------------
 Create an IoT thing for your device
-###################################
+-----------------------------------
 
 #. Login to your account and browse to the `AWS IoT console <https://console.aws.amazon.com/iotv2/>`__.
 #. In the left navigation pane, choose ``All devices``, and then choose ``Things``.
@@ -75,9 +75,9 @@ Create an IoT thing for your device
    the certificate.
 #. Activate your certificate if it is not active by default.
 
-###############
+---------------
 Create a policy
-###############
+---------------
 
 For the sake of simplicity in this example a very permissive Policy is created,
 for production usage a more restrictive one is recommended.
@@ -108,9 +108,9 @@ for production usage a more restrictive one is recommended.
    ]
    }
 
-#######################################
+---------------------------------------
 Attach the created policy to your thing
-#######################################
+---------------------------------------
 
 #. In the left navigation pane of the AWS IoT console, choose ``Secure``, and
    then choose ``Certificates``. You should see the certificate that you have
@@ -120,9 +120,9 @@ Attach the created policy to your thing
 #. In the ``Attach policies to certificate(s)`` window choose the created
    policy and click ``Attach``.
 
-####################################
+------------------------------------
 Update source with thing credentials
-####################################
+------------------------------------
 
 Edit `examples/vad_an552/ns_side/amazon-freertos/aws_clientcredential.h` file and
 set the value of the following macros:
@@ -154,9 +154,9 @@ following macros:
 * ``keyCLIENT_PRIVATE_KEY_PEM``, content of ``<your-thing-certificate-unique-string>-private.pem.key``.
 * ``keyCLIENT_PUBLIC_KEY_PEM``, content of ``<your-thing-certificate-unique-string>-public.pem.key``.
 
-##################
+------------------
 Running TF-M build
-##################
+------------------
 
 For building TF-M's build system is used with the following mandatory CMAKE
 flags::
@@ -183,14 +183,14 @@ Our measurements showed that MVE speeds up the frequency calculation by 10
 times with release GCC build.
 
 You can check TF-M's build instructions
-`here <https://tf-m-user-guide.trustedfirmware.org/docs/technical_references/instructions/tfm_build_instruction.html>`__.
+`here <https://trustedfirmware-m.readthedocs.io/en/latest/building/tfm_build_instruction.html>`__.
 
 -----------------------
 Running the application
 -----------------------
 
 It is covered by the generic TF-M run instructions for AN552
-`here <https://tf-m-user-guide.trustedfirmware.org/platform/ext/target/arm/mps3/an552/README.html>`__.
+`here <https://trustedfirmware-m.readthedocs.io/en/latest/platform/arm/mps3/corstone300/README.html?highlight=an552#build-instructions-with-platform-name-arm-mps3-corstone300-an547>`__.
 
 ---------------------------
 Testing the voice algorithm

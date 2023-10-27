@@ -134,13 +134,13 @@ References
   https://documentation-service.arm.com/static/600067c09b9c2d1bb22cd1c5?token=
 
 .. _Adding Secure Partition:
-  https://tf-m-user-guide.trustedfirmware.org/integration_guide/services/tfm_secure_partition_addition.html
+  https://trustedfirmware-m.readthedocs.io/en/latest/integration_guide/services/tfm_secure_partition_addition.html
 
 .. _TF-M Manifest List:
-  https://tf-m-user-guide.trustedfirmware.org/integration_guide/services/tfm_manifest_tool_user_guide.html#manifest-list
+  https://trustedfirmware-m.readthedocs.io/en/latest/integration_guide/services/tfm_manifest_tool_user_guide.html#manifest-list
 
 .. _Out-of-tree Secure Partition build:
-  https://tf-m-user-guide.trustedfirmware.org/integration_guide/services/tfm_secure_partition_addition.html#out-of-tree-secure-partition-build
+  https://trustedfirmware-m.readthedocs.io/en/latest/integration_guide/services/tfm_secure_partition_addition.html#out-of-tree-secure-partition-build
 
 .. _Adding TF-M Regression Test Suite:
   https://git.trustedfirmware.org/TF-M/tf-m-tests.git/tree/docs/tfm_test_suites_addition.rst
