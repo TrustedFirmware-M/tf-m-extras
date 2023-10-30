@@ -1,0 +1,28 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+{
+  "description": "TFM Authenticated Debug Service",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "description": "TFM ADAC Service Partition",
+      "manifest": "tfm_adac.yaml",
+      "output_path": "secure_fw/partitions/adac",
+      "conditional": "TFM_PARTITION_ADAC",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 276,
+      "linker_pattern": {
+        "library_list": [
+          "*tfm_*partition_adac.*"
+        ]
+      }
+    }
+  ]
+}
