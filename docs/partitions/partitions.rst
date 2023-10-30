@@ -87,6 +87,20 @@ Maintainers
 - Gabor Toth `<gabor.toth@arm.com> <gabor.toth@arm.com>`_
 - Mark Horvath `<mark.horvath@arm.com> <mark.horvath@arm.com>`_
 
+####
+adac
+####
+
+***********
+Description
+***********
+ADAC partition for authenticated debug and access control for RSS platform.
+
+***********
+Maintainers
+***********
+- Maulik Patel `<Maulik.Patel@arm.com>`_
+
 ---------------------------
 
 *Copyright (c) 2021-2022, Arm Limited. All rights reserved.*
