@@ -22,13 +22,14 @@ extern "C" {
 #define DPE_CDI_KEY_TYPE  PSA_KEY_TYPE_DERIVE
 #define DPE_CDI_KEY_ALG   PSA_ALG_HKDF(PSA_ALG_SHA_256)
 #define DPE_CDI_KEY_BITS  256
-#define DPE_CDI_KEY_USAGE PSA_KEY_USAGE_DERIVE
+#define DPE_CDI_KEY_USAGE PSA_KEY_USAGE_DERIVE | PSA_KEY_USAGE_EXPORT
 
 /* Below labels as per
  * https://pigweed.googlesource.com/open-dice/+/refs/heads/main/docs/specification.md#attestation-cdi
  */
 #define DPE_ATTEST_CDI_LABEL "CDI_Attest"
 #define DPE_SEAL_CDI_LABEL   "CDI_Seal"
+#define DPE_ATTEST_EXPORTED_CDI_LABEL "Exported_CDI_Attest" /* Custom Label - yet to be specified */
 
 #define DPE_ATTEST_KEY_CURVE_TYPE PSA_ECC_FAMILY_SECP_R1
 #define DPE_ATTEST_KEY_TYPE       PSA_KEY_TYPE_ECC_KEY_PAIR(DPE_ATTEST_KEY_CURVE_TYPE)

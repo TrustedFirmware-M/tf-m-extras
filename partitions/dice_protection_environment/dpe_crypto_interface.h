@@ -88,6 +88,20 @@ psa_status_t derive_wrapping_key(struct layer_context_t *layer_ctx);
 psa_status_t derive_cdi_id(psa_key_id_t attest_key_id, uint8_t *cdi_id,
                            size_t cdi_id_size);
 
+/**
+ * \brief Gets the layer's CDI value.
+ *
+ * \param[in]  layer_ctx       Pointer to current layer context.
+ * \param[out] cdi_buf         Pointer to output CDI Buffer.
+ * \param[in]  cdi_buf_size    Size of CDI buffer.
+ * \param[out] cdi_actual_size Actual size of the CDI value.
+ *
+ * \return Returns error code as specified in \ref psa_status_t
+ */
+psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
+                                 uint8_t *cdi_buf,
+                                 size_t cdi_buf_size,
+                                 size_t *cdi_actual_size);
 #ifdef __cplusplus
 }
 #endif

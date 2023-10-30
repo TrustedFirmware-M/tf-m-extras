@@ -103,6 +103,7 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
     return DPE_NO_ERROR;
 }
 
+//TODO: Handle the omission of parameters from DPE commands.
 static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
                                          QCBOREncodeContext *encode_ctx,
                                          int32_t client_id)
@@ -111,12 +112,20 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     QCBORError qcbor_err;
     UsefulBufC out;
     int context_handle;
+    int32_t target_locality;
     bool retain_parent_context;
     bool allow_new_context_to_derive;
     bool create_certificate;
+    bool return_certificate;
+    bool allow_new_context_to_export;
+    bool export_cdi;
     DiceInputValues dice_inputs;
     int new_context_handle;
     int new_parent_context_handle;
+    uint8_t new_certificate_buf[DICE_CERT_SIZE];
+    uint8_t exported_cdi_buf[DICE_MAX_ENCODED_CDI_SIZE];
+    size_t new_certificate_actual_size = 0;
+    size_t exported_cdi_actual_size = 0;
 
     /* Decode DeriveContext command */
     QCBORDecode_EnterMap(decode_ctx, NULL);
@@ -142,6 +151,22 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
         return dpe_err;
     }
 
+    QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_DERIVE_CONTEXT_TARGET_LOCALITY,
+                                    &out);
+    if (out.len != sizeof(target_locality)) {
+        return DPE_INVALID_COMMAND;
+    }
+    memcpy(&target_locality, out.ptr, out.len);
+
+    QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_RETURN_CERTIFICATE,
+                              &return_certificate);
+
+    QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_ALLOW_NEW_CONTEXT_TO_EXPORT,
+                              &allow_new_context_to_export);
+
+    QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_EXPORT_CDI,
+                              &export_cdi);
+
     QCBORDecode_ExitMap(decode_ctx);
 
     /* Exit top level array */
@@ -156,8 +181,18 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     dpe_err = derive_context_request(context_handle, retain_parent_context,
                                      allow_new_context_to_derive, create_certificate,
                                      &dice_inputs, client_id,
+                                     target_locality,
+                                     return_certificate,
+                                     allow_new_context_to_export,
+                                     export_cdi,
                                      &new_context_handle,
-                                     &new_parent_context_handle);
+                                     &new_parent_context_handle,
+                                     new_certificate_buf,
+                                     sizeof(new_certificate_buf),
+                                     &new_certificate_actual_size,
+                                     exported_cdi_buf,
+                                     sizeof(exported_cdi_buf),
+                                     &exported_cdi_actual_size);
     if (dpe_err != DPE_NO_ERROR) {
         return dpe_err;
     }
@@ -174,6 +209,19 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
                                DPE_DERIVE_CONTEXT_PARENT_CONTEXT_HANDLE,
                                (UsefulBufC){ &new_parent_context_handle,
                                              sizeof(new_parent_context_handle) });
+
+    /* The certificate is already encoded into a CBOR array by the function
+     * add_encoded_layer_certificate. Add it as a byte string so that its
+     * decoding can be skipped and the CBOR returned to the caller.
+     */
+    QCBOREncode_AddBytesToMapN(encode_ctx, DPE_DERIVE_CONTEXT_NEW_CERTIFICATE,
+                               (UsefulBufC){ new_certificate_buf,
+                                             new_certificate_actual_size });
+
+    QCBOREncode_AddBytesToMapN(encode_ctx, DPE_DERIVE_CONTEXT_EXPORTED_CDI,
+                               (UsefulBufC){ exported_cdi_buf,
+                                             exported_cdi_actual_size });
+
     QCBOREncode_CloseMap(encode_ctx);
 
     QCBOREncode_CloseArray(encode_ctx);

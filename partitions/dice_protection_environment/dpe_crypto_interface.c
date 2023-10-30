@@ -15,6 +15,7 @@
 #include "tfm_crypto_defs.h"
 
 static const char attest_cdi_label[] = DPE_ATTEST_CDI_LABEL;
+static const char exported_attest_cdi_label[] = DPE_ATTEST_EXPORTED_CDI_LABEL;
 static const char attest_key_pair_label[] = DPE_ATTEST_KEY_PAIR_LABEL;
 static const char id_label[] = DPE_ID_LABEL;
 static const uint8_t attest_key_salt[] = DPE_ATTEST_KEY_SALT;
@@ -92,13 +93,25 @@ psa_status_t derive_attestation_cdi(struct layer_context_t *layer_ctx,
 
     /* Perform CDI derivation */
     /* Parent layer CDI is the base key (input secret to key derivation) */
-    return perform_derivation(parent_layer_ctx->data.cdi_key_id,
-                              &derive_key_attr,
-                              (uint8_t *) &attest_cdi_label[0],
-                              sizeof(attest_cdi_label),
-                              layer_ctx->attest_cdi_hash_input,
-                              sizeof(layer_ctx->attest_cdi_hash_input),
-                              &layer_ctx->data.cdi_key_id);
+
+    if (layer_ctx->is_cdi_to_be_exported) {
+        return perform_derivation(parent_layer_ctx->data.cdi_key_id,
+                                &derive_key_attr,
+                                (uint8_t *) &exported_attest_cdi_label[0],
+                                sizeof(exported_attest_cdi_label),
+                                layer_ctx->attest_cdi_hash_input,
+                                sizeof(layer_ctx->attest_cdi_hash_input),
+                                &layer_ctx->data.cdi_key_id);
+
+    } else {
+        return perform_derivation(parent_layer_ctx->data.cdi_key_id,
+                                &derive_key_attr,
+                                (uint8_t *) &attest_cdi_label[0],
+                                sizeof(attest_cdi_label),
+                                layer_ctx->attest_cdi_hash_input,
+                                sizeof(layer_ctx->attest_cdi_hash_input),
+                                &layer_ctx->data.cdi_key_id);
+    }
 }
 
 psa_status_t derive_attestation_key(struct layer_context_t *layer_ctx)
@@ -264,5 +277,24 @@ psa_status_t derive_cdi_id(psa_key_id_t attest_key_id, uint8_t *cdi_id,
 
 err_abort:
     (void)psa_key_derivation_abort(&op);
+    return status;
+}
+
+psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
+                                 uint8_t *cdi_buf,
+                                 size_t cdi_buf_size,
+                                 size_t *cdi_actual_size)
+{
+    psa_status_t status;
+
+    //TODO: Sealing CDI to be added later
+    status = psa_export_key(layer_ctx->data.cdi_key_id,
+                            cdi_buf,
+                            sizeof(cdi_buf),
+                            &cdi_actual_size);
+    if (status != PSA_SUCCESS) {
+        *cdi_actual_size = 0;
+    }
+
     return status;
 }

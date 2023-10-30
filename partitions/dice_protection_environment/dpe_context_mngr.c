@@ -63,12 +63,17 @@ static dpe_error_t renew_nonce(int *handle)
 static void set_context_to_default(int i)
 {
     component_ctx_array[i].in_use = false;
-    component_ctx_array[i].is_leaf = false;
+    component_ctx_array[i].is_allowed_to_derive = true;
+    /* export CDI attribute is inherited and once disabled, a derived context
+     * and subsequent derivations cannot export CDI, hence enable by default
+     */
+    component_ctx_array[i].is_export_cdi_allowed = true;
     component_ctx_array[i].nonce = INVALID_NONCE_VALUE;
     component_ctx_array[i].parent_idx = INVALID_COMPONENT_IDX;
     component_ctx_array[i].linked_layer_idx = INVALID_LAYER_IDX;
     (void)memset(&component_ctx_array[i].data, 0, sizeof(struct component_context_data_t));
     //TODO: Question: how to initialise MHU Id mapping?
+    component_ctx_array[i].target_locality = 0;
     /* Allow component to be derived by default */
 }
 
@@ -76,6 +81,7 @@ static void invalidate_layer(int i)
 {
     layer_ctx_array[i].state = LAYER_STATE_CLOSED;
     layer_ctx_array[i].parent_layer_idx = INVALID_LAYER_IDX;
+    layer_ctx_array[i].is_cdi_to_be_exported = false;
     (void)memset(&layer_ctx_array[i].attest_cdi_hash_input, 0,
                  sizeof(layer_ctx_array[i].attest_cdi_hash_input));
     (void)psa_destroy_key(layer_ctx_array[i].data.cdi_key_id);
@@ -259,6 +265,39 @@ static psa_status_t compute_layer_cdi_attest_input(uint16_t curr_layer_idx)
     return status;
 }
 
+static dpe_error_t get_encoded_cdi_to_export(struct layer_context_t *layer_ctx,
+                                             uint8_t *exported_cdi_buf,
+                                             size_t exported_cdi_buf_size,
+                                             size_t *exported_cdi_actual_size)
+{
+    uint8_t cdi_buf[DICE_CDI_SIZE];
+    size_t cdi_size;
+    psa_status_t status;
+    dpe_error_t err;
+
+    /* Get CDI value */
+    status = get_layer_cdi_value(layer_ctx,
+                                 cdi_buf,
+                                 sizeof(cdi_buf),
+                                 &cdi_size);
+    if (status != PSA_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    /* Encode CDI value */
+    err = encode_cdi(cdi_buf,
+                     cdi_size,
+                     exported_cdi_buf,
+                     exported_cdi_buf_size,
+                     exported_cdi_actual_size);
+    if (err != DPE_NO_ERROR) {
+        return err;
+    }
+    layer_ctx->is_cdi_to_be_exported = true;
+
+    return DPE_NO_ERROR;
+}
+
 static dpe_error_t create_layer_certificate(uint16_t layer_idx)
 {
     uint16_t parent_layer_idx;
@@ -357,9 +396,10 @@ static inline void link_layer(uint16_t derived_ctx_layer, uint16_t parent_ctx_la
     layer_ctx_array[derived_ctx_layer].parent_layer_idx = parent_ctx_layer;
 }
 
-static inline bool is_input_client_id_valid(int32_t client_id)
+static inline bool is_input_client_id_valid(int32_t client_id, int32_t target_locality)
 {
-    //TODO: Waiting for implementation
+    // TODO: FIXME
+    //    return (client_id == target_locality);
     return true;
 }
 
@@ -467,13 +507,25 @@ dpe_error_t derive_context_request(int input_ctx_handle,
                                    bool create_certificate,
                                    const DiceInputValues *dice_inputs,
                                    int32_t client_id,
+                                   int32_t target_locality,
+                                   bool return_certificate,
+                                   bool allow_new_context_to_export,
+                                   bool export_cdi,
                                    int *new_context_handle,
-                                   int *new_parent_context_handle)
+                                   int *new_parent_context_handle,
+                                   uint8_t *new_certificate_buf,
+                                   size_t new_certificate_buf_size,
+                                   size_t *new_certificate_actual_size,
+                                   uint8_t *exported_cdi_buf,
+                                   size_t exported_cdi_buf_size,
+                                   size_t *exported_cdi_actual_size)
 {
     dpe_error_t err;
     struct component_context_t *parent_ctx, *derived_ctx;
-    uint16_t parent_ctx_idx;
+    uint16_t parent_ctx_idx, linked_layer_idx;
     int free_component_idx;
+    struct layer_context_t *layer_ctx;
+    psa_status_t status;
 
     log_derive_context(input_ctx_handle, retain_parent_context,
                        allow_new_context_to_derive, create_certificate, dice_inputs,
@@ -489,6 +541,10 @@ dpe_error_t derive_context_request(int input_ctx_handle,
         }
     }
 #endif /* DPE_TEST_MODE */
+
+    if (export_cdi && !create_certificate) {
+        return DPE_INVALID_ARGUMENT;
+    }
 
     /* Validate dice inputs */
     if (!is_dice_input_valid(dice_inputs)) {
@@ -509,8 +565,13 @@ dpe_error_t derive_context_request(int input_ctx_handle,
 
     parent_ctx = &component_ctx_array[parent_ctx_idx];
 
+    /* Check if parent context is allowed to derive */
+    if (!parent_ctx->is_allowed_to_derive) {
+        return DPE_INVALID_ARGUMENT;
+    }
+
     //TODO:  Question: how to get mhu id of incoming request?
-    if (!is_input_client_id_valid(client_id)) {
+    if (!is_input_client_id_valid(client_id, parent_ctx->target_locality)) {
         return DPE_INVALID_ARGUMENT;
     }
 
@@ -521,11 +582,25 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     }
 
     derived_ctx = &component_ctx_array[free_component_idx];
+    if (parent_ctx->is_export_cdi_allowed && allow_new_context_to_export) {
+        /* If parent context has export enabled and input allow_new_context_to_export
+         * is true, then allow context CDI to be exported for derived context
+         */
+        derived_ctx->is_export_cdi_allowed = true;
+    } else {
+        /* Export of new context CDI is NOT allowed */
+        derived_ctx->is_export_cdi_allowed = false;
+        if (export_cdi) {
+            return DPE_INVALID_ARGUMENT;
+        }
+    }
+
     /* Copy dice input to the new derived component context */
     err = copy_dice_input(derived_ctx, dice_inputs);
     if (err != DPE_NO_ERROR) {
         return err;
     }
+    derived_ctx->target_locality = target_locality;
 
     /* Update parent idx in new derived component context */
     derived_ctx->parent_idx = parent_ctx_idx;
@@ -551,7 +626,7 @@ dpe_error_t derive_context_request(int input_ctx_handle,
         parent_ctx->nonce = INVALID_NONCE_VALUE;
     }
 
-    if (allow_new_context_to_derive) {
+    if (!export_cdi) {
         /* Return handle to derived context */
         *new_context_handle = SET_IDX(*new_context_handle, free_component_idx);
         err = renew_nonce(new_context_handle);
@@ -568,7 +643,38 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     }
 
     if (create_certificate) {
-        err = create_layer_certificate(derived_ctx->linked_layer_idx);
+        linked_layer_idx = derived_ctx->linked_layer_idx;
+        assert(linked_layer_idx < MAX_NUM_OF_LAYERS);
+        layer_ctx = &layer_ctx_array[linked_layer_idx];
+        layer_ctx->is_cdi_to_be_exported = export_cdi;
+
+        err = create_layer_certificate(linked_layer_idx);
+        if (err != DPE_NO_ERROR) {
+            return err;
+        }
+
+        if (return_certificate) {
+            if (new_certificate_buf_size < layer_ctx->data.cert_buf_len) {
+                return DPE_INVALID_ARGUMENT;
+            }
+
+            /* Encode and return generated layer certificate */
+            err = add_encoded_layer_certificate(layer_ctx->data.cert_buf,
+                                                layer_ctx->data.cert_buf_len,
+                                                new_certificate_buf,
+                                                new_certificate_buf_size,
+                                                new_certificate_actual_size);
+            if (err != DPE_NO_ERROR) {
+                return err;
+            }
+        }
+    }
+
+    if (export_cdi) {
+        err = get_encoded_cdi_to_export(layer_ctx,
+                                        exported_cdi_buf,
+                                        exported_cdi_buf_size,
+                                        exported_cdi_actual_size);
         if (err != DPE_NO_ERROR) {
             return err;
         }

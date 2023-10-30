@@ -18,11 +18,19 @@ struct derive_context_input_t {
     bool allow_new_context_to_derive;
     bool create_certificate;
     const DiceInputValues *dice_inputs;
+    int32_t target_locality;
+    bool return_certificate;
+    bool allow_new_context_to_export;
+    bool export_cdi;
 };
 
 struct derive_context_output_t {
     int new_context_handle;
     int new_parent_context_handle;
+    const uint8_t *new_certificate;
+    size_t new_certificate_size;
+    const uint8_t *exported_cdi;
+    size_t exported_cdi_size;
 };
 
 struct destroy_context_input_t {
@@ -118,6 +126,15 @@ static QCBORError encode_derive_context(const struct derive_context_input_t *arg
     QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_CREATE_CERTIFICATE,
                               args->create_certificate);
     encode_dice_inputs(&encode_ctx, args->dice_inputs);
+    QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_TARGET_LOCALITY,
+                               (UsefulBufC){ &args->target_locality,
+                                             sizeof(args->target_locality) });
+    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_RETURN_CERTIFICATE,
+                              args->return_certificate);
+    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_ALLOW_NEW_CONTEXT_TO_EXPORT,
+                              args->allow_new_context_to_export);
+    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_EXPORT_CDI,
+                              args->export_cdi);
     QCBOREncode_CloseMap(&encode_ctx);
 
     QCBOREncode_CloseArray(&encode_ctx);
@@ -185,6 +202,18 @@ static QCBORError decode_derive_context_response(UsefulBufC encoded_buf,
             return QCBORDecode_Finish(&decode_ctx);
         }
         memcpy(&args->new_parent_context_handle, out.ptr, out.len);
+
+        QCBORDecode_GetByteStringInMapN(&decode_ctx,
+                                        DPE_DERIVE_CONTEXT_NEW_CERTIFICATE,
+                                        &out);
+        args->new_certificate = out.ptr;
+        args->new_certificate_size = out.len;
+
+        QCBORDecode_GetByteStringInMapN(&decode_ctx,
+                                        DPE_DERIVE_CONTEXT_EXPORTED_CDI,
+                                        &out);
+        args->exported_cdi = out.ptr;
+        args->exported_cdi_size = out.len;
 
         QCBORDecode_ExitMap(&decode_ctx);
     }
@@ -291,13 +320,24 @@ static QCBORError decode_certify_key_response(UsefulBufC encoded_buf,
     return QCBORDecode_Finish(&decode_ctx);
 }
 
-dpe_error_t dpe_derive_context(int context_handle,
-                               bool retain_parent_context,
-                               bool allow_new_context_to_derive,
-                               bool create_certificate,
-                               const DiceInputValues *dice_inputs,
-                               int *new_context_handle,
-                               int *new_parent_context_handle)
+dpe_error_t
+dpe_derive_context(int                    context_handle,
+                   bool                   retain_parent_context,
+                   bool                   allow_new_context_to_derive,
+                   bool                   create_certificate,
+                   const DiceInputValues *dice_inputs,
+                   int32_t                target_locality,
+                   bool                   return_certificate,
+                   bool                   allow_new_context_to_export,
+                   bool                   export_cdi,
+                   int                   *new_context_handle,
+                   int                   *new_parent_context_handle,
+                   uint8_t               *new_certificate_buf,
+                   size_t                 new_certificate_buf_size,
+                   size_t                *new_certificate_actual_size,
+                   uint8_t               *exported_cdi_buf,
+                   size_t                 exported_cdi_buf_size,
+                   size_t                *exported_cdi_actual_size)
 {
     int32_t service_err;
     dpe_error_t dpe_err;
@@ -311,6 +351,10 @@ dpe_error_t dpe_derive_context(int context_handle,
         allow_new_context_to_derive,
         create_certificate,
         dice_inputs,
+        target_locality,
+        return_certificate,
+        allow_new_context_to_export,
+        export_cdi,
     };
     struct derive_context_output_t out_args;
 
@@ -336,6 +380,20 @@ dpe_error_t dpe_derive_context(int context_handle,
     /* Copy returned values into caller's memory */
     *new_context_handle = out_args.new_context_handle;
     *new_parent_context_handle = out_args.new_parent_context_handle;
+
+    if (out_args.new_certificate_size > new_certificate_buf_size) {
+        return DPE_INVALID_ARGUMENT;
+    }
+    memcpy(new_certificate_buf, out_args.new_certificate,
+           out_args.new_certificate_size);
+    *new_certificate_actual_size = out_args.new_certificate_size;
+
+    if (out_args.exported_cdi_size > exported_cdi_buf_size) {
+        return DPE_INVALID_ARGUMENT;
+    }
+    memcpy(exported_cdi_buf, out_args.exported_cdi,
+           out_args.exported_cdi_size);
+    *exported_cdi_actual_size = out_args.exported_cdi_size;
 
     return DPE_NO_ERROR;
 }

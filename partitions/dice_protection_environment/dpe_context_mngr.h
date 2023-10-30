@@ -19,6 +19,8 @@ extern "C" {
 #endif
 
 #define DICE_CERT_SIZE  3072
+/* Below encoded CDI size accomodate both Attest and Seal CDI */
+#define DICE_MAX_ENCODED_CDI_SIZE ((2 * DICE_CDI_SIZE) + 16)
 
 #define INVALID_HANDLE 0xFFFFFFFF
 #define INVALID_COMPONENT_IDX 0xFFFF
@@ -58,10 +60,13 @@ struct component_context_data_t {
 struct component_context_t {
     struct component_context_data_t data;   /* Component context data */
     bool in_use;                            /* Flag to indicate if element is used */
-    bool is_leaf;                           /* Is the component allowed to derive */
+    bool is_allowed_to_derive;              /* Is the component allowed to derive */
+    bool is_export_cdi_allowed;             /* Is CDI allowed to export */
     uint16_t nonce;                         /* Context handle nonce for the component */
     uint16_t parent_idx;                    /* Parent component's index */
     uint16_t linked_layer_idx;              /* Layer component is linked to */
+    int32_t  target_locality;               /* Identifies the locality to which the
+                                             * derived context will be bound */
     uint32_t expected_mhu_id;               /* Expected mhu to authorise derivation */
 };
 
@@ -90,6 +95,7 @@ struct layer_context_t {
     uint8_t attest_cdi_hash_input[DPE_HASH_ALG_SIZE];
     enum layer_state_t state;
     bool is_external_pub_key_provided;
+    bool is_cdi_to_be_exported;
 };
 
 /**
@@ -105,10 +111,10 @@ dpe_error_t initialise_context_mngr(int *rot_ctx_handle);
  * \brief Derives a component context and optionally creates certificate
  *        chain.
  *
- * \param[in]  input_context_handle        Input handle to parent component context
+ * \param[in]  input_context_handle        Input handle to parent component context.
  * \param[in]  retain_parent_context       Flag to indicate if parent context need
  *                                         to be retained. TRUE only if a client
- *                                         is calling DPE commands multiple times
+ *                                         is calling DPE commands multiple times.
  * \param[in]  allow_new_context_to_derive Flag to indicate if derived context can
  *                                         derive further.
  * \param[in]  create_certificate          Flag to indicate if certificate needs
@@ -117,19 +123,47 @@ dpe_error_t initialise_context_mngr(int *rot_ctx_handle);
  * \param[in]  dice_inputs                 Pointer to dice_input buffer.
  * \param[in]  client_id                   Identifier of the client calling the
  *                                         service.
+ * \param[in]  target_locality             Identifier of the locality to which the
+ *                                         derived context should be bound to.
+ * \param[in]  return_certificate          Indicates whether to return the generated
+ *                                         certificate when create_certificate is true.
+ * \param[in]  allow_new_context_to_export Indicates whether the DPE permits export of
+ *                                         the CDI from the newly derived context.
+ * \param[in]  export_cdi                  Indicates whether to export derived CDI.
  * \param[out] new_context_handle          A new handle for derived context.
  * \param[out] new_parent_context_handle   A new handle for parent context.
+ * \param[out] new_certificate_buf         If create_certificate and return_certificate
+ *                                         are both true, this argument holds the new
+ *                                         certificate generated for the new context.
+ * \param[in]  new_certificate_buf_size    Size of the allocated buffer for
+ *                                         new certificate.
+ * \param[out] new_certificate_actual_size Actual size of the new certificate.
+ * \param[out] exported_cdi_buf            If export_cdi is true, this is the
+ *                                         exported CDI value.
+ * \param[in]  exported_cdi_buf_size       Size of the allocated buffer for
+ *                                         exported CDI.
+ * \param[out] exported_cdi_actual_size    Actual size of the exported CDI.
  *
  * \return Returns error code of type dpe_error_t
  */
-dpe_error_t derive_context_request(int input_context_handle,
+dpe_error_t derive_context_request(int input_ctx_handle,
                                    bool retain_parent_context,
                                    bool allow_new_context_to_derive,
                                    bool create_certificate,
                                    const DiceInputValues *dice_inputs,
                                    int32_t client_id,
+                                   int32_t target_locality,
+                                   bool return_certificate,
+                                   bool allow_new_context_to_export,
+                                   bool export_cdi,
                                    int *new_context_handle,
-                                   int *new_parent_context_handle);
+                                   int *new_parent_context_handle,
+                                   uint8_t *new_certificate_buf,
+                                   size_t new_certificate_buf_size,
+                                   size_t *new_certificate_actual_size,
+                                   uint8_t *exported_cdi_buf,
+                                   size_t exported_cdi_buf_size,
+                                   size_t *exported_cdi_actual_size);
 
 /**
  * \brief Destroys a component context and optionally depending on argument

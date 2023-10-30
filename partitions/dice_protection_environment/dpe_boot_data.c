@@ -296,13 +296,23 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
 
     /* Derive RoT layer */
     err = derive_context_request(rot_ctx_handle,
-                                 false,
-                                 true,
+                                 false, /* retain_parent_context */
+                                 true, /* allow_new_context_to_derive */
                                  true, /* create certificate */
                                  &dice_inputs,
-                                 0,
-                                 &plat_ctx_handle,
-                                 &invalid_ctx_handle);
+                                 0, /* client_id */
+                                 0, /* target_locality */
+                                 false, /* return_certificate */
+                                 true, /* allow_new_context_to_export */
+                                 false, /* export_cdi */
+                                 &plat_ctx_handle, /* new_ctx_handle */
+                                 &invalid_ctx_handle, /* new_parent_ctx_handle */
+                                 NULL, /* new_certificate_buf */
+                                 0, /* new_certificate_buf_size */
+                                 NULL, /* new_certificate_actual_size */
+                                 NULL, /* exported_cdi_buf */
+                                 0, /* exported_cdi_buf_size */
+                                 NULL); /* exported_cdi_actual_size */
     if (err != DPE_NO_ERROR) {
         return err;
     }
@@ -319,11 +329,21 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
     err = derive_context_request(plat_ctx_handle,
                                  false, /* close parent context */
                                  true, /* allow BL2 to derive further */
-                                 false,
+                                 false, /* create_certificate */
                                  &dice_inputs,
-                                 0,
-                                 &plat_ctx_handle,
-                                 &invalid_ctx_handle);
+                                 0, /* client_id */
+                                 0, /* target_locality */
+                                 false, /* return_certificate */
+                                 true, /* allow_new_context_to_export */
+                                 false, /* export_cdi */
+                                 &plat_ctx_handle, /* new_ctx_handle */
+                                 &invalid_ctx_handle, /* new_parent_ctx_handle */
+                                 NULL, /* new_certificate_buf */
+                                 0, /* new_certificate_buf_size */
+                                 NULL, /* new_certificate_actual_size */
+                                 NULL, /* exported_cdi_buf */
+                                 0, /* exported_cdi_buf_size */
+                                 NULL); /* exported_cdi_actual_size */
     if (err != DPE_NO_ERROR) {
         return err;
     }
@@ -336,11 +356,22 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
         err = derive_context_request(plat_ctx_handle,
                                      true, /* retain parent context */
                                      false, /* do not allow derived context to derive */
-                                     false,
+                                     false, /* create_certificate */
                                      &dice_inputs,
-                                     0,
-                                     &invalid_ctx_handle,
-                                     &plat_ctx_handle);
+                                     0, /* client_id */
+                                     0, /* target_locality */
+                                     false, /* return_certificate */
+                                     true, /* allow_new_context_to_export */
+                                     false, /* export_cdi */
+                                     &invalid_ctx_handle, /* new_ctx_handle */
+                                     &plat_ctx_handle, /* new_parent_ctx_handle */
+                                     NULL, /* new_certificate_buf */
+                                     0, /* new_certificate_buf_size */
+                                     NULL, /* new_certificate_actual_size */
+                                     NULL, /* exported_cdi_buf */
+                                     0, /* exported_cdi_buf_size */
+                                     NULL); /* exported_cdi_actual_size */
+
         if (err != DPE_NO_ERROR) {
             return err;
         }
@@ -365,9 +396,20 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
     return derive_context_request(plat_ctx_handle,
                                   false, /* close parent context */
                                   true, /* allow AP to derive */
-                                  false,
+                                  false, /* create_certificate */
                                   &dice_inputs,
-                                  0,
-                                  new_ctx_handle,
-                                  &invalid_ctx_handle);
+                                  0, /* client_id */
+                                  0, /* target_locality */
+                                  false, /* return_certificate */
+                                  true, /* allow_new_context_to_export */
+                                  false, /* export_cdi */
+                                  new_ctx_handle, /* new_ctx_handle */
+                                  &invalid_ctx_handle, /* new_parent_ctx_handle */
+                                  NULL, /* new_certificate_buf */
+                                  0, /* new_certificate_buf_size */
+                                  NULL, /* new_certificate_actual_size */
+                                  NULL, /* exported_cdi_buf */
+                                  0, /* exported_cdi_buf_size */
+                                  NULL); /* exported_cdi_actual_size */
+
 }

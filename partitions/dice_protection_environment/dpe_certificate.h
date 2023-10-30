@@ -41,9 +41,14 @@ extern "C" {
 #define DPE_CERT_LABEL_SUBJECT_PUBLIC_KEY        (DPE_CERT_LABEL_RANGE_BASE - 7)
 #define DPE_CERT_LABEL_KEY_USAGE                 (DPE_CERT_LABEL_RANGE_BASE - 8)
 
-/* Below label is custom and not specified in DICE profile */
+/* Below labels are custom and not specified in DICE profile */
 #define DPE_CERT_LABEL_SW_COMPONENTS             (DPE_CERT_LABEL_RANGE_BASE - 9)
 #define DPE_CERT_LABEL_EXTERNAL_LABEL            (DPE_CERT_LABEL_RANGE_BASE - 10)
+#define DPE_CERT_LABEL_CDI_EXPORT                (DPE_CERT_LABEL_RANGE_BASE - 11)
+#define DPE_LABEL_CDI_ATTEST                     (1)
+#define DPE_LABEL_CDI_SEAL                       (2)
+#define DPE_LABEL_CERT_CHAIN                     (3)
+#define DPE_LABEL_CERT                           (4)
 
 /* Key usage constant per RFC 5280 */
 #define DPE_CERT_KEY_USAGE_CERT_SIGN             (1 << 5);
@@ -85,6 +90,40 @@ dpe_error_t get_certificate_chain(uint16_t layer_idx,
                                   uint8_t *cert_chain_buf,
                                   size_t cert_chain_buf_size,
                                   size_t *cert_chain_actual_size);
+
+/**
+ * \brief Returns the encoded CDI from raw value.
+ *
+ * \param[in]  cdi                       Pointer to the input CDI buffer.
+ * \param[in]  cdi_size                  Size of the input CDI buffer.
+ * \param[out] encoded_cdi_buf           Pointer to the output encoded CDI buffer.
+ * \param[in]  encoded_cdi_buf_size      Size of the encoded CDI buffer.
+ * \param[out] exported_cdi_actual_size  Actual size of the encoded CDI.
+ *
+ * \return Returns error code of type dpe_error_t
+ */
+dpe_error_t encode_cdi(const uint8_t *cdi,
+                       size_t cdi_size,
+                       uint8_t *encoded_cdi_buf,
+                       size_t encoded_cdi_buf_size,
+                       size_t *encoded_cdi_actual_size);
+
+/**
+ * \brief Adds already encoded certificate to the array.
+ *
+ * \param[in]  cert_buf                  Pointer to the input cert buffer.
+ * \param[in]  cert_buf_size             Size of the input cert buffer.
+ * \param[out] encoded_cert_buf          Pointer to the output encoded cert buffer.
+ * \param[in]  encoded_cert_buf_size     Size of the encoded cert buffer.
+ * \param[out] encoded_cert_actual_size  Actual size of the encoded cert byte array.
+ *
+ * \return Returns error code of type dpe_error_t
+ */
+dpe_error_t add_encoded_layer_certificate(const uint8_t *cert_buf,
+                                          size_t cert_buf_size,
+                                          uint8_t *encoded_cert_buf,
+                                          size_t encoded_cert_buf_size,
+                                          size_t *encoded_cert_actual_size);
 
 #ifdef __cplusplus
 }

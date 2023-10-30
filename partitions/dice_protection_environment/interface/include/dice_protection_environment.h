@@ -53,8 +53,27 @@ typedef int32_t dpe_error_t;
  *                                         intermediate certificate. True only if
  *                                         it is the last component in the layer.
  * \param[in]  dice_inputs                 DICE input values.
+ * \param[in]  target_locality             Identifies the locality to which the
+ *                                         derived context will be bound. Could be
+ *                                         MHU id.
+ * \param[in]  return_certificate          Indicates whether to return the generated
+ *                                         certificate when create_certificate is true.
+ * \param[in]  allow_new_context_to_export Indicates whether the DPE permits export of
+ *                                         the CDI from the newly derived context.
+ * \param[in]  export_cdi                  Indicates whether to export derived CDI.
  * \param[out] new_context_handle          New handle for the derived context.
  * \param[out] new_parent_context_handle   New handle for the parent context.
+ * \param[out] new_certificate_buf         If create_certificate and return_certificate
+ *                                         are both true, this argument holds the new
+ *                                         certificate generated for the new context
+ * \param[in]  new_certificate_buf_size    Size of the allocated buffer for
+ *                                         new certificate.
+ * \param[out] new_certificate_actual_size Actual size of the new certificate.
+ * \param[out] exported_cdi_buf            If export_cdi is true, this is the
+ *                                         exported CDI value.
+ * \param[in]  exported_cdi_buf_size       Size of the allocated buffer for
+ *                                         exported cdi.
+ * \param[out] exported_cdi_actual_size    Actual size of the exported cdi.
  *
  * \return Returns error code of type dpe_error_t
  */
@@ -64,8 +83,18 @@ dpe_derive_context(int                    context_handle,
                    bool                   allow_new_context_to_derive,
                    bool                   create_certificate,
                    const DiceInputValues *dice_inputs,
+                   int32_t                target_locality,
+                   bool                   return_certificate,
+                   bool                   allow_new_context_to_export,
+                   bool                   export_cdi,
                    int                   *new_context_handle,
-                   int                   *new_parent_context_handle);
+                   int                   *new_parent_context_handle,
+                   uint8_t               *new_certificate_buf,
+                   size_t                 new_certificate_buf_size,
+                   size_t                *new_certificate_actual_size,
+                   uint8_t               *exported_cdi_buf,
+                   size_t                 exported_cdi_buf_size,
+                   size_t                *exported_cdi_actual_size);
 
 /**
  * \brief Destroys a DPE context.

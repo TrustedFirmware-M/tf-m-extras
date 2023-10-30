@@ -124,6 +124,14 @@ static void add_label_claim(struct dpe_cert_encode_ctx *me,
     }
 }
 
+static void add_cdi_export_claim(struct dpe_cert_encode_ctx *me,
+                                 struct layer_context_t *layer_ctx)
+{
+    QCBOREncode_AddBoolToMapN(&me->cbor_enc_ctx,
+                              DPE_CERT_LABEL_CDI_EXPORT,
+                              layer_ctx->is_cdi_to_be_exported);
+}
+
 static void add_subject_claim(struct dpe_cert_encode_ctx *me,
                               struct layer_context_t *layer_ctx)
 {
@@ -439,6 +447,11 @@ dpe_error_t encode_layer_certificate(uint16_t layer_idx,
     /* Add key usage claim */
     add_key_usage_claim(&dpe_cert_ctx);
 
+    /* Add CDI exported claim */
+    if (layer_ctx->is_cdi_to_be_exported) {
+        add_cdi_export_claim(&dpe_cert_ctx, layer_ctx);
+    }
+
     /* Finish up creating the token. This is where the actual signature
      * is generated. This finishes up the CBOR encoding too.
      */
@@ -574,4 +587,70 @@ dpe_error_t get_certificate_chain(uint16_t layer_idx,
 
     return close_certificate_chain(&dpe_cert_chain_ctx,
                                    cert_chain_actual_size);
+}
+
+dpe_error_t encode_cdi(const uint8_t *cdi,
+                       size_t cdi_size,
+                       uint8_t *encoded_cdi_buf,
+                       size_t encoded_cdi_buf_size,
+                       size_t *encoded_cdi_actual_size)
+{
+    QCBOREncodeContext encode_ctx;
+    QCBORError encode_err;
+    UsefulBufC out;
+
+    QCBOREncode_Init(&encode_ctx, (UsefulBuf){ encoded_cdi_buf, encoded_cdi_buf_size });
+    QCBOREncode_OpenMap(&encode_ctx);
+
+    /* Encode CDI value as byte string */
+    QCBOREncode_AddBytesToMapN(&encode_ctx,
+                               DPE_LABEL_CDI_ATTEST,
+                               (UsefulBufC){ cdi, cdi_size });
+
+    QCBOREncode_CloseMap(&encode_ctx);
+    encode_err = QCBOREncode_Finish(&encode_ctx, &out);
+
+    /* Check for any encoding errors. */
+    if (encode_err == QCBOR_ERR_BUFFER_TOO_SMALL) {
+        return DPE_INSUFFICIENT_MEMORY;
+    } else if (encode_err != QCBOR_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    *encoded_cdi_actual_size = out.len;
+
+    return DPE_NO_ERROR;
+}
+
+dpe_error_t add_encoded_layer_certificate(const uint8_t *cert_buf,
+                                          size_t cert_buf_size,
+                                          uint8_t *encoded_cert_buf,
+                                          size_t encoded_cert_buf_size,
+                                          size_t *encoded_cert_actual_size)
+{
+    QCBOREncodeContext encode_ctx;
+    QCBORError encode_err;
+    UsefulBufC out;
+
+    QCBOREncode_Init(&encode_ctx, (UsefulBuf){ encoded_cert_buf, encoded_cert_buf_size });
+    QCBOREncode_OpenMap(&encode_ctx);
+
+    /* Encode CDI value as byte string */
+    QCBOREncode_AddBytesToMapN(&encode_ctx,
+                               DPE_LABEL_CERT,
+                               (UsefulBufC){ cert_buf, cert_buf_size });
+
+    QCBOREncode_CloseMap(&encode_ctx);
+    encode_err = QCBOREncode_Finish(&encode_ctx, &out);
+
+    /* Check for any encoding errors. */
+    if (encode_err == QCBOR_ERR_BUFFER_TOO_SMALL) {
+        return DPE_INSUFFICIENT_MEMORY;
+    } else if (encode_err != QCBOR_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    *encoded_cert_actual_size = out.len;
+
+    return DPE_NO_ERROR;
 }
