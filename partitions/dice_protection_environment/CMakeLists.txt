@@ -113,8 +113,8 @@ target_compile_definitions(tfm_config
 
 install(FILES       ${CMAKE_CURRENT_SOURCE_DIR}/interface/src/dpe_cmd_encode.c
                     ${CMAKE_CURRENT_SOURCE_DIR}/interface/src/dpe_client.c
-        DESTINATION ${TFM_INSTALL_PATH}/interface/src)
+        DESTINATION ${INSTALL_INTERFACE_SRC_DIR})
 
 install(FILES       ${CMAKE_CURRENT_SOURCE_DIR}/interface/include/dice_protection_environment.h
                     ${CMAKE_CURRENT_SOURCE_DIR}/interface/include/dpe_client.h
-        DESTINATION ${TFM_INSTALL_PATH}/interface/include)
+        DESTINATION ${INSTALL_INTERFACE_INC_DIR})

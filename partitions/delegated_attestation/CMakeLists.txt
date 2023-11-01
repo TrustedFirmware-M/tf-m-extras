@@ -97,9 +97,6 @@ target_compile_definitions(tfm_config
         TFM_PARTITION_DELEGATED_ATTESTATION
 )
 
-set(INSTALL_INTERFACE_SRC_DIR    ${TFM_INSTALL_PATH}/interface/src)
-set(INSTALL_INTERFACE_INC_DIR    ${TFM_INSTALL_PATH}/interface/include)
-
 install(FILES       ${INTERFACE_SRC_DIR}/tfm_delegated_attestation_api.c
         DESTINATION ${INSTALL_INTERFACE_SRC_DIR})
 
