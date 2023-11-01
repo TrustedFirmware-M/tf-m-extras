@@ -10,8 +10,8 @@
 static struct test_t dpe_ns_tests[] = {
     {&derive_rot_layer_context, "DPE_NS_TEST_INIT",
      "DPE derive RoT context"},
-    {&derive_child_api_test, "DPE_NS_TEST_1001",
-     "DPE DeriveChild API"},
+    {&derive_context_api_test, "DPE_NS_TEST_1001",
+     "DPE DeriveContext API"},
     {&certify_key_api_test, "DPE_NS_TEST_1002",
      "DPE CertifyKey API"},
 };
