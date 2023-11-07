@@ -82,7 +82,7 @@ Additional requirements
 
 .. toctree::
   :caption: Overview
-  :maxdepth: 1
+  :titlesonly:
   :hidden:
 
   Partitions <partitions/index>
@@ -94,6 +94,8 @@ Additional requirements
   :hidden:
 
   Trusted Firmware-M <https://trustedfirmware-m.readthedocs.io/en/latest/>
+  TF-M Tests <https://trustedfirmware-m.readthedocs.io/projects/tf-m-tests/en/latest/>
+  TF-M Tools <https://trustedfirmware-m.readthedocs.io/projects/tf-m-tools/en/latest/>
 
 --------------
 
