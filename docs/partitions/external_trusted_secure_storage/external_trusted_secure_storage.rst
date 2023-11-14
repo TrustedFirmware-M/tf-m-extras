@@ -146,21 +146,19 @@ It can be intergated with different software platforms and OSes, and consists of
 four parts: secure Flash API layer, secure Flash common layer, vendor specific
 layer and crypto service interface.
 
-- Secure Flash API layer: This layer mainly manages application's access
-permission based on application identification and pre-provisioned information.
-The implementation of this layer varies accross software platforms and OSes.
-Here integrated with TF-M, this layer manages access permissions based on client
-id, and derives parameters passed to secure Flash common layer.
+- Secure Flash API layer: This layer mainly manages application's access permission based on
+  application identification and pre-provisioned information. The implementation of this layer
+  varies accross software platforms and OSes. Here integrated with TF-M, this layer manages access
+  permissions based on client id, and derives parameters passed to secure Flash common layer.
 
-- Secure Flash common layer: This layer abstracts secure Flash operations, and
-calls binding vendor specific operations.
+- Secure Flash common layer: This layer abstracts secure Flash operations, and calls binding vendor
+  specific operations.
 
-- Vendor specific layer: The specific implementation of different secure Flash
-vendors and JEDEC recommended implementation, it depends on upper layer's choice
-to bind with JEDEC recommended implementation or vendor specific implementation.
-This layer calls tf-m crypto services via crypto service interface to perform
-cryptographic operations, then assemble packets sent to external secure Flash
-and parse packets received from external secure Flash.
+- Vendor specific layer: The specific implementation of different secure Flash vendors and JEDEC
+  recommended implementation, it depends on upper layer's choice to bind with JEDEC recommended
+  implementation or vendor specific implementation. This layer calls tf-m crypto services via
+  crypto service interface to perform cryptographic operations, then assemble packets sent to
+  external secure Flash and parse packets received from external secure Flash.
 
 If vendors tend to contribute projects with hiding some critical source codes,
 then these critical parts can be released as library files. These library files
@@ -215,8 +213,8 @@ tf-binaries repo:
 
 .. note::
 
-The ``suites/etss/`` provides ETSS service test suites, this folder can be
-integrated with ``tf-m-tests/test/suites`` for testing.
+   The ``suites/etss/`` provides ETSS service test suites, this folder can be
+   integrated with ``tf-m-tests/test/suites`` for testing.
 
 
 ***********************
@@ -233,13 +231,13 @@ Besides, to integrate ETSS testsuites sample with ``tf-m-tests``, put the
 ``suites/etss`` folder under ``tf-m-test/test/suites``, add following command to
 ``tf-m-test/test/suites/CMakeLists.txt``.
 
-.. code-block:: cmake
+.. code-block:: console
 
     add_subdirectory(suites/etss)
 
     and add the following command to ``tf-m-test/app/CMakeLists.txt``
 
-.. code-block:: cmake
+.. code-block:: console
 
     $<$<BOOL:${TFM_PARTITION_EXTERNAL_TRUSTED_SECURE_STORAGE}>:${INTERFACE_SRC_DIR}/etss/etss_ipc_api.c>
 

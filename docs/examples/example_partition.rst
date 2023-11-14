@@ -11,8 +11,10 @@ Please refer to `PSA Firmware Framework 1.0`_
 and `Firmware Framework for M 1.1 Extensions`_
 for details of the attributes of Secure Partitions.
 
-Please refer to `Adding Secure Partition`_
+Please refer to :doc:`Adding Secure Partition <TF-M:integration_guide/services/tfm_secure_partition_addition>`
 for more details of adding a new Secure Partition to TF-M.
+
+.. file-structure:
 
 **************
 File structure
@@ -92,7 +94,7 @@ To test the RoT Services, you need to build the APIs and call the service APIs
 somewhere.
 
 If you want to add comprehensive tests using the TF-M test framework, please
-refer to `Adding TF-M Regression Test Suite`_.
+refer to :doc:`Adding TF-M Regression Test Suite <TF-M-Tests:tfm_test_suites_addition>`.
 
 Testing in NSPE
 ===============
@@ -122,28 +124,20 @@ References
 
 | `PSA Firmware Framework 1.0`_
 | `Firmware Framework for M 1.1 Extensions`_
-| `Adding Secure Partition`_
 | `TF-M Manifest List`_
 | `Out-of-tree Secure Partition build`_
-| `Adding TF-M Regression Test Suite`_
 
 .. _PSA Firmware Framework 1.0:
-  https://developer.arm.com/-/media/Files/pdf/PlatformSecurityArchitecture/Architect/DEN0063-PSA_Firmware_Framework-1.0.0-2.pdf?revision=2d1429fa-4b5b-461a-a60e-4ef3d8f7f4b4
+  https://developer.arm.com/documentation/den0063/latest/
 
 .. _Firmware Framework for M 1.1 Extensions:
-  https://documentation-service.arm.com/static/600067c09b9c2d1bb22cd1c5?token=
-
-.. _Adding Secure Partition:
-  https://trustedfirmware-m.readthedocs.io/en/latest/integration_guide/services/tfm_secure_partition_addition.html
+  https://developer.arm.com/documentation/aes0039/latest/
 
 .. _TF-M Manifest List:
   https://trustedfirmware-m.readthedocs.io/en/latest/integration_guide/services/tfm_manifest_tool_user_guide.html#manifest-list
 
 .. _Out-of-tree Secure Partition build:
   https://trustedfirmware-m.readthedocs.io/en/latest/integration_guide/services/tfm_secure_partition_addition.html#out-of-tree-secure-partition-build
-
-.. _Adding TF-M Regression Test Suite:
-  https://git.trustedfirmware.org/TF-M/tf-m-tests.git/tree/docs/tfm_test_suites_addition.rst
 
 --------------
 

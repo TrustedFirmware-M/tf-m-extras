@@ -8,7 +8,7 @@ The unprivileged task demonstrates the usage of the unprivileged DMA API through
 a simple 2D example.
 
 For detailed description of how privilege separation can be achieved with
-DMA-350, checkout :doc:`DMA-350 privilege separation </partitions/dma350_unpriv_partition/dma350_privilege_separation>`
+DMA-350, checkout :doc:`DMA-350 privilege separation <../../partitions/dma350_unpriv_partition/dma350_privilege_separation>`
 
 ***********
 Build steps
