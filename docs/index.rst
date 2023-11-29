@@ -2,8 +2,6 @@
 Trusted Firmware-M Extras
 ################################
 
-.. raw:: html
-
 The Trusted Firmware-M (TF-M) Extras repository is the extension of the TF-M
 main repository to host the examples, demonstrations, third-party modules,
 third-party secure partitions, etc.
@@ -12,7 +10,7 @@ third-party secure partitions, etc.
 License
 *******
 
-The default license of new source code in this repository is :doc:`BSD 3-clause <license>`.
+The default license of new source code in this repository is `BSD 3-clause <https://git.trustedfirmware.org/TF-M/tf-m-extras.git/tree/license.rst>`_.
 
 Some source files are contributed by the third-parties or derived from the
 external projects. A license file should be included in the root folder of these
@@ -30,7 +28,7 @@ Folder Structure
 Contribute to this repository
 *****************************
 
-Refer to `contributing process <https://trustedfirmware-m.readthedocs.io/en/latest/contributing/contributing_process.html>`_
+Refer to :doc:`contributing process <TF-M:contributing/contributing_process>`
 for the TF-M general contribution guideline.
 
 Please contact `TF-M development mailing list <https://lists.trustedfirmware.org/mailman3/lists/tf-m.lists.trustedfirmware.org>`_
@@ -50,8 +48,8 @@ Additional requirements
   mitigate known security vulnerabilities.
 
 - List the example and secure partition in
-  :doc:`example readme <examples/examples_readme>` and
-  :doc:`secure partition readme <partitions/partitions_readme>` respectively.
+  :doc:`example readme <examples/examples>` and
+  :doc:`secure partition readme <partitions/partitions>` respectively.
 
    - Each example/secure partition shall specify the following information
 
@@ -82,7 +80,7 @@ Additional requirements
 
 .. toctree::
   :caption: Overview
-  :maxdepth: 1
+  :titlesonly:
   :hidden:
 
   Partitions <partitions/index>
@@ -94,6 +92,8 @@ Additional requirements
   :hidden:
 
   Trusted Firmware-M <https://trustedfirmware-m.readthedocs.io/en/latest/>
+  TF-M Tests <https://trustedfirmware-m.readthedocs.io/projects/tf-m-tests/en/latest/>
+  TF-M Tools <https://trustedfirmware-m.readthedocs.io/projects/tf-m-tools/en/latest/>
 
 --------------
 

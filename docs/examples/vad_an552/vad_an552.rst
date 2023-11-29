@@ -183,14 +183,14 @@ Our measurements showed that MVE speeds up the frequency calculation by 10
 times with release GCC build.
 
 You can check TF-M's build instructions
-`here <https://trustedfirmware-m.readthedocs.io/en/latest/building/tfm_build_instruction.html>`__.
+:doc:`here <TF-M:building/tfm_build_instruction>`.
 
 -----------------------
 Running the application
 -----------------------
 
 It is covered by the generic TF-M run instructions for AN552
-`here <https://trustedfirmware-m.readthedocs.io/en/latest/platform/arm/mps3/corstone300/README.html?highlight=an552#build-instructions-with-platform-name-arm-mps3-corstone300-an547>`__.
+`here <https://trustedfirmware-m.readthedocs.io/en/latest/platform/arm/mps3/corstone300/README.html?highlight=an552#build-instructions-with-platform-name-arm-mps3-corstone300-an547>`_.
 
 ---------------------------
 Testing the voice algorithm

@@ -9,7 +9,7 @@ The example demonstrates the proper, non-blocking usage of the library, as well
 as some negative tests for invalid channel access, not allocated channel
 access, and accesses for privileged memory.
 For detailed description of how privilege separation can be achieved with
-DMA-350, checkout :doc:`DMA-350 privilege separation <dma350_privilege_separation.rst>`
+DMA-350, checkout :doc:`DMA-350 privilege separation <dma350_privilege_separation>`
 The partition requires a DMA350 peripheral in the platform with Channel 0 configured as
 secure, like for example mps3/corstone310/fvp.
 

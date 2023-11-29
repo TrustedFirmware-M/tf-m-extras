@@ -52,7 +52,7 @@ metrics. The principals and metrics should also be specified.
 Target of Evaluation
 ********************
 
-A typical TF-M system diagram can be seen on `Generic Threat Model <Generic-Threat-Model_>`_.
+A typical TF-M system diagram can be seen on :doc:`Generic Threat Model <TF-M:security/threat_models/generic_threat_model>`.
 TF-M is running in the Secure Processing Environment (SPE) and NS software is
 running in Non-secure Processing Environment (NSPE).
 
@@ -81,7 +81,7 @@ In this threat model, assets include the items listed below:
 Data Flow Diagram
 *****************
 
-The list and details of data flows are described in the `Generic Threat Model <Generic-Threat-Model_>`_.
+The list and details of data flows are described in the :doc:`Generic Threat Model <TF-M:security/threat_models/generic_threat_model>`.
 In addition to the data flows above, this use-case introduces a new data flow
 from a peripheral to the SPE. Although the peripheral resides within the SPE,
 the data from it is external so must be considered as data crossing a trust
@@ -90,8 +90,8 @@ boundary. This Data flow will be labeled as DF7 from now on.
 .. note::
 
   All the other data flows across the Trusted Boundary besides the valid ones
-  mentioned in the `Generic Threat Model <Generic-Threat-Model_>`_ and above
-  should be prohibited by default. Proper isolation must be configured to
+  mentioned in the :doc:`Generic Threat Model <TF-M:security/threat_models/generic_threat_model>`
+  and above should be prohibited by default. Proper isolation must be configured to
   prevent NSPE directly accessing SPE.
 
   Although the data flows are covered in general in the TF-M Generic Threat
@@ -142,7 +142,7 @@ representation of the CVSS metric values used to score the threat. Refer to
   This threat model document focuses on threats specific to the VAD partition.
   Similar threats might exist in the generic threat model with different
   consequense or severity. For the details of generic threats in general usage
-  scenario, please refer to the `Generic Threat Model <Generic-Threat-Model_>`_ document.
+  scenario, please refer to the :doc:`Generic Threat Model <TF-M:security/threat_models/generic_threat_model>` document.
 
 NSPE requests TF-M secure service
 ---------------------------------
@@ -310,33 +310,15 @@ Version control
   | v1.0    | First version                                    | TF-M v1.6.0   |
   +---------+--------------------------------------------------+---------------+
 
-*********
-Reference
-*********
-
-.. [Security-Incident-Process] `Security Incident Process <https://developer.trustedfirmware.org/w/collaboration/security_center/reporting/>`_
-
-.. [Generic-Threat-Model] `Generic Threat Model <https://tf-m-user-guide.trustedfirmware.org/docs/security/threat_models/generic_threat_model.html>`_
-
-.. [FF-M] `Arm® Platform Security Architecture Firmware Framework 1.0 <https://developer.arm.com/-/media/Files/pdf/PlatformSecurityArchitecture/Architect/DEN0063-PSA_Firmware_Framework-1.0.0-2.pdf?revision=2d1429fa-4b5b-461a-a60e-4ef3d8f7f4b4>`_
-
-.. [DUAL-CPU-BOOT] `Booting a dual core system <https://tf-m-user-guide.trustedfirmware.org/docs/technical_references/design_docs/dual-cpu/booting_a_dual_core_system.html>`_
+**********
+References
+**********
 
 .. [CVSS] `Common Vulnerability Scoring System Version 3.1 Calculator <https://www.first.org/cvss/calculator/3.1>`_
 
 .. [CVSS_SPEC] `CVSS v3.1 Specification Document <https://www.first.org/cvss/v3-1/cvss-v31-specification_r1.pdf>`_
 
 .. [STRIDE] `The STRIDE Threat Model <https://docs.microsoft.com/en-us/previous-versions/commerce-server/ee823878(v=cs.20)?redirectedfrom=MSDN>`_
-
-.. [SECURE-BOOT] `Secure boot <https://tf-m-user-guide.trustedfirmware.org/docs/technical_references/design_docs/tfm_secure_boot.html>`_
-
-.. [ROLLBACK-PROTECT] `Rollback protection in TF-M secure boot <https://tf-m-user-guide.trustedfirmware.org/docs/technical_references/design_docs/secure_boot_rollback_protection.html>`_
-
-.. [STACK-SEAL] `Armv8-M processor Secure software Stack Sealing vulnerability <https://developer.arm.com/support/arm-security-updates/armv8-m-stack-sealing>`_
-
-.. [ADVISORY-TFMV-1] `Advisory TFMV-1 <https://tf-m-user-guide.trustedfirmware.org/docs/security/security_advisories/stack_seal_vulnerability.html>`_
-
-.. [ADVISORY-TFMV-2] `Advisory TFMV-2 <https://tf-m-user-guide.trustedfirmware.org/docs/security/security_advisories/svc_caller_sp_fetching_vulnerability.html>`_
 
 --------------------
 
