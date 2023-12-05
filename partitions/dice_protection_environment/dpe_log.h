@@ -49,6 +49,13 @@ void log_certify_key(int context_handle,
                      size_t label_size);
 
 /**
+ * \brief Log the get certificate chain command parameters.
+ */
+void log_get_certificate_chain(int context_handle,
+                               bool retain_context,
+                               bool clear_from_context);
+
+/**
  * \brief Log intermediate layer certificate contents.
  */
 void log_intermediate_certificate(uint16_t layer_idx,
@@ -67,6 +74,7 @@ void log_certificate_chain(const uint8_t *certificate_chain_buf,
 #define log_derive_context(...)
 #define log_destroy_context(...)
 #define log_certify_key(...)
+#define log_get_certificate_chain(...)
 #define log_intermediate_certificate(...)
 #define log_certificate_chain(...)
 

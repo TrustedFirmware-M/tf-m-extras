@@ -876,3 +876,62 @@ dpe_error_t certify_key_request(int input_ctx_handle,
 
     return DPE_NO_ERROR;
 }
+
+dpe_error_t get_certificate_chain_request(int input_ctx_handle,
+                                          bool retain_context,
+                                          bool clear_from_context,
+                                          uint8_t *certificate_chain_buf,
+                                          size_t certificate_chain_buf_size,
+                                          size_t *certificate_chain_actual_size,
+                                          int *new_context_handle)
+{
+    dpe_error_t err;
+    uint16_t input_ctx_idx, input_layer_idx, parent_layer_idx;
+    psa_status_t status;
+    struct layer_context_t *layer_ctx;
+
+    log_get_certificate_chain(input_ctx_handle, retain_context, clear_from_context);
+
+    /* Validate input handle */
+    if (!is_input_handle_valid(input_ctx_handle)) {
+        return DPE_INVALID_ARGUMENT;
+    }
+
+    /* Get component index from the input handle */
+    input_ctx_idx = GET_IDX(input_ctx_handle);
+    /* Get current linked layer idx */
+    input_layer_idx = component_ctx_array[input_ctx_idx].linked_layer_idx;
+    assert(input_layer_idx < MAX_NUM_OF_LAYERS);
+
+    layer_ctx = &layer_ctx_array[input_layer_idx];
+    err = get_certificate_chain(input_layer_idx,
+                                certificate_chain_buf,
+                                certificate_chain_buf_size,
+                                certificate_chain_actual_size);
+    if (err != DPE_NO_ERROR) {
+        return err;
+    }
+
+    log_certificate_chain(certificate_chain_buf, *certificate_chain_actual_size);
+
+    /* Renew handle for the same context, if requested */
+    if (retain_context) {
+        *new_context_handle = input_ctx_handle;
+        status = renew_nonce(new_context_handle);
+        if (status != PSA_SUCCESS) {
+            return DPE_INTERNAL_ERROR;
+        }
+        component_ctx_array[input_ctx_idx].nonce = GET_NONCE(*new_context_handle);
+
+        if (clear_from_context) {
+            /* Clear all the accumulated certificate information so far */
+            clear_certificate_chain(input_layer_idx, layer_ctx);
+        }
+
+    } else {
+        *new_context_handle = INVALID_HANDLE;
+        component_ctx_array[input_ctx_idx].nonce = INVALID_NONCE_VALUE;
+    }
+
+    return DPE_NO_ERROR;
+}

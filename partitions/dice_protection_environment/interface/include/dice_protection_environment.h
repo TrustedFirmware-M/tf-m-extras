@@ -157,6 +157,42 @@ dpe_certify_key(int            context_handle,
                 size_t        *derived_public_key_actual_size,
                 int           *new_context_handle);
 
+/**
+ * \brief Returns the certificate chain generated for a given DPE context. The
+ *        order, format, and encoding of the certificate chain are specified by
+ *        a DPE profile.
+ *
+ * \param[in]  context_handle                  Input context handle for the DPE
+ *                                             context.
+ * \param[in]  retain_context                  Flag to indicate whether to
+ *                                             retain the context.
+ * \param[in]  clear_from_context              Flag to indicate whether DPE must
+ *                                             clear the certificate chain from
+ *                                             the context so subsequent calls
+ *                                             on a given context, or contexts
+ *                                             derived from it do not include
+ *                                             the certificates returned by this
+ *                                             command.
+ *                                             retain the context.
+ * \param[out] certificate_chain_buf           Buffer to write the certificate
+ *                                             chain output.
+ * \param[in]  certificate_chain_buf_size      Size of the certificate chain
+ *                                             buffer.
+ * \param[out] certificate_chain_actual_size   Size of the certificate chain
+ *                                             output written to the buffer.
+ * \param[out] new_context_handle              New handle for the DPE context.
+ *
+ * \return Returns error code of type dpe_error_t
+ */
+dpe_error_t
+dpe_get_certificate_chain(int      context_handle,
+                          bool     retain_context,
+                          bool     clear_from_context,
+                          uint8_t *certificate_chain_buf,
+                          size_t   certificate_chain_buf_size,
+                          size_t  *certificate_chain_actual_size,
+                          int     *new_context_handle);
+
 #ifdef __cplusplus
 }
 #endif

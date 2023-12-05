@@ -287,7 +287,7 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
     size_t public_key_size;
     const uint8_t *label;
     size_t label_size;
-    uint8_t certificate_chain_buf[DICE_CERT_SIZE];
+    uint8_t certificate_chain_buf[DICE_CERT_CHAIN_SIZE];
     size_t certificate_chain_actual_size;
     uint8_t derived_public_key_buf[DPE_ATTEST_PUB_KEY_SIZE];
     size_t derived_public_key_actual_size;
@@ -367,6 +367,82 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
     return DPE_NO_ERROR;
 }
 
+static dpe_error_t decode_get_certificate_chain(QCBORDecodeContext *decode_ctx,
+                                                QCBOREncodeContext *encode_ctx)
+{
+    QCBORError qcbor_err;
+    UsefulBufC out;
+    dpe_error_t dpe_err;
+    int context_handle;
+    bool retain_context;
+    bool clear_from_context;
+    uint8_t certificate_chain_buf[DICE_CERT_CHAIN_SIZE];
+    size_t certificate_chain_actual_size;
+    int new_context_handle;
+
+    /* Decode GetCertificateChain command */
+    QCBORDecode_EnterMap(decode_ctx, NULL);
+
+    QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_GET_CERTIFICATE_CHAIN_CONTEXT_HANDLE,
+                                    &out);
+    if (out.len != sizeof(context_handle)) {
+        return DPE_INVALID_COMMAND;
+    }
+    memcpy(&context_handle, out.ptr, out.len);
+
+    QCBORDecode_GetBoolInMapN(decode_ctx, DPE_GET_CERTIFICATE_CHAIN_RETAIN_CONTEXT,
+                              &retain_context);
+
+    QCBORDecode_GetBoolInMapN(decode_ctx, DPE_GET_CERTIFICATE_CHAIN_CLEAR_FROM_CONTEXT,
+                              &clear_from_context);
+
+    QCBORDecode_ExitMap(decode_ctx);
+
+    /* Exit top level array */
+    QCBORDecode_ExitArray(decode_ctx);
+
+    /* Finish and check for errors before using decoded values */
+    qcbor_err = QCBORDecode_Finish(decode_ctx);
+    if (qcbor_err != QCBOR_SUCCESS) {
+        return DPE_INVALID_COMMAND;
+    }
+
+    dpe_err = get_certificate_chain_request(context_handle,
+                                            retain_context,
+                                            clear_from_context,
+                                            certificate_chain_buf,
+                                            sizeof(certificate_chain_buf),
+                                            &certificate_chain_actual_size,
+                                            &new_context_handle);
+    if (dpe_err != DPE_NO_ERROR) {
+        return dpe_err;
+    }
+
+    /* Encode response */
+    QCBOREncode_OpenArray(encode_ctx);
+    QCBOREncode_AddInt64(encode_ctx, DPE_NO_ERROR);
+
+    QCBOREncode_OpenMap(encode_ctx);
+
+    /* The certificate chain is already encoded into a CBOR array by the get certificate
+     * chain implementation. Add it as a byte string so that its decoding can be
+     * skipped and the CBOR returned to the caller.
+     */
+    QCBOREncode_AddBytesToMapN(encode_ctx, DPE_GET_CERTIFICATE_CHAIN_CERTIFICATE_CHAIN,
+                               (UsefulBufC){ certificate_chain_buf,
+                                             certificate_chain_actual_size });
+
+    QCBOREncode_AddBytesToMapN(encode_ctx, DPE_GET_CERTIFICATE_CHAIN_NEW_CONTEXT_HANDLE,
+                               (UsefulBufC){ &new_context_handle,
+                                             sizeof(new_context_handle) });
+
+    QCBOREncode_CloseMap(encode_ctx);
+
+    QCBOREncode_CloseArray(encode_ctx);
+
+    return DPE_NO_ERROR;
+}
+
 static void encode_error_only(QCBOREncodeContext *encode_ctx,
                               dpe_error_t dpe_err)
 {
@@ -406,6 +482,9 @@ int32_t dpe_command_decode(int32_t client_id,
             break;
         case DPE_CERTIFY_KEY:
             dpe_err = decode_certify_key(&decode_ctx, &encode_ctx);
+            break;
+        case DPE_GET_CERTIFICATE_CHAIN:
+            dpe_err = decode_get_certificate_chain(&decode_ctx, &encode_ctx);
             break;
         case DPE_DESTROY_CONTEXT:
             dpe_err = decode_destroy_context(&decode_ctx, &encode_ctx);

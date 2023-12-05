@@ -622,6 +622,30 @@ dpe_error_t encode_cdi(const uint8_t *cdi,
     return DPE_NO_ERROR;
 }
 
+void clear_certificate_chain(uint16_t layer_idx,
+                             struct layer_context_t *layer_ctx)
+{
+    uint16_t layer_cnt = 0;
+
+    // Q - Confirm - Clear all the certificate info till threshold layer?
+    while ((layer_idx >= DPE_DESTROY_CONTEXT_THRESHOLD_LAYER_IDX) &&
+           (layer_cnt < MAX_NUM_OF_LAYERS)) {
+
+        layer_cnt++;
+        memset(&layer_ctx->data.cert_buf[0], 0, layer_ctx->data.cert_buf_len);
+
+        if (layer_idx == DPE_DESTROY_CONTEXT_THRESHOLD_LAYER_IDX) {
+            /* Cannot clear data from this point onwards */
+            break;
+        }
+
+        layer_ctx = get_layer_ctx_ptr(layer_idx);
+        assert(layer_ctx->parent_layer_idx < layer_idx);
+        /* Move to the parent layer */
+        layer_idx = layer_ctx->parent_layer_idx;
+    }
+}
+
 dpe_error_t add_encoded_layer_certificate(const uint8_t *cert_buf,
                                           size_t cert_buf_size,
                                           uint8_t *encoded_cert_buf,

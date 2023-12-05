@@ -109,6 +109,16 @@ dpe_error_t encode_cdi(const uint8_t *cdi,
                        size_t *encoded_cdi_actual_size);
 
 /**
+ * \brief Clears the certificate chain.
+ *
+ * \param[in] layer_idx  Index of the current layer context.
+ * \param[in] layer_ctx  Pointer to current layer context.
+ *
+ */
+void clear_certificate_chain(uint16_t layer_idx,
+                             struct layer_context_t *layer_ctx);
+
+/**
  * \brief Adds already encoded certificate to the array.
  *
  * \param[in]  cert_buf                  Pointer to the input cert buffer.

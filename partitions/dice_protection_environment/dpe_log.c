@@ -99,6 +99,17 @@ void log_certify_key(int context_handle,
     print_byte_array(label, label_size);
 }
 
+void log_get_certificate_chain(int context_handle,
+                               bool retain_context,
+                               bool clear_from_context)
+{
+    LOG_DBGFMT("DPE GetCertificateChain:\r\n");
+    LOG_DBGFMT(" - context_handle index = %d\r\n", GET_IDX(context_handle));
+    LOG_DBGFMT(" - context_handle nonce = %d\r\n", GET_NONCE(context_handle));
+    LOG_DBGFMT(" - retain_context = %d\r\n", retain_context);
+    LOG_DBGFMT(" - clear_from_context = %d\r\n", clear_from_context);
+}
+
 void log_intermediate_certificate(uint16_t layer_idx,
                                   const uint8_t *cert_buf,
                                   size_t cert_buf_size)

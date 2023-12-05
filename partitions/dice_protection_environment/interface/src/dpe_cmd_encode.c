@@ -12,6 +12,8 @@
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
 
+#define DPE_CERT_CHAIN_BUF_SIZE 4096
+
 struct derive_context_input_t {
     int context_handle;
     bool retain_parent_context;
@@ -52,6 +54,17 @@ struct certify_key_output_t {
     size_t certificate_chain_size;
     const uint8_t *derived_public_key;
     size_t derived_public_key_size;
+    int new_context_handle;
+};
+
+struct get_certificate_chain_input_t {
+    int context_handle;
+    bool retain_context;
+    bool clear_from_context;
+};
+struct get_certificate_chain_output_t {
+    const uint8_t *certificate_chain;
+    size_t certificate_chain_size;
     int new_context_handle;
 };
 
@@ -320,6 +333,75 @@ static QCBORError decode_certify_key_response(UsefulBufC encoded_buf,
     return QCBORDecode_Finish(&decode_ctx);
 }
 
+static QCBORError encode_get_certificate_chain(const struct get_certificate_chain_input_t *args,
+                                               UsefulBuf buf,
+                                               UsefulBufC *encoded_buf)
+{
+    QCBOREncodeContext encode_ctx;
+
+    QCBOREncode_Init(&encode_ctx, buf);
+
+    QCBOREncode_OpenArray(&encode_ctx);
+    QCBOREncode_AddUInt64(&encode_ctx, DPE_GET_CERTIFICATE_CHAIN);
+
+    /* Encode GetCertificateChain command */
+    QCBOREncode_OpenMap(&encode_ctx);
+    QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_GET_CERTIFICATE_CHAIN_CONTEXT_HANDLE,
+                               (UsefulBufC){ &args->context_handle,
+                                             sizeof(args->context_handle) });
+    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_GET_CERTIFICATE_CHAIN_RETAIN_CONTEXT,
+                              args->retain_context);
+    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_GET_CERTIFICATE_CHAIN_RETAIN_CONTEXT,
+                              args->clear_from_context);
+    QCBOREncode_CloseMap(&encode_ctx);
+
+    QCBOREncode_CloseArray(&encode_ctx);
+
+    return QCBOREncode_Finish(&encode_ctx, encoded_buf);
+}
+
+static QCBORError decode_get_certificate_chain_response(UsefulBufC encoded_buf,
+                                                        struct get_certificate_chain_output_t *args,
+                                                        dpe_error_t *dpe_err)
+{
+    QCBORDecodeContext decode_ctx;
+    UsefulBufC out;
+    int64_t response_dpe_err;
+
+    QCBORDecode_Init(&decode_ctx, encoded_buf, QCBOR_DECODE_MODE_NORMAL);
+
+    QCBORDecode_EnterArray(&decode_ctx, NULL);
+
+    /* Get the error code from the response */
+    QCBORDecode_GetInt64(&decode_ctx, &response_dpe_err);
+    *dpe_err = (dpe_error_t)response_dpe_err;
+
+    /* Decode CertifyKey response if successful */
+    if (*dpe_err == DPE_NO_ERROR) {
+        QCBORDecode_EnterMap(&decode_ctx, NULL);
+
+        QCBORDecode_GetByteStringInMapN(&decode_ctx,
+                                        DPE_GET_CERTIFICATE_CHAIN_CERTIFICATE_CHAIN,
+                                        &out);
+        args->certificate_chain = out.ptr;
+        args->certificate_chain_size = out.len;
+
+        QCBORDecode_GetByteStringInMapN(&decode_ctx,
+                                        DPE_GET_CERTIFICATE_CHAIN_NEW_CONTEXT_HANDLE,
+                                        &out);
+        if (out.len != sizeof(args->new_context_handle)) {
+            return QCBORDecode_Finish(&decode_ctx);
+        }
+        memcpy(&args->new_context_handle, out.ptr, out.len);
+
+        QCBORDecode_ExitMap(&decode_ctx);
+    }
+
+    QCBORDecode_ExitArray(&decode_ctx);
+
+    return QCBORDecode_Finish(&decode_ctx);
+}
+
 dpe_error_t
 dpe_derive_context(int                    context_handle,
                    bool                   retain_parent_context,
@@ -496,6 +578,61 @@ dpe_error_t dpe_certify_key(int context_handle,
     memcpy(derived_public_key_buf, out_args.derived_public_key,
            out_args.derived_public_key_size);
     *derived_public_key_actual_size = out_args.derived_public_key_size;
+
+    *new_context_handle = out_args.new_context_handle;
+
+    return DPE_NO_ERROR;
+}
+
+dpe_error_t
+dpe_get_certificate_chain(int            context_handle,
+                          bool           retain_context,
+                          bool           clear_from_context,
+                          uint8_t       *certificate_chain_buf,
+                          size_t         certificate_chain_buf_size,
+                          size_t        *certificate_chain_actual_size,
+                          int           *new_context_handle)
+{
+    int32_t service_err;
+    dpe_error_t dpe_err;
+    QCBORError qcbor_err;
+    UsefulBufC encoded_buf;
+    UsefulBuf_MAKE_STACK_UB(cmd_buf, DPE_CERT_CHAIN_BUF_SIZE);
+
+    const struct get_certificate_chain_input_t in_args = {
+        context_handle,
+        retain_context,
+        clear_from_context
+    };
+    struct get_certificate_chain_output_t out_args;
+
+    qcbor_err = encode_get_certificate_chain(&in_args, cmd_buf, &encoded_buf);
+    if (qcbor_err != QCBOR_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    service_err = dpe_client_call(encoded_buf.ptr, encoded_buf.len,
+                                  cmd_buf.ptr, &cmd_buf.len);
+    if (service_err != 0) {
+        return DPE_INTERNAL_ERROR;
+    }
+
+    qcbor_err = decode_get_certificate_chain_response(UsefulBuf_Const(cmd_buf),
+                                                                      &out_args,
+                                                                      &dpe_err);
+    if (qcbor_err != QCBOR_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    } else if (dpe_err != DPE_NO_ERROR) {
+        return dpe_err;
+    }
+
+    /* Copy returned values into caller's memory */
+    if (out_args.certificate_chain_size > certificate_chain_buf_size) {
+        return DPE_INVALID_ARGUMENT;
+    }
+    memcpy(certificate_chain_buf, out_args.certificate_chain,
+           out_args.certificate_chain_size);
+    *certificate_chain_actual_size = out_args.certificate_chain_size;
 
     *new_context_handle = out_args.new_context_handle;
 

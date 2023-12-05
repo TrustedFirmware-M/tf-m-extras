@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 #define DICE_CERT_SIZE  3072
+#define DICE_CERT_CHAIN_SIZE  3200
 /* Below encoded CDI size accomodate both Attest and Seal CDI */
 #define DICE_MAX_ENCODED_CDI_SIZE ((2 * DICE_CDI_SIZE) + 16)
 
@@ -278,6 +279,40 @@ dpe_error_t certify_key_request(int input_ctx_handle,
                                 size_t *derived_public_key_actual_size,
                                 int *new_context_handle);
 
+/**
+ * \brief Returns the certificate chain generated for a given DPE context. The
+ *        order, format, and encoding of the certificate chain are specified by
+ *        a DPE profile.
+ *
+ * \param[in]  input_ctx_handle                Input context handle for the DPE
+ *                                             context.
+ * \param[in]  retain_context                  Flag to indicate whether to
+ *                                             retain the context.
+ * \param[in]  clear_from_context              Flag to indicate whether DPE must
+ *                                             clear the certificate chain from
+ *                                             the context so subsequent calls
+ *                                             on a given context, or contexts
+ *                                             derived from it do not include
+ *                                             the certificates returned by this
+ *                                             command.
+ *                                             retain the context.
+ * \param[out] certificate_chain_buf           Buffer to write the certificate
+ *                                             chain output.
+ * \param[in]  certificate_chain_buf_size      Size of the certificate chain
+ *                                             buffer.
+ * \param[out] certificate_chain_actual_size   Size of the certificate chain
+ *                                             output written to the buffer.
+ * \param[out] new_context_handle              New handle for the DPE context.
+ *
+ * \return Returns error code of type dpe_error_t
+ */
+dpe_error_t get_certificate_chain_request(int input_ctx_handle,
+                                          bool retain_context,
+                                          bool clear_from_context,
+                                          uint8_t *certificate_chain_buf,
+                                          size_t certificate_chain_buf_size,
+                                          size_t *certificate_chain_actual_size,
+                                          int *new_context_handle);
 #ifdef __cplusplus
 }
 #endif
