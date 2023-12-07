@@ -83,7 +83,7 @@ enum dpe_certify_key_input_labels_t {
 };
 
 enum dpe_certify_key_output_labels_t {
-    DPE_CERTIFY_KEY_CERTIFICATE_CHAIN = 1,
+    DPE_CERTIFY_KEY_CERTIFICATE = 1,
     DPE_CERTIFY_KEY_DERIVED_PUBLIC_KEY = 2,
     DPE_CERTIFY_KEY_NEW_CONTEXT_HANDLE = 3,
 };

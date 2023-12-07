@@ -306,7 +306,7 @@ static QCBORError decode_certify_key_response(UsefulBufC encoded_buf,
         QCBORDecode_EnterMap(&decode_ctx, NULL);
 
         QCBORDecode_GetByteStringInMapN(&decode_ctx,
-                                        DPE_CERTIFY_KEY_CERTIFICATE_CHAIN,
+                                        DPE_CERTIFY_KEY_CERTIFICATE,
                                         &out);
         args->certificate_chain = out.ptr;
         args->certificate_chain_size = out.len;

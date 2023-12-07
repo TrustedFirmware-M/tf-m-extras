@@ -287,8 +287,8 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
     size_t public_key_size;
     const uint8_t *label;
     size_t label_size;
-    uint8_t certificate_chain_buf[DICE_CERT_CHAIN_SIZE];
-    size_t certificate_chain_actual_size;
+    uint8_t certificate_buf[DICE_CERT_SIZE];
+    size_t certificate_actual_size;
     uint8_t derived_public_key_buf[DPE_ATTEST_PUB_KEY_SIZE];
     size_t derived_public_key_actual_size;
     int new_context_handle;
@@ -328,9 +328,9 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
 
     dpe_err = certify_key_request(context_handle, retain_context, public_key,
                                   public_key_size, label, label_size,
-                                  certificate_chain_buf,
-                                  sizeof(certificate_chain_buf),
-                                  &certificate_chain_actual_size,
+                                  certificate_buf,
+                                  sizeof(certificate_buf),
+                                  &certificate_actual_size,
                                   derived_public_key_buf,
                                   sizeof(derived_public_key_buf),
                                   &derived_public_key_actual_size,
@@ -349,9 +349,9 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
      * key implementation. Add it as a byte string so that its decoding can be
      * skipped and the CBOR returned to the caller.
      */
-    QCBOREncode_AddBytesToMapN(encode_ctx, DPE_CERTIFY_KEY_CERTIFICATE_CHAIN,
-                               (UsefulBufC){ certificate_chain_buf,
-                                             certificate_chain_actual_size });
+    QCBOREncode_AddBytesToMapN(encode_ctx, DPE_CERTIFY_KEY_CERTIFICATE,
+                               (UsefulBufC){ certificate_buf,
+                                             certificate_actual_size });
 
     QCBOREncode_AddBytesToMapN(encode_ctx, DPE_CERTIFY_KEY_DERIVED_PUBLIC_KEY,
                                (UsefulBufC){ derived_public_key_buf,

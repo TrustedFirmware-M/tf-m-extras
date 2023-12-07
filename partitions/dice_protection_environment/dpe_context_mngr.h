@@ -203,8 +203,8 @@ struct component_context_t* get_component_if_linked_to_layer(uint16_t layer_idx,
 struct layer_context_t* get_layer_ctx_ptr(uint16_t layer_idx);
 
 /**
- * \brief Generates a leaf certificate and returns all the certificate chain
- *        leading to it. This command functionality depends on whether:
+ * \brief Certifies the attestation key and generates a leaf certificate.
+ *        This command functionality depends on whether:
  *        - last layer is finalised
  *        - public key is supplied to the command
  *        - label is supplied to the command
@@ -221,20 +221,19 @@ struct layer_context_t* get_layer_ctx_ptr(uint16_t layer_idx);
  *  |               |            | see Note F | no label       |
  *  +---------------+------------+------------+----------------+
  *
- *  A - Opens a new layer (if not opened), creates a leaf certificate which
- *      includes supplied key and generates certificate chain.
+ *  A - Opens a new layer (if not opened), and creates a leaf certificate which
+ *      includes supplied key.
  *  B - Creates certificate for current (existing) layer, which includes supplied
- *      key and generates certificate chain.
+ *      key.
  *  C - Opens a new layer (if not opened), performs derivation which includes
- *      supplied label, creates leaf certificate (including supplied label as a
- *      claim) and generates certificate chain.
+ *      supplied label, and creates leaf certificate (including supplied label
+ *      as a claim).
  *  D - Opens a new layer (if not opened), performs standard derivation,
- *      creates a leaf certificate and generates certificate chain.
- *  E - Performs derivation (which includes supplied label) for current/existing layer,
- *      creates certificate which includes supplied label as a claim, and generates
- *      certificate chain.
- *  F - Performs standard derivation for current/existing layer, creates certificate
- *      and generates certificate chain.
+ *      and creates a leaf certificate.
+ *  E - Performs derivation (which includes supplied label) for current/existing layer
+ *      and creates certificate which includes supplied label as a claim.
+ *  F - Performs standard derivation for current/existing layer, and creates
+ *      certificate.
  *
  * \param[in]  input_ctx_handle                Input handle to component context.
  * \param[in]  retain_context                  Flag to indicate if context needs
@@ -249,12 +248,11 @@ struct layer_context_t* get_layer_ctx_ptr(uint16_t layer_idx);
  *                                             already provided, this argument is
  *                                             ignored.
  * \param[in]  label_size                      Size of the input label.
- * \param[out] certificate_chain_buf           Pointer to the buffer where
- *                                             certificate chain will be stored.
- * \param[in]  certificate_chain_buf_size      Size of the allocated buffer for
- *                                             certificate chain.
- * \param[out] certificate_chain_actual_size   Actual size of the certificate
- *                                             chain.
+ * \param[out] certificate_buf                 Pointer to the buffer where
+ *                                             the certificate will be stored.
+ * \param[in]  certificate_buf_size            Size of the allocated buffer for
+ *                                             the certificate.
+ * \param[out] certificate_actual_size         Actual size of the certificate.
  * \param[out] derived_public_key_buf          Pointer to the buffer where
  *                                             derived public key will be stored.
  * \param[in]  derived_public_key_buf_size     Size of the allocated buffer for
@@ -271,9 +269,9 @@ dpe_error_t certify_key_request(int input_ctx_handle,
                                 size_t public_key_size,
                                 const uint8_t *label,
                                 size_t label_size,
-                                uint8_t *certificate_chain_buf,
-                                size_t certificate_chain_buf_size,
-                                size_t *certificate_chain_actual_size,
+                                uint8_t *certificate_buf,
+                                size_t certificate_buf_size,
+                                size_t *certificate_actual_size,
                                 uint8_t *derived_public_key_buf,
                                 size_t derived_public_key_buf_size,
                                 size_t *derived_public_key_actual_size,

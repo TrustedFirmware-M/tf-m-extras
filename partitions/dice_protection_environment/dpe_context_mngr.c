@@ -307,8 +307,6 @@ static dpe_error_t create_layer_certificate(uint16_t layer_idx)
 
     assert(layer_idx < MAX_NUM_OF_LAYERS);
     layer_ctx = &layer_ctx_array[layer_idx];
-   /* Finalise the layer */
-    layer_ctx->state = LAYER_STATE_FINALISED;
     parent_layer_idx = layer_ctx->parent_layer_idx;
     assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
     parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
@@ -648,6 +646,8 @@ dpe_error_t derive_context_request(int input_ctx_handle,
         layer_ctx = &layer_ctx_array[linked_layer_idx];
         layer_ctx->is_cdi_to_be_exported = export_cdi;
 
+        /* Finalise the layer */
+        layer_ctx->state = LAYER_STATE_FINALISED;
         err = create_layer_certificate(linked_layer_idx);
         if (err != DPE_NO_ERROR) {
             return err;
@@ -765,9 +765,9 @@ dpe_error_t certify_key_request(int input_ctx_handle,
                                 size_t public_key_size,
                                 const uint8_t *label,
                                 size_t label_size,
-                                uint8_t *certificate_chain_buf,
-                                size_t certificate_chain_buf_size,
-                                size_t *certificate_chain_actual_size,
+                                uint8_t *certificate_buf,
+                                size_t certificate_buf_size,
+                                size_t *certificate_actual_size,
                                 uint8_t *derived_public_key_buf,
                                 size_t derived_public_key_buf_size,
                                 size_t *derived_public_key_actual_size,
@@ -831,7 +831,7 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     /* Correct layer should already be assigned in last call of
      * derive context command
      */
-    /* Finalise the current layer & create leaf certificate */
+    /* Create leaf certificate */
     err = create_layer_certificate(input_layer_idx);
     if (err != DPE_NO_ERROR) {
         return err;
@@ -851,16 +851,14 @@ dpe_error_t certify_key_request(int input_ctx_handle,
            parent_layer_ctx->data.attest_pub_key_len);
     *derived_public_key_actual_size = parent_layer_ctx->data.attest_pub_key_len;
 
-    /* Get certificate chain */
-    err = get_certificate_chain(input_layer_idx,
-                                certificate_chain_buf,
-                                certificate_chain_buf_size,
-                                certificate_chain_actual_size);
-    if (err != DPE_NO_ERROR) {
-        return err;
+    /* Get certificate */
+    if (certificate_buf_size < layer_ctx->data.cert_buf_len) {
+        return DPE_INVALID_ARGUMENT;
     }
-
-    log_certificate_chain(certificate_chain_buf, *certificate_chain_actual_size);
+    memcpy(certificate_buf,
+           &layer_ctx->data.cert_buf[0],
+           layer_ctx->data.cert_buf_len);
+    *certificate_actual_size = layer_ctx->data.cert_buf_len;
 
     /* Renew handle for the same context */
     *new_context_handle = input_ctx_handle;
