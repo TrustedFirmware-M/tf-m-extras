@@ -245,16 +245,6 @@ static psa_status_t compute_layer_cdi_attest_input(uint16_t curr_layer_idx)
         }
     }
 
-    if (layer_ctx_array[curr_layer_idx].data.attest_key_label_len != 0) {
-
-        status = psa_hash_update(&hash_op,
-                                 &layer_ctx_array[curr_layer_idx].data.attest_key_label[0],
-                                 layer_ctx_array[curr_layer_idx].data.attest_key_label_len);
-        if (status != PSA_SUCCESS) {
-            return status;
-        }
-    }
-
     status = psa_hash_finish(&hash_op,
                              &layer_ctx_array[curr_layer_idx].attest_cdi_hash_input[0],
                              sizeof(layer_ctx_array[curr_layer_idx].attest_cdi_hash_input),
@@ -810,7 +800,7 @@ dpe_error_t certify_key_request(int input_ctx_handle,
         layer_ctx->data.attest_pub_key_len = public_key_size;
 
         /* If public key is provided, then provided label (if any) is ignored */
-        layer_ctx->data.attest_key_label_len = 0;
+        layer_ctx->data.external_key_deriv_label_len = 0;
 
     } else {
         /* No external public key is provided */
@@ -818,13 +808,13 @@ dpe_error_t certify_key_request(int input_ctx_handle,
 
         if ((label_size > 0) && (label != NULL)) {
             /* Copy the label provided */
-            memcpy(&layer_ctx->data.attest_key_label[0],
+            memcpy(&layer_ctx->data.external_key_deriv_label[0],
                    label,
                    label_size);
-            layer_ctx->data.attest_key_label_len = label_size;
+            layer_ctx->data.external_key_deriv_label_len = label_size;
 
         } else {
-            layer_ctx->data.attest_key_label_len = 0;
+            layer_ctx->data.external_key_deriv_label_len = 0;
         }
     }
 
@@ -869,8 +859,10 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     component_ctx_array[input_ctx_idx].nonce = GET_NONCE(*new_context_handle);
 
     /* Clear the context label and key contents */
-    memset(&layer_ctx->data.attest_key_label[0], 0u, layer_ctx->data.attest_key_label_len);
-    memset(&layer_ctx->data.attest_pub_key[0], 0u, layer_ctx->data.attest_pub_key_len);
+    memset(&layer_ctx->data.external_key_deriv_label[0], 0u,
+           layer_ctx->data.external_key_deriv_label_len);
+    memset(&layer_ctx->data.attest_pub_key[0], 0u,
+           layer_ctx->data.attest_pub_key_len);
 
     return DPE_NO_ERROR;
 }

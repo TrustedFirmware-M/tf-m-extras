@@ -16,7 +16,7 @@
 
 static const char attest_cdi_label[] = DPE_ATTEST_CDI_LABEL;
 static const char exported_attest_cdi_label[] = DPE_ATTEST_EXPORTED_CDI_LABEL;
-static const char attest_key_pair_label[] = DPE_ATTEST_KEY_PAIR_LABEL;
+static const char default_attest_key_deriv_label[] = DPE_ATTEST_KEY_PAIR_LABEL;
 static const char id_label[] = DPE_ID_LABEL;
 static const uint8_t attest_key_salt[] = DPE_ATTEST_KEY_SALT;
 static const uint8_t id_salt[] = DPE_ID_SALT;
@@ -126,13 +126,27 @@ psa_status_t derive_attestation_key(struct layer_context_t *layer_ctx)
     psa_set_key_usage_flags(&attest_key_attr, DPE_ATTEST_KEY_USAGE);
 
     /* Perform key pair derivation */
-    status = perform_derivation(layer_ctx->data.cdi_key_id,
-                                &attest_key_attr,
-                                (uint8_t *)&attest_key_pair_label[0],
-                                sizeof(attest_key_pair_label),
-                                attest_key_salt,
-                                sizeof(attest_key_salt),
-                                &layer_ctx->data.attest_key_id);
+
+    if (layer_ctx->data.external_key_deriv_label_len > 0) {
+        /* Use the external label provided for key derivation */
+        status = perform_derivation(layer_ctx->data.cdi_key_id,
+                    &attest_key_attr,
+                    &layer_ctx->data.external_key_deriv_label[0],  /* External label */
+                    layer_ctx->data.external_key_deriv_label_len,
+                    attest_key_salt,
+                    sizeof(attest_key_salt),
+                    &layer_ctx->data.attest_key_id);
+    } else {
+        /* Use the default label for key derivation */
+        status = perform_derivation(layer_ctx->data.cdi_key_id,
+                    &attest_key_attr,
+                    (uint8_t *)&default_attest_key_deriv_label[0], /* Default label */
+                    sizeof(default_attest_key_deriv_label),
+                    attest_key_salt,
+                    sizeof(attest_key_salt),
+                    &layer_ctx->data.attest_key_id);
+    }
+
     if (status != PSA_SUCCESS) {
         return status;
     }

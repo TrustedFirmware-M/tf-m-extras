@@ -436,8 +436,8 @@ dpe_error_t encode_layer_certificate(uint16_t layer_idx,
 
     /* Add label claim */
     add_label_claim(&dpe_cert_ctx,
-                    &layer_ctx->data.attest_key_label[0],
-                    layer_ctx->data.attest_key_label_len);
+                    &layer_ctx->data.external_key_deriv_label[0],
+                    layer_ctx->data.external_key_deriv_label_len);
 
     /* Add public key claim */
     add_public_key_claim(&dpe_cert_ctx,
