@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -351,7 +351,7 @@ static QCBORError encode_get_certificate_chain(const struct get_certificate_chai
                                              sizeof(args->context_handle) });
     QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_GET_CERTIFICATE_CHAIN_RETAIN_CONTEXT,
                               args->retain_context);
-    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_GET_CERTIFICATE_CHAIN_RETAIN_CONTEXT,
+    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_GET_CERTIFICATE_CHAIN_CLEAR_FROM_CONTEXT,
                               args->clear_from_context);
     QCBOREncode_CloseMap(&encode_ctx);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -304,8 +304,8 @@ psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
     //TODO: Sealing CDI to be added later
     status = psa_export_key(layer_ctx->data.cdi_key_id,
                             cdi_buf,
-                            sizeof(cdi_buf),
-                            &cdi_actual_size);
+                            cdi_buf_size,
+                            cdi_actual_size);
     if (status != PSA_SUCCESS) {
         *cdi_actual_size = 0;
     }
