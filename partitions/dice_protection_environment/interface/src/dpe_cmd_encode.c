@@ -425,7 +425,7 @@ dpe_derive_context(int                    context_handle,
     dpe_error_t dpe_err;
     QCBORError qcbor_err;
     UsefulBufC encoded_buf;
-    UsefulBuf_MAKE_STACK_UB(cmd_buf, 512);
+    UsefulBuf_MAKE_STACK_UB(cmd_buf, 612);
 
     const struct derive_context_input_t in_args = {
         context_handle,

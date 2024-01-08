@@ -121,6 +121,11 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
     QCBORDecode_ExitMap(decode_ctx);
     QCBORDecode_ExitBstrWrapped(decode_ctx);
 
+    qcbor_err = QCBORDecode_GetError(decode_ctx);
+    if (qcbor_err != QCBOR_SUCCESS) {
+        return DPE_INVALID_COMMAND;
+    }
+
     return DPE_NO_ERROR;
 }
 
