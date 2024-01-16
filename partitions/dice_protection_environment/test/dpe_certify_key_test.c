@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -25,8 +25,8 @@ static void call_certify_key_with_test_data(
     int in_handle, out_ctx_handle, out_parent_handle, new_context_handle;
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
     int saved_handles_cnt, i, j;
-    uint8_t certificate_chain_buf[3072];
-    size_t certificate_chain_actual_size;
+    uint8_t certificate_buf[3072];
+    size_t certificate_actual_size;
     uint8_t derived_public_key_buf[DPE_ATTEST_PUB_KEY_SIZE];
     size_t derived_public_key_actual_size;
     int saved_handles[MAX_NUM_OF_COMPONENTS] = {0};
@@ -100,9 +100,9 @@ static void call_certify_key_with_test_data(
                               0,                                /* public_key_size */
                               NULL,                             /* label */
                               0,                                /* label_size */
-                              certificate_chain_buf,            /* certificate_chain_buf */
-                              sizeof(certificate_chain_buf),    /* certificate_chain_buf_size */
-                              &certificate_chain_actual_size,   /* certificate_chain_buf_actual_size */
+                              certificate_buf,                  /* certificate_buf */
+                              sizeof(certificate_buf),          /* certificate_buf_size */
+                              &certificate_actual_size,         /* certificate_actual_size */
                               derived_public_key_buf,           /* derived_public_key_buf */
                               sizeof(derived_public_key_buf),   /* derived_public_key_buf_size */
                               &derived_public_key_actual_size,  /* derived_public_key_buf_actual_size */
@@ -124,7 +124,7 @@ static void call_certify_key_with_test_data(
         }
     }
 
-    //TODO: Verify the output certificate chain
+    //TODO: Verify the output certificate
 
     /* Destroy the saved contexts for the subsequent test */
     for (i = 0; i < saved_handles_cnt; i++) {
@@ -156,8 +156,8 @@ void certify_key_api_test(struct test_result_t *ret)
     dpe_error_t dpe_err;
     int out_ctx_handle;
     const uint8_t label[] = { 0x1A, 0xBE, 0x1 };
-    uint8_t certificate_chain_buf[2000];
-    size_t certificate_chain_actual_size;
+    uint8_t certificate_buf[2000];
+    size_t certificate_actual_size;
     uint8_t derived_public_key_buf[DPE_ATTEST_PUB_KEY_SIZE];
     size_t derived_public_key_actual_size;
     int new_context_handle;
@@ -192,9 +192,9 @@ void certify_key_api_test(struct test_result_t *ret)
                               0,                                /* public_key_size */
                               label,                            /* label */
                               sizeof(label),                    /* label_size */
-                              certificate_chain_buf,            /* certificate_chain_buf */
-                              sizeof(certificate_chain_buf),    /* certificate_chain_buf_size */
-                              &certificate_chain_actual_size,   /* certificate_chain_buf_actual_size */
+                              certificate_buf,                  /* certificate_buf */
+                              sizeof(certificate_buf),          /* certificate_buf_size */
+                              &certificate_actual_size,         /* certificate_actual_size */
                               derived_public_key_buf,           /* derived_public_key_buf */
                               sizeof(derived_public_key_buf),   /* derived_public_key_buf_size */
                               &derived_public_key_actual_size,  /* derived_public_key_buf_actual_size */
@@ -220,9 +220,8 @@ void certify_key_retain_context_test(struct test_result_t *ret)
 {
     dpe_error_t dpe_err;
     int out_ctx_handle;
-    const uint8_t label[] = { 0x1A, 0xBE, 0x1 };
-    uint8_t certificate_chain_buf[2000];
-    size_t certificate_chain_actual_size;
+    uint8_t certificate_buf[1100];
+    size_t certificate_actual_size;
     uint8_t derived_public_key_buf[DPE_ATTEST_PUB_KEY_SIZE];
     size_t derived_public_key_actual_size;
     int new_context_handle;
@@ -258,11 +257,11 @@ void certify_key_retain_context_test(struct test_result_t *ret)
                               false,                            /* retain_context */
                               NULL,                             /* public_key */
                               0,                                /* public_key_size */
-                              label,                            /* label */
-                              sizeof(label),                    /* label_size */
-                              certificate_chain_buf,            /* certificate_chain_buf */
-                              sizeof(certificate_chain_buf),    /* certificate_chain_buf_size */
-                              &certificate_chain_actual_size,   /* certificate_chain_buf_actual_size */
+                              NULL,                             /* label */
+                              0,                                /* label_size */
+                              certificate_buf,                  /* certificate_buf */
+                              sizeof(certificate_buf),          /* certificate_buf_size */
+                              &certificate_actual_size,         /* certificate_actual_size */
                               derived_public_key_buf,           /* derived_public_key_buf */
                               sizeof(derived_public_key_buf),   /* derived_public_key_buf_size */
                               &derived_public_key_actual_size,  /* derived_public_key_buf_actual_size */
@@ -290,42 +289,241 @@ void certify_key_retain_context_test(struct test_result_t *ret)
 
 void certify_key_incorrect_handle_test(struct test_result_t *ret)
 {
-    //TODO: TO BE IMPLEMENTED
+    dpe_error_t dpe_err;
+    int out_ctx_handle, new_context_handle, out_parent_handle;
+    uint8_t certificate_buf[10], derived_public_key_buf[10];
+    size_t certificate_actual_size;
+    size_t derived_public_key_actual_size;
 
-   ret->val = TEST_PASSED;
+    DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
+
+    dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
+                                 true,                          /* retain_parent_context */
+                                 true,                          /* allow_new_context_to_derive */
+                                 true,                          /* create_certificate */
+                                 &dice_inputs,                  /* dice_inputs */
+                                 0,                             /* target_locality */
+                                 false,                         /* return_certificate */
+                                 true,                          /* allow_new_context_to_export */
+                                 false,                         /* export_cdi */
+                                 &out_ctx_handle,               /* new_context_handle */
+                                 &out_parent_handle,            /* new_parent_context_handle */
+                                 NULL,                          /* new_certificate_buf */
+                                 0,                             /* new_certificate_buf_size */
+                                 NULL,                          /* new_certificate_actual_size */
+                                 NULL,                          /* exported_cdi_buf */
+                                 0,                             /* exported_cdi_buf_size */
+                                 NULL);                         /* exported_cdi_actual_size */
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext call failed");
+        return;
+    }
+
+    /* Use incorrect handle */
+    dpe_err = dpe_certify_key(out_ctx_handle + 1,               /* input_ctx_handle */
+                              true,                             /* retain_context */
+                              NULL,                             /* public_key */
+                              0,                                /* public_key_size */
+                              NULL,                             /* label */
+                              0,                                /* label_size */
+                              certificate_buf,                  /* certificate_buf */
+                              sizeof(certificate_buf),          /* certificate_buf_size */
+                              &certificate_actual_size,         /* certificate_actual_size */
+                              derived_public_key_buf,           /* derived_public_key_buf */
+                              sizeof(derived_public_key_buf),   /* derived_public_key_buf_size */
+                              &derived_public_key_actual_size,  /* derived_public_key_buf_actual_size */
+                              &new_context_handle);             /* new_context_handle */
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
+        TEST_FAIL("DPE CertifyKey test: Invalid handle nonce should return invalid argument");
+        return;
+    }
+
+    /* Save the last handle for the subsequent test */
+    retained_rot_ctx_handle = out_parent_handle;
+
+    ret->val = TEST_PASSED;
 }
 
 void certify_key_supplied_pub_key_test(struct test_result_t *ret)
 {
     //TODO: TO BE IMPLEMENTED
 
-   ret->val = TEST_PASSED;
+    ret->val = TEST_PASSED;
 }
 
 void certify_key_supplied_label_test(struct test_result_t *ret)
 {
     //TODO: TO BE IMPLEMENTED
 
-   ret->val = TEST_PASSED;
+    ret->val = TEST_PASSED;
 }
 
 void certify_key_smaller_cert_buffer_test(struct test_result_t *ret)
 {
-    //TODO: TO BE IMPLEMENTED
+    dpe_error_t dpe_err;
+    int out_ctx_handle, new_context_handle, out_parent_handle;
+    uint8_t certificate_buf[1];
+    size_t certificate_actual_size;
+    uint8_t derived_public_key_buf[DPE_ATTEST_PUB_KEY_SIZE];
+    size_t derived_public_key_actual_size;
+    DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
 
-   ret->val = TEST_PASSED;
+    dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
+                                 true,                          /* retain_parent_context */
+                                 true,                          /* allow_new_context_to_derive */
+                                 true,                          /* create_certificate */
+                                 &dice_inputs,                  /* dice_inputs */
+                                 0,                             /* target_locality */
+                                 false,                         /* return_certificate */
+                                 true,                          /* allow_new_context_to_export */
+                                 false,                         /* export_cdi */
+                                 &out_ctx_handle,               /* new_context_handle */
+                                 &out_parent_handle,            /* new_parent_context_handle */
+                                 NULL,                          /* new_certificate_buf */
+                                 0,                             /* new_certificate_buf_size */
+                                 NULL,                          /* new_certificate_actual_size */
+                                 NULL,                          /* exported_cdi_buf */
+                                 0,                             /* exported_cdi_buf_size */
+                                 NULL);                         /* exported_cdi_actual_size */
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext call failed");
+        return;
+    }
+
+    dpe_err = dpe_certify_key(out_ctx_handle,                   /* input_ctx_handle */
+                              true,                             /* retain_context */
+                              NULL,                             /* public_key */
+                              0,                                /* public_key_size */
+                              NULL,                             /* label */
+                              0,                                /* label_size */
+                              certificate_buf,                  /* certificate_buf */
+                              sizeof(certificate_buf),          /* certificate_buf_size */
+                              &certificate_actual_size,         /* certificate_actual_size */
+                              derived_public_key_buf,           /* derived_public_key_buf */
+                              sizeof(derived_public_key_buf),   /* derived_public_key_buf_size */
+                              &derived_public_key_actual_size,  /* derived_public_key_buf_actual_size */
+                              &new_context_handle);             /* new_context_handle */
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
+        TEST_FAIL("DPE CertifyKey test: Smaller certificate buffer size should return invalid argument");
+        return;
+    }
+
+    /* Save the last handle for the subsequent test */
+    retained_rot_ctx_handle = out_parent_handle;
+
+    ret->val = TEST_PASSED;
 }
 
 void certify_key_smaller_derived_pub_key_buffer_test(struct test_result_t *ret)
 {
-    //TODO: TO BE IMPLEMENTED
+    dpe_error_t dpe_err;
+    int out_ctx_handle, new_context_handle, out_parent_handle;
+    uint8_t certificate_buf[1100];
+    size_t certificate_actual_size;
+    uint8_t derived_public_key_buf[1];
+    size_t derived_public_key_actual_size;
+    DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
 
-   ret->val = TEST_PASSED;
+    dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
+                                 true,                          /* retain_parent_context */
+                                 true,                          /* allow_new_context_to_derive */
+                                 true,                          /* create_certificate */
+                                 &dice_inputs,                  /* dice_inputs */
+                                 0,                             /* target_locality */
+                                 false,                         /* return_certificate */
+                                 true,                          /* allow_new_context_to_export */
+                                 false,                         /* export_cdi */
+                                 &out_ctx_handle,               /* new_context_handle */
+                                 &out_parent_handle,            /* new_parent_context_handle */
+                                 NULL,                          /* new_certificate_buf */
+                                 0,                             /* new_certificate_buf_size */
+                                 NULL,                          /* new_certificate_actual_size */
+                                 NULL,                          /* exported_cdi_buf */
+                                 0,                             /* exported_cdi_buf_size */
+                                 NULL);                         /* exported_cdi_actual_size */
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext call failed");
+        return;
+    }
+
+    dpe_err = dpe_certify_key(out_ctx_handle,                   /* input_ctx_handle */
+                              true,                             /* retain_context */
+                              NULL,                             /* public_key */
+                              0,                                /* public_key_size */
+                              NULL,                             /* label */
+                              0,                                /* label_size */
+                              certificate_buf,                  /* certificate_buf */
+                              sizeof(certificate_buf),          /* certificate_buf_size */
+                              &certificate_actual_size,         /* certificate_actual_size */
+                              derived_public_key_buf,           /* derived_public_key_buf */
+                              sizeof(derived_public_key_buf),   /* derived_public_key_buf_size */
+                              &derived_public_key_actual_size,  /* derived_public_key_buf_actual_size */
+                              &new_context_handle);             /* new_context_handle */
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
+        TEST_FAIL("DPE CertifyKey test: Smaller public key buffer size should return invalid argument");
+        return;
+    }
+
+    /* Save the last handle for the subsequent test */
+    retained_rot_ctx_handle = out_parent_handle;
+
+    ret->val = TEST_PASSED;
 }
 
 void certify_key_invalid_cbor_encoded_input_test(struct test_result_t *ret)
 {
-    //TODO: TO BE IMPLEMENTED
+    dpe_error_t dpe_err;
+    int out_ctx_handle, new_context_handle, out_parent_handle;
+    uint8_t certificate_buf[10];
+    size_t certificate_actual_size;
+    uint8_t derived_public_key_buf[10];
+    size_t derived_public_key_actual_size;
+    DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
 
-   ret->val = TEST_PASSED;
+    dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
+                                 true,                          /* retain_parent_context */
+                                 true,                          /* allow_new_context_to_derive */
+                                 true,                          /* create_certificate */
+                                 &dice_inputs,                  /* dice_inputs */
+                                 0,                             /* target_locality */
+                                 false,                         /* return_certificate */
+                                 true,                          /* allow_new_context_to_export */
+                                 false,                         /* export_cdi */
+                                 &out_ctx_handle,               /* new_context_handle */
+                                 &out_parent_handle,            /* new_parent_context_handle */
+                                 NULL,                          /* new_certificate_buf */
+                                 0,                             /* new_certificate_buf_size */
+                                 NULL,                          /* new_certificate_actual_size */
+                                 NULL,                          /* exported_cdi_buf */
+                                 0,                             /* exported_cdi_buf_size */
+                                 NULL);                         /* exported_cdi_actual_size */
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext call failed");
+        return;
+    }
+
+    /* Call test encode function with corrupt_encoded_cbor = true */
+    dpe_err = dpe_certify_key_with_test_param(out_ctx_handle,   /* input_ctx_handle */
+                              true,                             /* retain_context */
+                              NULL,                             /* public_key */
+                              0,                                /* public_key_size */
+                              NULL,                             /* label */
+                              0,                                /* label_size */
+                              certificate_buf,                  /* certificate_buf */
+                              sizeof(certificate_buf),          /* certificate_buf_size */
+                              &certificate_actual_size,         /* certificate_actual_size */
+                              derived_public_key_buf,           /* derived_public_key_buf */
+                              sizeof(derived_public_key_buf),   /* derived_public_key_buf_size */
+                              &derived_public_key_actual_size,  /* derived_public_key_buf_actual_size */
+                              &new_context_handle,              /* new_context_handle */
+                              true);                            /* corrupt_encoded_cbor */
+    if (dpe_err != DPE_INVALID_COMMAND) {
+        TEST_FAIL("DPE CertifyKey test: Invalid CBOR construct should return invalid command");
+        return;
+    }
+
+    /* Save the last handle for the subsequent test */
+    retained_rot_ctx_handle = out_parent_handle;
+
+    ret->val = TEST_PASSED;
 }
