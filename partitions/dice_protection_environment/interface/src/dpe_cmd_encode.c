@@ -440,6 +440,16 @@ dpe_derive_context(int                    context_handle,
     };
     struct derive_context_output_t out_args;
 
+    /* Validate the output params. Input params are validated by DPE service */
+    if ((new_context_handle == NULL) ||
+        (retain_parent_context && new_parent_context_handle == NULL) ||
+        (return_certificate &&
+        (new_certificate_buf == NULL || new_certificate_actual_size == NULL)) ||
+        (export_cdi &&
+        (exported_cdi_buf == NULL || exported_cdi_actual_size == NULL))) {
+        return DPE_INVALID_ARGUMENT;
+    }
+
     qcbor_err = encode_derive_context(&in_args, cmd_buf, &encoded_buf);
     if (qcbor_err != QCBOR_SUCCESS) {
         return DPE_INTERNAL_ERROR;
@@ -461,21 +471,27 @@ dpe_derive_context(int                    context_handle,
 
     /* Copy returned values into caller's memory */
     *new_context_handle = out_args.new_context_handle;
-    *new_parent_context_handle = out_args.new_parent_context_handle;
-
-    if (out_args.new_certificate_size > new_certificate_buf_size) {
-        return DPE_INVALID_ARGUMENT;
+    if (retain_parent_context) {
+        *new_parent_context_handle = out_args.new_parent_context_handle;
     }
-    memcpy(new_certificate_buf, out_args.new_certificate,
-           out_args.new_certificate_size);
-    *new_certificate_actual_size = out_args.new_certificate_size;
 
-    if (out_args.exported_cdi_size > exported_cdi_buf_size) {
-        return DPE_INVALID_ARGUMENT;
+    if (return_certificate) {
+        if (out_args.new_certificate_size > new_certificate_buf_size) {
+            return DPE_INVALID_ARGUMENT;
+        }
+        memcpy(new_certificate_buf, out_args.new_certificate,
+               out_args.new_certificate_size);
+        *new_certificate_actual_size = out_args.new_certificate_size;
     }
-    memcpy(exported_cdi_buf, out_args.exported_cdi,
-           out_args.exported_cdi_size);
-    *exported_cdi_actual_size = out_args.exported_cdi_size;
+
+    if (export_cdi) {
+        if (out_args.exported_cdi_size > exported_cdi_buf_size) {
+            return DPE_INVALID_ARGUMENT;
+        }
+        memcpy(exported_cdi_buf, out_args.exported_cdi,
+               out_args.exported_cdi_size);
+        *exported_cdi_actual_size = out_args.exported_cdi_size;
+    }
 
     return DPE_NO_ERROR;
 }
@@ -545,6 +561,14 @@ dpe_error_t dpe_certify_key(int context_handle,
     };
     struct certify_key_output_t out_args;
 
+    /* Validate the output params. Input params are validated by DPE service */
+    if ((retain_context && new_context_handle == NULL) ||
+        (certificate_chain_buf == NULL || certificate_chain_actual_size == NULL) ||
+        (public_key == NULL &&
+        (derived_public_key_buf == NULL || derived_public_key_actual_size == NULL))) {
+        return DPE_INVALID_ARGUMENT;
+    }
+
     qcbor_err = encode_certify_key(&in_args, cmd_buf, &encoded_buf);
     if (qcbor_err != QCBOR_SUCCESS) {
         return DPE_INTERNAL_ERROR;
@@ -572,14 +596,18 @@ dpe_error_t dpe_certify_key(int context_handle,
            out_args.certificate_chain_size);
     *certificate_chain_actual_size = out_args.certificate_chain_size;
 
-    if (out_args.derived_public_key_size > derived_public_key_buf_size) {
-        return DPE_INVALID_ARGUMENT;
+    if (public_key == NULL) {
+        if (out_args.derived_public_key_size > derived_public_key_buf_size) {
+            return DPE_INVALID_ARGUMENT;
+        }
+        memcpy(derived_public_key_buf, out_args.derived_public_key,
+               out_args.derived_public_key_size);
+        *derived_public_key_actual_size = out_args.derived_public_key_size;
     }
-    memcpy(derived_public_key_buf, out_args.derived_public_key,
-           out_args.derived_public_key_size);
-    *derived_public_key_actual_size = out_args.derived_public_key_size;
 
-    *new_context_handle = out_args.new_context_handle;
+    if (retain_context) {
+        *new_context_handle = out_args.new_context_handle;
+    }
 
     return DPE_NO_ERROR;
 }
@@ -605,6 +633,12 @@ dpe_get_certificate_chain(int            context_handle,
         clear_from_context
     };
     struct get_certificate_chain_output_t out_args;
+
+    /* Validate the output params. Input params are validated by DPE service */
+    if ((retain_context && new_context_handle == NULL) ||
+        (certificate_chain_buf == NULL || certificate_chain_actual_size == NULL)) {
+        return DPE_INVALID_ARGUMENT;
+    }
 
     qcbor_err = encode_get_certificate_chain(&in_args, cmd_buf, &encoded_buf);
     if (qcbor_err != QCBOR_SUCCESS) {
@@ -634,7 +668,9 @@ dpe_get_certificate_chain(int            context_handle,
            out_args.certificate_chain_size);
     *certificate_chain_actual_size = out_args.certificate_chain_size;
 
-    *new_context_handle = out_args.new_context_handle;
+    if (retain_context) {
+        *new_context_handle = out_args.new_context_handle;
+    }
 
     return DPE_NO_ERROR;
 }
