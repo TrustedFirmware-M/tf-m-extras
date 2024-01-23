@@ -12,8 +12,10 @@
 extern "C" {
 #endif
 
-#define MAX_NUM_OF_COMPONENTS 30
+#define MAX_NUM_OF_COMPONENTS 20
 #define INVALID_COMPONENT_IDX 0xFFFF
+
+#define DPE_PLATFORM_CERT_ID 0x200
 
 #define DERIVE_CONTEXT_TEST_DATA1_SIZE 3
 #define DERIVE_CONTEXT_TEST_DATA2_SIZE 1
@@ -34,6 +36,7 @@ extern "C" {
     }
 
 struct dpe_derive_context_test_input_data_t {
+    uint32_t cert_id;
     /* If below flag is true, use previous parent handle or use derived context handle */
     bool use_parent_handle;
     bool retain_parent_context;
@@ -52,10 +55,12 @@ struct dpe_derive_context_test_params_t {
     bool is_mode_missing;
     bool corrupt_encoded_cbor;
     bool is_input_dice_data_missing;
+    bool is_cert_id_missing;
 };
 
 dpe_error_t
 dpe_derive_context_with_test_param(int    context_handle,
+                   uint32_t               cert_id,
                    bool                   retain_parent_context,
                    bool                   allow_new_context_to_derive,
                    bool                   create_certificate,

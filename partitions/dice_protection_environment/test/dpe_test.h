@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -142,6 +142,13 @@ void derive_context_check_export_cdi_test(struct test_result_t *ret);
  * \param[out] ret  Test result
  */
 void derive_context_single_use_handle_test(struct test_result_t *ret);
+
+/**
+ * \brief Test the DPE DeriveContext without cert id argument.
+ *
+ * \param[out] ret  Test result
+ */
+void derive_context_without_cert_id_test(struct test_result_t *ret);
 
 /**
  * \brief Test the DPE DeriveContext for leaf component.

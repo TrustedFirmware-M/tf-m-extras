@@ -37,6 +37,7 @@ static void call_certify_key_with_test_data(
     for (i = 0; i < test_count; i++, test_data++) {
 
         dpe_err = dpe_derive_context(in_handle,                 /* input_ctx_handle */
+                                     test_data->inputs.cert_id, /* cert_id */
                                      test_data->inputs.retain_parent_context,       /* retain_parent_context */
                                      test_data->inputs.allow_new_context_to_derive, /* allow_new_context_to_derive */
                                      test_data->inputs.create_certificate,          /* create_certificate */
@@ -165,6 +166,7 @@ void certify_key_api_test(struct test_result_t *ret)
     int out_parent_handle;
 
     dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
+                                 DPE_PLATFORM_CERT_ID,          /* cert_id */
                                  true,                          /* retain_parent_context */
                                  true,                          /* allow_new_context_to_derive */
                                  true,                          /* create_certificate */
@@ -229,6 +231,7 @@ void certify_key_retain_context_test(struct test_result_t *ret)
     int out_parent_handle;
 
     dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* context_handle */
+                                 DPE_PLATFORM_CERT_ID,          /* cert_id */
                                  true,                          /* retain_parent_context */
                                  true,                          /* allow_new_context_to_derive */
                                  true,                          /* create_certificate */
@@ -298,6 +301,7 @@ void certify_key_incorrect_handle_test(struct test_result_t *ret)
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
 
     dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
+                                 DPE_PLATFORM_CERT_ID,          /* cert_id */
                                  true,                          /* retain_parent_context */
                                  true,                          /* allow_new_context_to_derive */
                                  true,                          /* create_certificate */
@@ -369,6 +373,7 @@ void certify_key_smaller_cert_buffer_test(struct test_result_t *ret)
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
 
     dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
+                                 DPE_PLATFORM_CERT_ID,          /* cert_id */
                                  true,                          /* retain_parent_context */
                                  true,                          /* allow_new_context_to_derive */
                                  true,                          /* create_certificate */
@@ -425,6 +430,7 @@ void certify_key_smaller_derived_pub_key_buffer_test(struct test_result_t *ret)
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
 
     dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
+                                 DPE_PLATFORM_CERT_ID,          /* cert_id */
                                  true,                          /* retain_parent_context */
                                  true,                          /* allow_new_context_to_derive */
                                  true,                          /* create_certificate */
@@ -481,6 +487,7 @@ void certify_key_invalid_cbor_encoded_input_test(struct test_result_t *ret)
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
 
     dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
+                                 DPE_PLATFORM_CERT_ID,          /* cert_id */
                                  true,                          /* retain_parent_context */
                                  true,                          /* allow_new_context_to_derive */
                                  true,                          /* create_certificate */

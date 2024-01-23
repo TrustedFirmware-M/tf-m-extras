@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -40,23 +40,25 @@ static struct test_t dpe_s_tests[] = {
      "DPE DeriveContext - check function of export_cdi arg"},
     {&derive_context_single_use_handle_test, "DPE_S_TEST_1015",
      "DPE DeriveContext - same handle"},
-    {&certify_key_core_functionality_test, "DPE_S_TEST_1016",
+    {&derive_context_without_cert_id_test, "DPE_S_TEST_1016",
+     "DPE DeriveContext - without cert_id parameter"},
+    {&certify_key_core_functionality_test, "DPE_S_TEST_1017",
      "DPE CertifyKey functionality"},
-    {&certify_key_retain_context_test, "DPE_S_TEST_1017",
+    {&certify_key_retain_context_test, "DPE_S_TEST_1018",
      "DPE CertifyKey - retain context"},
-    {&certify_key_incorrect_handle_test, "DPE_S_TEST_1018",
+    {&certify_key_incorrect_handle_test, "DPE_S_TEST_1019",
      "DPE CertifyKey - invalid handle"},
-    {&certify_key_supplied_pub_key_test, "DPE_S_TEST_1019",
+    {&certify_key_supplied_pub_key_test, "DPE_S_TEST_1020",
      "DPE CertifyKey - supplied public key"},
-    {&certify_key_supplied_label_test, "DPE_S_TEST_1020",
+    {&certify_key_supplied_label_test, "DPE_S_TEST_1021",
      "DPE CertifyKey - supplied label"},
-    {&certify_key_smaller_cert_buffer_test, "DPE_S_TEST_1021",
+    {&certify_key_smaller_cert_buffer_test, "DPE_S_TEST_1022",
      "DPE CertifyKey - invalid certificate chain buffer size"},
-    {&certify_key_smaller_derived_pub_key_buffer_test, "DPE_S_TEST_1022",
+    {&certify_key_smaller_derived_pub_key_buffer_test, "DPE_S_TEST_1023",
      "DPE CertifyKey - invalid public key buffer size"},
-    {&certify_key_invalid_cbor_encoded_input_test, "DPE_S_TEST_1023",
+    {&certify_key_invalid_cbor_encoded_input_test, "DPE_S_TEST_1024",
      "DPE CertifyKey - invalid cbor encoded input"},
-    {&derive_context_with_parent_leaf_component_test, "DPE_S_TEST_1024",
+    {&derive_context_with_parent_leaf_component_test, "DPE_S_TEST_1025",
      "DPE DeriveContext - Leaf component"},
 };
 
