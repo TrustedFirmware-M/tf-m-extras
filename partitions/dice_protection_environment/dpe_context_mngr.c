@@ -10,6 +10,7 @@
 #include <string.h>
 #include "dice_protection_environment.h"
 #include "dpe_certificate.h"
+#include "dpe_client.h"
 #include "dpe_crypto_interface.h"
 #include "dpe_log.h"
 #include "dpe_plat.h"
@@ -82,6 +83,7 @@ static void invalidate_layer(int i)
     layer_ctx_array[i].state = LAYER_STATE_CLOSED;
     layer_ctx_array[i].parent_layer_idx = INVALID_LAYER_IDX;
     layer_ctx_array[i].is_cdi_to_be_exported = false;
+    layer_ctx_array[i].cert_id = DPE_CERT_ID_INVALID;
     (void)memset(&layer_ctx_array[i].attest_cdi_hash_input, 0,
                  sizeof(layer_ctx_array[i].attest_cdi_hash_input));
     (void)psa_destroy_key(layer_ctx_array[i].data.cdi_key_id);
@@ -378,11 +380,6 @@ static uint16_t open_new_layer(void)
     return MAX_NUM_OF_LAYERS - 1;
 }
 
-static inline void link_layer(uint16_t derived_ctx_layer, uint16_t parent_ctx_layer)
-{
-    layer_ctx_array[derived_ctx_layer].parent_layer_idx = parent_ctx_layer;
-}
-
 static inline bool is_input_client_id_valid(int32_t client_id, int32_t target_locality)
 {
     // TODO: FIXME
@@ -390,31 +387,68 @@ static inline bool is_input_client_id_valid(int32_t client_id, int32_t target_lo
     return true;
 }
 
-static dpe_error_t assign_layer_to_context(struct component_context_t *new_ctx)
+static bool is_cert_id_used(uint32_t cert_id, uint16_t *layer_idx)
 {
-    uint16_t new_layer_idx, parent_layer_idx;
+    int i;
+
+    for (i = 0; i < MAX_NUM_OF_LAYERS; i++) {
+        if (layer_ctx_array[i].cert_id == cert_id) {
+            *layer_idx = i;
+            return true;
+        }
+    }
+
+    /* No certificate ID match found */
+    return false;
+}
+
+static dpe_error_t assign_layer_to_context(struct component_context_t *new_ctx,
+                                           uint32_t cert_id)
+{
+    uint16_t parent_layer_idx, layer_idx_to_link;
 
     assert(new_ctx->parent_idx < MAX_NUM_OF_COMPONENTS);
 
     parent_layer_idx = component_ctx_array[new_ctx->parent_idx].linked_layer_idx;
     assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
 
-    if (layer_ctx_array[parent_layer_idx].state == LAYER_STATE_FINALISED) {
-        /* Parent comp's layer of new derived context is finalised; open a new layer */
-        new_layer_idx = open_new_layer();
-        if (new_layer_idx == INVALID_LAYER_IDX) {
-            return DPE_INTERNAL_ERROR;
+    if (cert_id != DPE_CERT_ID_INVALID) {
+        /* cert id was sent by the client */
+        if (cert_id == DPE_CERT_ID_SAME_AS_PARENT) {
+            if (layer_ctx_array[parent_layer_idx].state == LAYER_STATE_FINALISED) {
+                /* Cannot add to the layer which is already finalised */
+                return DPE_INTERNAL_ERROR;
+            }
+            /* Derived context belongs to the same certificate as its parent component */
+            new_ctx->linked_layer_idx = parent_layer_idx;
+
+        } else if (is_cert_id_used(cert_id, &layer_idx_to_link)) {
+            /* Cert ID is already in use */
+            if (layer_ctx_array[layer_idx_to_link].state == LAYER_STATE_FINALISED) {
+                /* Cannot add to the layer which is already finalised */
+                return DPE_INTERNAL_ERROR;
+            }
+            /* Use the same layer that is associated with cert_id */
+            new_ctx->linked_layer_idx = layer_idx_to_link;
+            /* Linked layer's parent is already assigned when it was opened */
+
+        } else {
+            /* Open new layer and link derived context to new layer */
+            layer_idx_to_link = open_new_layer();
+            if (layer_idx_to_link == INVALID_LAYER_IDX) {
+                return DPE_INTERNAL_ERROR;
+            }
+            /* Link this context to the new layer */
+            new_ctx->linked_layer_idx = layer_idx_to_link;
+            /* New layer's parent is parent component's layer */
+            layer_ctx_array[layer_idx_to_link].parent_layer_idx = parent_layer_idx;
+            layer_ctx_array[layer_idx_to_link].cert_id = cert_id;
         }
-        /* Link this context to the new layer */
-        new_ctx->linked_layer_idx = new_layer_idx;
-        /* New layer's parent is current layer */
-        link_layer(new_layer_idx, parent_layer_idx);
 
     } else {
-        /* Parent comp's layer is not yet finalised, link
-         * new component to the same layer as parent
-         */
-        new_ctx->linked_layer_idx = parent_layer_idx;
+        /* cert id was not sent by the client */
+        //TODO: To be implemented; return error for now.
+        return DPE_INVALID_ARGUMENT;
     }
 
     return DPE_NO_ERROR;
@@ -439,8 +473,6 @@ static dpe_error_t create_rot_context(int *rot_ctx_handle)
     struct component_context_t *rot_comp_ctx = &component_ctx_array[0];
     struct layer_context_t *rot_layer_ctx = &layer_ctx_array[DPE_ROT_LAYER_IDX];
 
-    /* Open RoT layer */
-    rot_layer_ctx->state = LAYER_STATE_OPEN;
     /* Parent layer for RoT context's layer is same */
     rot_layer_ctx->parent_layer_idx = DPE_ROT_LAYER_IDX;
 
@@ -489,6 +521,7 @@ dpe_error_t initialise_context_mngr(int *rot_ctx_handle)
 }
 
 dpe_error_t derive_context_request(int input_ctx_handle,
+                                   uint32_t cert_id,
                                    bool retain_parent_context,
                                    bool allow_new_context_to_derive,
                                    bool create_certificate,
@@ -514,7 +547,7 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     struct layer_context_t *layer_ctx;
     psa_status_t status;
 
-    log_derive_context(input_ctx_handle, retain_parent_context,
+    log_derive_context(input_ctx_handle, cert_id, retain_parent_context,
                        allow_new_context_to_derive, create_certificate, dice_inputs,
                        client_id);
 
@@ -593,7 +626,7 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     derived_ctx->parent_idx = parent_ctx_idx;
     /* Mark new derived component index as in use */
     derived_ctx->in_use = true;
-    err = assign_layer_to_context(derived_ctx);
+    err = assign_layer_to_context(derived_ctx, cert_id);
     if (err != DPE_NO_ERROR) {
         return err;
     }

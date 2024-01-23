@@ -26,6 +26,7 @@ void log_derive_rot_context(const DiceInputValues *dice_inputs);
  * \brief Log the derive context command parameters.
  */
 void log_derive_context(int context_handle,
+                        uint32_t cert_id,
                         bool retain_parent_context,
                         bool allow_new_context_to_derive,
                         bool create_certificate,

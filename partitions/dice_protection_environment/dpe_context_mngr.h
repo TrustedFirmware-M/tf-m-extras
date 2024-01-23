@@ -98,6 +98,7 @@ struct layer_context_t {
     enum layer_state_t state;
     bool is_external_pub_key_provided;
     bool is_cdi_to_be_exported;
+    uint32_t cert_id;
 };
 
 /**
@@ -114,6 +115,8 @@ dpe_error_t initialise_context_mngr(int *rot_ctx_handle);
  *        chain.
  *
  * \param[in]  input_context_handle        Input handle to parent component context.
+ * \param[in]  cert_id                     Logical certificate id to which derived
+ *                                         context belongs to.
  * \param[in]  retain_parent_context       Flag to indicate if parent context need
  *                                         to be retained. TRUE only if a client
  *                                         is calling DPE commands multiple times.
@@ -149,6 +152,7 @@ dpe_error_t initialise_context_mngr(int *rot_ctx_handle);
  * \return Returns error code of type dpe_error_t
  */
 dpe_error_t derive_context_request(int input_ctx_handle,
+                                   uint32_t cert_id,
                                    bool retain_parent_context,
                                    bool allow_new_context_to_derive,
                                    bool create_certificate,

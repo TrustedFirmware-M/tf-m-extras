@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -59,6 +59,8 @@ enum dpe_derive_context_input_labels_t {
     DPE_DERIVE_CONTEXT_RETURN_CERTIFICATE = 9,
     DPE_DERIVE_CONTEXT_ALLOW_NEW_CONTEXT_TO_EXPORT = 10,
     DPE_DERIVE_CONTEXT_EXPORT_CDI = 11,
+    /* enum values 256 and onwards are reserved for custom arguments */
+    DPE_DERIVE_CONTEXT_CERT_ID = 256,
 };
 
 enum dpe_destroy_context_input_labels_t {

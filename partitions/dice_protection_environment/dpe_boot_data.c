@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -14,10 +14,13 @@
 
 #include "boot_hal.h"
 #include "boot_measurement.h"
+#include "dice_protection_environment.h"
 #include "dpe_context_mngr.h"
 #include "service_api.h"
 #include "tfm_boot_status.h"
 #include "tfm_plat_otp.h"
+
+#define DPE_PLATFORM_CERT_ID 0x200
 
 /* Maximum measurement size is size of SHA-512 hash */
 #define MEASUREMENT_VALUE_MAX_SIZE 64
@@ -296,6 +299,7 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
 
     /* Derive RoT layer */
     err = derive_context_request(rot_ctx_handle,
+                                 DPE_ROT_CERT_ID, /* cert_id */
                                  false, /* retain_parent_context */
                                  true, /* allow_new_context_to_derive */
                                  true, /* create certificate */
@@ -327,6 +331,7 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
 
     /* Derive BL2 context */
     err = derive_context_request(plat_ctx_handle,
+                                 DPE_PLATFORM_CERT_ID, /* cert_id */
                                  false, /* close parent context */
                                  true, /* allow BL2 to derive further */
                                  false, /* create_certificate */
@@ -354,6 +359,7 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
                                                 &dice_inputs)) == 1) {
         /* Derive rest of platform contexts from retained BL2 context */
         err = derive_context_request(plat_ctx_handle,
+                                     DPE_CERT_ID_SAME_AS_PARENT, /* cert_id */
                                      true, /* retain parent context */
                                      false, /* do not allow derived context to derive */
                                      false, /* create_certificate */
@@ -394,9 +400,10 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
      * caller in the new_ctx_handle output parameter.
      */
     return derive_context_request(plat_ctx_handle,
+                                  DPE_CERT_ID_SAME_AS_PARENT, /* cert_id */
                                   false, /* close parent context */
                                   true, /* allow AP to derive */
-                                  false, /* create_certificate */
+                                  true, /* create_certificate */
                                   &dice_inputs,
                                   0, /* client_id */
                                   0, /* target_locality */

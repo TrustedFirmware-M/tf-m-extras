@@ -150,6 +150,7 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     int new_parent_context_handle;
     uint8_t *new_certificate_buf = REUSE_CMD_BUF(DICE_CERT_SIZE);
     uint8_t exported_cdi_buf[DICE_MAX_ENCODED_CDI_SIZE];
+    uint32_t cert_id;
     size_t new_certificate_actual_size = 0;
     size_t exported_cdi_actual_size = 0;
 
@@ -158,10 +159,18 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_DERIVE_CONTEXT_CONTEXT_HANDLE,
                                     &out);
-    if (out.len != sizeof(context_handle)) {
+    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
+    if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(context_handle))) {
         return DPE_INVALID_COMMAND;
     }
     memcpy(&context_handle, out.ptr, out.len);
+
+    QCBORDecode_GetUInt64InMapN(decode_ctx, DPE_DERIVE_CONTEXT_CERT_ID, &cert_id);
+    /* Check if cert_id was encoded in the received command buffer */
+    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
+    if (qcbor_err != QCBOR_SUCCESS) {
+        cert_id = DPE_CERT_ID_INVALID;
+    }
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_RETAIN_PARENT_CONTEXT,
                               &retain_parent_context);
@@ -204,7 +213,7 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
         return DPE_INVALID_COMMAND;
     }
 
-    dpe_err = derive_context_request(context_handle, retain_parent_context,
+    dpe_err = derive_context_request(context_handle, cert_id, retain_parent_context,
                                      allow_new_context_to_derive, create_certificate,
                                      &dice_inputs, client_id,
                                      target_locality,

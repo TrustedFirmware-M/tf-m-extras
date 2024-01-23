@@ -18,6 +18,7 @@ extern "C" {
 
 struct derive_context_input_t {
     int context_handle;
+    uint32_t cert_id;
     bool retain_parent_context;
     bool allow_new_context_to_derive;
     bool create_certificate;
