@@ -641,8 +641,46 @@ void derive_context_missing_req_input_param_combination_test(struct test_result_
 
 void derive_context_check_export_cdi_test(struct test_result_t *ret)
 {
-    //TODO: TO BE IMPLEMENTED
-   ret->val = TEST_PASSED;}
+    dpe_error_t dpe_err;
+    int out_ctx_handle, out_parent_handle;
+    uint8_t exported_cdi_buf[DICE_MAX_ENCODED_CDI_SIZE];
+    size_t exported_cdi_actual_size;
+    DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
+
+    dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
+                                 true,                          /* retain_parent_context */
+                                 true,                          /* allow_new_context_to_derive */
+                                 true,                          /* create_certificate */
+                                 &dice_inputs,                  /* dice_inputs */
+                                 0,                             /* target_locality */
+                                 false,                         /* return_certificate */
+                                 true,                          /* allow_new_context_to_export */
+                                 true,                          /* export_cdi */
+                                 &out_ctx_handle,               /* new_context_handle */
+                                 &out_parent_handle,            /* new_parent_context_handle */
+                                 NULL,                          /* new_certificate_buf */
+                                 0,                             /* new_certificate_buf_size */
+                                 NULL,                          /* new_certificate_actual_size */
+                                 exported_cdi_buf,              /* exported_cdi_buf */
+                                 sizeof(exported_cdi_buf),      /* exported_cdi_buf_size */
+                                 &exported_cdi_actual_size);    /* exported_cdi_actual_size */
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext call failed");
+        return;
+    }
+    /* NOTE: When CDI is exported, it creates an undestroyable context */
+
+    //TODO: Check the CBOR structure of exported CDI data:
+    /* Exported_CDI = {
+     * 1 : bstr .size 32,     ; CDI_Attest
+     * 2 : bstr .size 32,     ; CDI_Seal
+     * }
+     */
+    /* Save the last handle for the subsequent test */
+    retained_rot_ctx_handle = out_parent_handle;
+
+    ret->val = TEST_PASSED;
+}
 
 void derive_context_with_parent_leaf_component_test(struct test_result_t *ret)
 {
