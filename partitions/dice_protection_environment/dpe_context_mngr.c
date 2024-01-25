@@ -260,23 +260,22 @@ static dpe_error_t get_encoded_cdi_to_export(struct layer_context_t *layer_ctx,
                                              size_t exported_cdi_buf_size,
                                              size_t *exported_cdi_actual_size)
 {
-    uint8_t cdi_buf[DICE_CDI_SIZE];
-    size_t cdi_size;
+    uint8_t cdi_attest_buf[DICE_CDI_SIZE];
+    uint8_t cdi_seal_buf[DICE_CDI_SIZE];
     psa_status_t status;
     dpe_error_t err;
 
-    /* Get CDI value */
+    /* Get CDIs value */
     status = get_layer_cdi_value(layer_ctx,
-                                 cdi_buf,
-                                 sizeof(cdi_buf),
-                                 &cdi_size);
+                                 cdi_attest_buf,
+                                 cdi_seal_buf);
     if (status != PSA_SUCCESS) {
         return DPE_INTERNAL_ERROR;
     }
 
     /* Encode CDI value */
-    err = encode_cdi(cdi_buf,
-                     cdi_size,
+    err = encode_cdi(cdi_attest_buf,
+                     cdi_seal_buf,
                      exported_cdi_buf,
                      exported_cdi_buf_size,
                      exported_cdi_actual_size);

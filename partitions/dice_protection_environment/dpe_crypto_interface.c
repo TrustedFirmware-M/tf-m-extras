@@ -295,20 +295,22 @@ err_abort:
 }
 
 psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
-                                 uint8_t *cdi_buf,
-                                 size_t cdi_buf_size,
-                                 size_t *cdi_actual_size)
+                                 uint8_t cdi_attest_buf[DICE_CDI_SIZE],
+                                 uint8_t cdi_seal_buf[DICE_CDI_SIZE])
 {
     psa_status_t status;
+    size_t cdi_attest_actual_size;
 
     //TODO: Sealing CDI to be added later
+    memset(cdi_seal_buf, 0, DICE_CDI_SIZE); /* Return hard-coded data */
+
+    /* Query the attest CDI */
     status = psa_export_key(layer_ctx->data.cdi_key_id,
-                            cdi_buf,
-                            cdi_buf_size,
-                            cdi_actual_size);
-    if (status != PSA_SUCCESS) {
-        *cdi_actual_size = 0;
-    }
+                            cdi_attest_buf,
+                            DICE_CDI_SIZE,
+                            &cdi_attest_actual_size);
+
+    assert(cdi_attest_actual_size == DICE_CDI_SIZE);
 
     return status;
 }

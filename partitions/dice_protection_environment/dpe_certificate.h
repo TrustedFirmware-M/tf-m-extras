@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -94,16 +94,16 @@ dpe_error_t get_certificate_chain(uint16_t layer_idx,
 /**
  * \brief Returns the encoded CDI from raw value.
  *
- * \param[in]  cdi                       Pointer to the input CDI buffer.
- * \param[in]  cdi_size                  Size of the input CDI buffer.
+ * \param[in]  cdi_attest_buf            Buffer holds the  attestation CDI data.
+ * \param[in]  cdi_seal_buf              Buffer holds the  sealing CDI data.
  * \param[out] encoded_cdi_buf           Pointer to the output encoded CDI buffer.
  * \param[in]  encoded_cdi_buf_size      Size of the encoded CDI buffer.
  * \param[out] exported_cdi_actual_size  Actual size of the encoded CDI.
  *
  * \return Returns error code of type dpe_error_t
  */
-dpe_error_t encode_cdi(const uint8_t *cdi,
-                       size_t cdi_size,
+dpe_error_t encode_cdi(const uint8_t cdi_attest_buf[DICE_CDI_SIZE],
+                       const uint8_t cdi_seal_buf[DICE_CDI_SIZE],
                        uint8_t *encoded_cdi_buf,
                        size_t encoded_cdi_buf_size,
                        size_t *encoded_cdi_actual_size);

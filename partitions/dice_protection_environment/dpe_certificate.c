@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -589,8 +589,8 @@ dpe_error_t get_certificate_chain(uint16_t layer_idx,
                                    cert_chain_actual_size);
 }
 
-dpe_error_t encode_cdi(const uint8_t *cdi,
-                       size_t cdi_size,
+dpe_error_t encode_cdi(const uint8_t cdi_attest_buf[DICE_CDI_SIZE],
+                       const uint8_t cdi_seal_buf[DICE_CDI_SIZE],
                        uint8_t *encoded_cdi_buf,
                        size_t encoded_cdi_buf_size,
                        size_t *encoded_cdi_actual_size)
@@ -605,7 +605,11 @@ dpe_error_t encode_cdi(const uint8_t *cdi,
     /* Encode CDI value as byte string */
     QCBOREncode_AddBytesToMapN(&encode_ctx,
                                DPE_LABEL_CDI_ATTEST,
-                               (UsefulBufC){ cdi, cdi_size });
+                               (UsefulBufC){ cdi_attest_buf, DICE_CDI_SIZE });
+
+    QCBOREncode_AddBytesToMapN(&encode_ctx,
+                               DPE_LABEL_CDI_SEAL,
+                               (UsefulBufC){ cdi_seal_buf, DICE_CDI_SIZE });
 
     QCBOREncode_CloseMap(&encode_ctx);
     encode_err = QCBOREncode_Finish(&encode_ctx, &out);

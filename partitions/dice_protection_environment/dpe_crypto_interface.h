@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -92,16 +92,14 @@ psa_status_t derive_cdi_id(psa_key_id_t attest_key_id, uint8_t *cdi_id,
  * \brief Gets the layer's CDI value.
  *
  * \param[in]  layer_ctx       Pointer to current layer context.
- * \param[out] cdi_buf         Pointer to output CDI Buffer.
- * \param[in]  cdi_buf_size    Size of CDI buffer.
- * \param[out] cdi_actual_size Actual size of the CDI value.
+ * \param[out] cdi_attest_buf  Buffer to hold the attestation CDI.
+ * \param[in]  cdi_seal_buf    Buffer to hold the sealing CDI.
  *
  * \return Returns error code as specified in \ref psa_status_t
  */
 psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
-                                 uint8_t *cdi_buf,
-                                 size_t cdi_buf_size,
-                                 size_t *cdi_actual_size);
+                                 uint8_t cdi_attest_buf[DICE_CDI_SIZE],
+                                 uint8_t cdi_seal_buf[DICE_CDI_SIZE]);
 #ifdef __cplusplus
 }
 #endif
