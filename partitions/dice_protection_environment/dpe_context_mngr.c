@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -880,7 +880,8 @@ dpe_error_t get_certificate_chain_request(int input_ctx_handle,
     psa_status_t status;
     struct layer_context_t *layer_ctx;
 
-    log_get_certificate_chain(input_ctx_handle, retain_context, clear_from_context);
+    log_get_certificate_chain(input_ctx_handle, retain_context,
+                              clear_from_context, certificate_chain_buf_size);
 
     /* Validate input handle */
     if (!is_input_handle_valid(input_ctx_handle)) {

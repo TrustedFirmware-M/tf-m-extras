@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -101,13 +101,15 @@ void log_certify_key(int context_handle,
 
 void log_get_certificate_chain(int context_handle,
                                bool retain_context,
-                               bool clear_from_context)
+                               bool clear_from_context,
+                               size_t cert_chain_buf_size)
 {
     LOG_DBGFMT("DPE GetCertificateChain:\r\n");
     LOG_DBGFMT(" - context_handle index = %d\r\n", GET_IDX(context_handle));
     LOG_DBGFMT(" - context_handle nonce = %d\r\n", GET_NONCE(context_handle));
     LOG_DBGFMT(" - retain_context = %d\r\n", retain_context);
     LOG_DBGFMT(" - clear_from_context = %d\r\n", clear_from_context);
+    LOG_DBGFMT(" - cert_chain_buf_size = %d\r\n", cert_chain_buf_size);
 }
 
 void log_intermediate_certificate(uint16_t layer_idx,

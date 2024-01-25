@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -53,7 +53,8 @@ void log_certify_key(int context_handle,
  */
 void log_get_certificate_chain(int context_handle,
                                bool retain_context,
-                               bool clear_from_context);
+                               bool clear_from_context,
+                               size_t cert_chain_buf_size);
 
 /**
  * \brief Log intermediate layer certificate contents.
