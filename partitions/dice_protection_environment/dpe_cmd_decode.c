@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -15,6 +15,27 @@
 #include "qcbor/qcbor_encode.h"
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
+
+/*
+ * The goal to reuse the cmd_buf allocated in dpe_req_mngr.c to create the
+ * big objects (certificate, certificate_chain) in place rather then allocate
+ * a separate  buffer on the stack and later copy them to cmd_buf.
+ *
+ * The temporary buffer is allocated from the end of the cmd_buf. When the
+ * reply is encoded then the content of the temp buf is moved to its final
+ * place in the cmd_buf.
+ *
+ * Overlapping copy is not an issue because QCBOR relies on memmove under the
+ * hood which handles this scenario.
+ *
+ * Note:
+ *   Make sure that the beginning of the encoded reply does not overwrite the
+ *   data in the temp buf. That is why the temp buff is allocated at the end of
+ *   cmd_buf.
+ */
+#define REUSE_CMD_BUF(size)  (uint8_t *)encode_ctx->OutBuf.UB.ptr + \
+                                        encode_ctx->OutBuf.UB.len - \
+                                        (size)
 
 static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
                                       DiceInputValues *input)
@@ -122,7 +143,7 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     DiceInputValues dice_inputs;
     int new_context_handle;
     int new_parent_context_handle;
-    uint8_t new_certificate_buf[DICE_CERT_SIZE];
+    uint8_t *new_certificate_buf = REUSE_CMD_BUF(DICE_CERT_SIZE);
     uint8_t exported_cdi_buf[DICE_MAX_ENCODED_CDI_SIZE];
     size_t new_certificate_actual_size = 0;
     size_t exported_cdi_actual_size = 0;
@@ -188,7 +209,7 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
                                      &new_context_handle,
                                      &new_parent_context_handle,
                                      new_certificate_buf,
-                                     sizeof(new_certificate_buf),
+                                     DICE_CERT_SIZE,
                                      &new_certificate_actual_size,
                                      exported_cdi_buf,
                                      sizeof(exported_cdi_buf),
@@ -287,7 +308,7 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
     size_t public_key_size;
     const uint8_t *label;
     size_t label_size;
-    uint8_t certificate_buf[DICE_CERT_SIZE];
+    uint8_t *certificate_buf = REUSE_CMD_BUF(DICE_CERT_SIZE);
     size_t certificate_actual_size;
     uint8_t derived_public_key_buf[DPE_ATTEST_PUB_KEY_SIZE];
     size_t derived_public_key_actual_size;
@@ -329,7 +350,7 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
     dpe_err = certify_key_request(context_handle, retain_context, public_key,
                                   public_key_size, label, label_size,
                                   certificate_buf,
-                                  sizeof(certificate_buf),
+                                  DICE_CERT_SIZE,
                                   &certificate_actual_size,
                                   derived_public_key_buf,
                                   sizeof(derived_public_key_buf),
@@ -376,7 +397,7 @@ static dpe_error_t decode_get_certificate_chain(QCBORDecodeContext *decode_ctx,
     int context_handle;
     bool retain_context;
     bool clear_from_context;
-    uint8_t certificate_chain_buf[DICE_CERT_CHAIN_SIZE];
+    uint8_t *certificate_chain_buf = REUSE_CMD_BUF(DICE_CERT_CHAIN_SIZE);
     size_t certificate_chain_actual_size;
     int new_context_handle;
 
@@ -411,7 +432,7 @@ static dpe_error_t decode_get_certificate_chain(QCBORDecodeContext *decode_ctx,
                                             retain_context,
                                             clear_from_context,
                                             certificate_chain_buf,
-                                            sizeof(certificate_chain_buf),
+                                            DICE_CERT_CHAIN_SIZE,
                                             &certificate_chain_actual_size,
                                             &new_context_handle);
     if (dpe_err != DPE_NO_ERROR) {
