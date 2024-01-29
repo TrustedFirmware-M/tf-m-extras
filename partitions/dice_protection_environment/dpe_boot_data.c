@@ -16,9 +16,9 @@
 #include "boot_measurement.h"
 #include "dice_protection_environment.h"
 #include "dpe_context_mngr.h"
+#include "psa/lifecycle.h"
 #include "service_api.h"
 #include "tfm_boot_status.h"
-#include "tfm_plat_otp.h"
 
 #define DPE_PLATFORM_CERT_ID 0x200
 
@@ -68,20 +68,16 @@ static struct boot_measurement_data boot_measurements;
  */
 static DiceMode get_dice_mode(void)
 {
-    enum tfm_plat_err_t err;
-    enum plat_otp_lcs_t otp_lcs;
+    uint32_t psa_lcs;
 
-    err = tfm_plat_otp_read(PLAT_OTP_ID_LCS, sizeof(otp_lcs),
-                            (uint8_t *)&otp_lcs);
-    if (err != TFM_PLAT_ERR_SUCCESS) {
-        return kDiceModeNotInitialized;
-    }
+    /* get PSA RoT life cycle state */
+    psa_lcs = psa_rot_lifecycle_state();
 
     /* FIXME consider DCU state as well */
-    switch (otp_lcs) {
-    case PLAT_OTP_LCS_SECURED:
+    switch (psa_lcs) {
+    case PSA_LIFECYCLE_SECURED:
         return kDiceModeNormal;
-    case PLAT_OTP_LCS_DECOMMISSIONED:
+    case PSA_LIFECYCLE_DECOMMISSIONED:
         return kDiceModeMaintenance;
     default:
         return kDiceModeNotInitialized;
