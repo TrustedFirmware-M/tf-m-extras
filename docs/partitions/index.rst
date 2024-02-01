@@ -6,7 +6,7 @@ Partitions
   :titlesonly:
   :hidden:
 
-  Authenticated Debug Access Control Service Integration Guide <adac/adac_integration_guide>
+  Authenticated Debug Access Control <adac/index>
   Delegated Attestation Service Integration Guide <delegated_attestation/delegated_attest_integration_guide>
   DICE Protection Environmnet <dice_protection_environment>
   DMA-350 Privilege Separation <dma350_unpriv_partition/dma350_privilege_separation>
