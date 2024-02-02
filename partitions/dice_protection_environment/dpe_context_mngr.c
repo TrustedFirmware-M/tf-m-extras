@@ -545,7 +545,6 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     uint16_t parent_ctx_idx, linked_layer_idx;
     int free_component_idx;
     struct layer_context_t *layer_ctx;
-    psa_status_t status;
 
     log_derive_context(input_ctx_handle, cert_id, retain_parent_context,
                        allow_new_context_to_derive, create_certificate, dice_inputs,
@@ -626,6 +625,7 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     derived_ctx->parent_idx = parent_ctx_idx;
     /* Mark new derived component index as in use */
     derived_ctx->in_use = true;
+    derived_ctx->is_allowed_to_derive = allow_new_context_to_derive;
     err = assign_layer_to_context(derived_ctx, cert_id);
     if (err != DPE_NO_ERROR) {
         return err;
@@ -908,7 +908,7 @@ dpe_error_t get_certificate_chain_request(int input_ctx_handle,
                                           int *new_context_handle)
 {
     dpe_error_t err;
-    uint16_t input_ctx_idx, input_layer_idx, parent_layer_idx;
+    uint16_t input_ctx_idx, input_layer_idx;
     psa_status_t status;
     struct layer_context_t *layer_ctx;
 
