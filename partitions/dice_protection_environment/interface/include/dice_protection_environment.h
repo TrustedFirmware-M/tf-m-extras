@@ -21,8 +21,7 @@ extern "C" {
 /* Additional defines for max size limit */
 #define DICE_AUTHORITY_DESCRIPTOR_MAX_SIZE  64
 #define DICE_CONFIG_DESCRIPTOR_MAX_SIZE     64
-/* The theoretical maximum image version is: "255.255.65535\0" */
-#define DICE_CODE_DESCRIPTOR_MAX_SIZE 14
+#define DICE_CODE_DESCRIPTOR_MAX_SIZE       32
 
 typedef int32_t dpe_error_t;
 
