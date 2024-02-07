@@ -59,6 +59,7 @@ target_link_libraries(tfm_app_rot_partition_dpe
         qcbor
         tfm_t_cose_s
         platform_s
+        psa_crypto_config
 )
 
 ############################ Secure API ########################################

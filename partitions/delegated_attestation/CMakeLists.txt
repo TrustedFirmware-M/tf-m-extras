@@ -54,6 +54,7 @@ target_link_libraries(tfm_app_rot_partition_delegated_attest
         tfm_sprt
         tfm_attestation_defs
         qcbor
+        psa_crypto_config
 )
 
 ############################ Secure API ########################################

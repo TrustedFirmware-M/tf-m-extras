@@ -49,6 +49,7 @@ target_link_libraries(tfm_psa_rot_partition_measured_boot
     PRIVATE
         platform_s
         tfm_sprt
+        psa_crypto_config
 )
 
 if(${MEASURED_BOOT_HASH_ALG} STREQUAL "PSA_ALG_SHA_512")
