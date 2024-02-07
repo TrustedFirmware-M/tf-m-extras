@@ -15,7 +15,11 @@
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-#define DPE_CMD_MAX_SIZE 4096
+/* TODO:
+ *    Might make this to be platform dependent if there are major difference
+ *    among them.
+ */
+#define DPE_CMD_MAX_SIZE 6 * 1024 /* cert_chain on the TC platform is a bit more than 5KB. */
 
 static char cmd_buf[DPE_CMD_MAX_SIZE];
 

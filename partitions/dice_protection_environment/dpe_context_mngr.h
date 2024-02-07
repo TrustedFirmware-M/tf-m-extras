@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 #define DICE_CERT_SIZE  3072
-#define DICE_CERT_CHAIN_SIZE  3200
+#define DICE_CERT_CHAIN_SIZE  5600
 /* Below encoded CDI size accomodate both Attest and Seal CDI */
 #define DICE_MAX_ENCODED_CDI_SIZE ((2 * DICE_CDI_SIZE) + 16)
 
