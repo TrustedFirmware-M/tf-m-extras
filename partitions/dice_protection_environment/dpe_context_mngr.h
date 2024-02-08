@@ -18,8 +18,6 @@
 extern "C" {
 #endif
 
-#define DICE_CERT_SIZE  3072
-#define DICE_CERT_CHAIN_SIZE  5600
 /* Below encoded CDI size accomodate both Attest and Seal CDI */
 #define DICE_MAX_ENCODED_CDI_SIZE ((2 * DICE_CDI_SIZE) + 16)
 
@@ -30,10 +28,13 @@ extern "C" {
 #define DPE_ROT_LAYER_IDX 0
 
 /* Below configuration defines are platform dependant */
-#define MAX_NUM_OF_COMPONENTS 30
-#define MAX_NUM_OF_LAYERS 6
+#define DICE_CERT_SIZE  3072
+#define DICE_CERT_CHAIN_SIZE  5600
+#define MAX_NUM_OF_COMPONENTS 20
+#define MAX_NUM_OF_LAYERS 4
 #define DPE_PLATFORM_LAYER_IDX 1
 #define DPE_SECURE_WORLD_AND_HYPERVISOR_LAYER_IDX 2
+
 /* Below threshold defines the threshold below which a context cannot be destroyed */
 #define DPE_DESTROY_CONTEXT_THRESHOLD_LAYER_IDX DPE_SECURE_WORLD_AND_HYPERVISOR_LAYER_IDX
 
