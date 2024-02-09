@@ -89,32 +89,44 @@ static QCBORError encode_derive_context(const struct derive_context_input_t *arg
                                (UsefulBufC){ &args->context_handle,
                                              sizeof(args->context_handle) });
     if (!test_params->is_cert_id_missing) {
-        QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_CERT_ID,
-                                   (UsefulBufC){ &args->cert_id,
-                                                 sizeof(args->cert_id) });
+        QCBOREncode_AddUInt64ToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_CERT_ID,
+                                    args->cert_id);
     }
-    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_RETAIN_PARENT_CONTEXT,
-                              args->retain_parent_context);
-    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_ALLOW_NEW_CONTEXT_TO_DERIVE,
-                              args->allow_new_context_to_derive);
-    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_CREATE_CERTIFICATE,
-                              args->create_certificate);
+
+    if (!test_params->is_retain_parent_context_missing) {
+        QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_RETAIN_PARENT_CONTEXT,
+                                args->retain_parent_context);
+    }
+    if (!test_params->is_allow_new_context_to_derive_missing) {
+        QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_ALLOW_NEW_CONTEXT_TO_DERIVE,
+                                  args->allow_new_context_to_derive);
+    }
+    if (!test_params->is_create_certificate_missing) {
+        QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_CREATE_CERTIFICATE,
+                                  args->create_certificate);
+    }
     if (!test_params->is_input_dice_data_missing) {
         encode_dice_inputs(&encode_ctx, args->dice_inputs, test_params);
     }
     QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_TARGET_LOCALITY,
                                (UsefulBufC){ &args->target_locality,
                                              sizeof(args->target_locality) });
-    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_RETURN_CERTIFICATE,
-                              args->return_certificate);
-    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_ALLOW_NEW_CONTEXT_TO_EXPORT,
-                              args->allow_new_context_to_export);
-    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_EXPORT_CDI,
-                              args->export_cdi);
+    if (!test_params->is_return_certificate_missing) {
+        QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_RETURN_CERTIFICATE,
+                                  args->return_certificate);
+    }
+    if (!test_params->is_allow_new_context_to_export_missing) {
+        QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_ALLOW_NEW_CONTEXT_TO_EXPORT,
+                                  args->allow_new_context_to_export);
+    }
+    if (!test_params->is_export_cdi_missing) {
+        QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_EXPORT_CDI,
+                                  args->export_cdi);
+    }
 
     QCBOREncode_CloseMap(&encode_ctx);
 
-    if (test_params->corrupt_encoded_cbor) {
+    if (test_params->is_encoded_cbor_corrupt) {
         /* Deliberately corrupt CBOR map metadata and construct */
         *((uint8_t *)encode_ctx.OutBuf.UB.ptr + 1) = 0xff;
     }
@@ -180,11 +192,10 @@ static QCBORError decode_derive_context_response(UsefulBufC encoded_buf,
     return QCBORDecode_Finish(&decode_ctx);
 }
 
-
 static QCBORError encode_certify_key(const struct certify_key_input_t *args,
                                      UsefulBuf buf,
                                      UsefulBufC *encoded_buf,
-                                     bool corrupt_encoded_cbor)
+                                     struct dpe_certify_key_test_params_t *test_params)
 {
     QCBOREncodeContext encode_ctx;
 
@@ -198,16 +209,22 @@ static QCBORError encode_certify_key(const struct certify_key_input_t *args,
     QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_CERTIFY_KEY_CONTEXT_HANDLE,
                                (UsefulBufC){ &args->context_handle,
                                              sizeof(args->context_handle) });
-    QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_CERTIFY_KEY_RETAIN_CONTEXT,
-                              args->retain_context);
-    QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_CERTIFY_KEY_PUBLIC_KEY,
-                               (UsefulBufC){ args->public_key,
-                                             args->public_key_size });
-    QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_CERTIFY_KEY_LABEL,
-                               (UsefulBufC){ args->label, args->label_size} );
+    if (!test_params->is_retain_context_missing) {
+        QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_CERTIFY_KEY_RETAIN_CONTEXT,
+                                  args->retain_context);
+    }
+    if (!test_params->is_public_key_missing) {
+        QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_CERTIFY_KEY_PUBLIC_KEY,
+                                   (UsefulBufC){ args->public_key,
+                                                 args->public_key_size });
+    }
+    if (!test_params->is_label_missing) {
+        QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_CERTIFY_KEY_LABEL,
+                                   (UsefulBufC){ args->label, args->label_size} );
+    }
     QCBOREncode_CloseMap(&encode_ctx);
 
-    if (corrupt_encoded_cbor) {
+    if (test_params->is_encoded_cbor_corrupt) {
         /* Deliberately corrupt CBOR map metadata and construct */
         *((uint8_t *)encode_ctx.OutBuf.UB.ptr + 1) = 0xff;
     }
@@ -290,7 +307,7 @@ dpe_derive_context_with_test_param(int    context_handle,
     dpe_error_t dpe_err;
     QCBORError qcbor_err;
     UsefulBufC encoded_buf;
-    UsefulBuf_MAKE_STACK_UB(cmd_buf, 612);
+    UsefulBuf_MAKE_STACK_UB(cmd_buf, DICE_CERT_SIZE);
 
     const struct derive_context_input_t in_args = {
         context_handle,
@@ -348,6 +365,8 @@ dpe_derive_context_with_test_param(int    context_handle,
         memcpy(new_certificate_buf, out_args.new_certificate,
                out_args.new_certificate_size);
         *new_certificate_actual_size = out_args.new_certificate_size;
+    } else {
+        *new_certificate_actual_size = 0;
     }
 
     if (export_cdi) {
@@ -357,6 +376,8 @@ dpe_derive_context_with_test_param(int    context_handle,
         memcpy(exported_cdi_buf, out_args.exported_cdi,
                out_args.exported_cdi_size);
         *exported_cdi_actual_size = out_args.exported_cdi_size;
+    } else {
+        *exported_cdi_actual_size = 0;
     }
 
     return DPE_NO_ERROR;
@@ -375,13 +396,13 @@ dpe_error_t dpe_certify_key_with_test_param(int context_handle,
                             size_t derived_public_key_buf_size,
                             size_t *derived_public_key_actual_size,
                             int *new_context_handle,
-                            bool corrupt_encoded_cbor)
+                            struct dpe_certify_key_test_params_t *test_params)
 {
     int32_t service_err;
     dpe_error_t dpe_err;
     QCBORError qcbor_err;
     UsefulBufC encoded_buf;
-    UsefulBuf_MAKE_STACK_UB(cmd_buf, 2500);
+    UsefulBuf_MAKE_STACK_UB(cmd_buf, DICE_CERT_SIZE);
 
     const struct certify_key_input_t in_args = {
         context_handle,
@@ -401,7 +422,7 @@ dpe_error_t dpe_certify_key_with_test_param(int context_handle,
         return DPE_INVALID_ARGUMENT;
     }
 
-    qcbor_err = encode_certify_key(&in_args, cmd_buf, &encoded_buf, corrupt_encoded_cbor);
+    qcbor_err = encode_certify_key(&in_args, cmd_buf, &encoded_buf, test_params);
     if (qcbor_err != QCBOR_SUCCESS) {
         return DPE_INTERNAL_ERROR;
     }

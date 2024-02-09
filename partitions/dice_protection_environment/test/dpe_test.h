@@ -158,6 +158,13 @@ void derive_context_without_cert_id_test(struct test_result_t *ret);
 void derive_context_with_parent_leaf_component_test(struct test_result_t *ret);
 
 /**
+ * \brief Test the DPE DeriveContext without optional arguments.
+ *
+ * \param[out] ret  Test result
+ */
+void derive_context_without_optional_args_test(struct test_result_t *ret);
+
+/**
  * \brief Test the DPE CertifyKey functionality.
  *        Note: this test will create context(s) which cannot be destroyed.
  *
@@ -213,6 +220,13 @@ void certify_key_smaller_derived_pub_key_buffer_test(struct test_result_t *ret);
  * \param[out] ret  Test result
  */
 void certify_key_invalid_cbor_encoded_input_test(struct test_result_t *ret);
+
+/**
+ * \brief Test the DPE CertifyKey without optional arguments.
+ *
+ * \param[out] ret  Test result
+ */
+void certify_key_without_optional_args_test(struct test_result_t *ret);
 
 #ifdef __cplusplus
 }

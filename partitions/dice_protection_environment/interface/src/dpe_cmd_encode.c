@@ -13,8 +13,6 @@
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
 
-#define DPE_CERT_CHAIN_BUF_SIZE 4096
-
 static void encode_dice_inputs(QCBOREncodeContext *encode_ctx,
                                const DiceInputValues *input)
 {
@@ -500,7 +498,7 @@ dpe_error_t dpe_certify_key(int context_handle,
     dpe_error_t dpe_err;
     QCBORError qcbor_err;
     UsefulBufC encoded_buf;
-    UsefulBuf_MAKE_STACK_UB(cmd_buf, 2500);
+    UsefulBuf_MAKE_STACK_UB(cmd_buf, DICE_CERT_SIZE);
 
     const struct certify_key_input_t in_args = {
         context_handle,
@@ -576,7 +574,7 @@ dpe_get_certificate_chain(int            context_handle,
     dpe_error_t dpe_err;
     QCBORError qcbor_err;
     UsefulBufC encoded_buf;
-    UsefulBuf_MAKE_STACK_UB(cmd_buf, DPE_CERT_CHAIN_BUF_SIZE);
+    UsefulBuf_MAKE_STACK_UB(cmd_buf, DICE_CERT_CHAIN_SIZE);
 
     const struct get_certificate_chain_input_t in_args = {
         context_handle,

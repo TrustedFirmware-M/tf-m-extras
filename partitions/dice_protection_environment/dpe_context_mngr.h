@@ -27,9 +27,7 @@ extern "C" {
 #define INVALID_LAYER_IDX 65535
 #define DPE_ROT_LAYER_IDX 0
 
-/* Below configuration defines are platform dependant */
-#define DICE_CERT_SIZE  3072
-#define DICE_CERT_CHAIN_SIZE  5600
+/* Below configuration defines are platform dependent */
 #define MAX_NUM_OF_COMPONENTS 20
 #define MAX_NUM_OF_LAYERS 4
 #define DPE_PLATFORM_LAYER_IDX 1

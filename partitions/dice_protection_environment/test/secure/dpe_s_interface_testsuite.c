@@ -58,8 +58,12 @@ static struct test_t dpe_s_tests[] = {
      "DPE CertifyKey - invalid public key buffer size"},
     {&certify_key_invalid_cbor_encoded_input_test, "DPE_S_TEST_1024",
      "DPE CertifyKey - invalid cbor encoded input"},
-    {&derive_context_with_parent_leaf_component_test, "DPE_S_TEST_1025",
+    {&certify_key_without_optional_args_test, "DPE_S_TEST_1025",
+     "DPE CertifyKey - without optional arguments"},
+    {&derive_context_with_parent_leaf_component_test, "DPE_S_TEST_1026",
      "DPE DeriveContext - Leaf component"},
+    {&derive_context_without_optional_args_test, "DPE_S_TEST_1027",
+     "DPE DeriveContext - without optional arguments"},
 };
 
 void register_testsuite_extra_s_interface(struct test_suite_t *p_test_suite)

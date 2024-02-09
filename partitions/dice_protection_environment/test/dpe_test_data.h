@@ -53,9 +53,22 @@ struct dpe_derive_context_test_params_t {
     bool is_config_descriptor_missing;
     bool is_authority_hash_missing;
     bool is_mode_missing;
-    bool corrupt_encoded_cbor;
+    bool is_encoded_cbor_corrupt;
     bool is_input_dice_data_missing;
     bool is_cert_id_missing;
+    bool is_retain_parent_context_missing;
+    bool is_allow_new_context_to_derive_missing;
+    bool is_create_certificate_missing;
+    bool is_return_certificate_missing;
+    bool is_allow_new_context_to_export_missing;
+    bool is_export_cdi_missing;
+};
+
+struct dpe_certify_key_test_params_t {
+    bool is_encoded_cbor_corrupt;
+    bool is_retain_context_missing;
+    bool is_public_key_missing;
+    bool is_label_missing;
 };
 
 dpe_error_t
@@ -80,19 +93,19 @@ dpe_derive_context_with_test_param(int    context_handle,
                    struct dpe_derive_context_test_params_t *test_params);
 
 dpe_error_t dpe_certify_key_with_test_param(int context_handle,
-                    bool                        retain_context,
-                    const uint8_t              *public_key,
-                    size_t                      public_key_size,
-                    const uint8_t              *label,
-                    size_t                      label_size,
-                    uint8_t                    *certificate_chain_buf,
-                    size_t                      certificate_chain_buf_size,
-                    size_t                     *certificate_chain_actual_size,
-                    uint8_t                    *derived_public_key_buf,
-                    size_t                      derived_public_key_buf_size,
-                    size_t                     *derived_public_key_actual_size,
-                    int                        *new_context_handle,
-                    bool                        corrupt_encoded_cbor);
+                    bool                    retain_context,
+                    const uint8_t          *public_key,
+                    size_t                  public_key_size,
+                    const uint8_t          *label,
+                    size_t                  label_size,
+                    uint8_t                *certificate_chain_buf,
+                    size_t                  certificate_chain_buf_size,
+                    size_t                 *certificate_chain_actual_size,
+                    uint8_t                *derived_public_key_buf,
+                    size_t                  derived_public_key_buf_size,
+                    size_t                 *derived_public_key_actual_size,
+                    int                    *new_context_handle,
+                    struct dpe_certify_key_test_params_t *test_params);
 
 #ifdef __cplusplus
 }

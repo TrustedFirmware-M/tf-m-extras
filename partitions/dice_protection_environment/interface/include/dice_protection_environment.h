@@ -34,9 +34,12 @@ typedef int32_t dpe_error_t;
 #define DPE_INSUFFICIENT_MEMORY       ((dpe_error_t)128)
 #define DPE_ERR_CBOR_FORMATTING       ((dpe_error_t)129)
 
+/* Below custom configuration defines are platform dependent */
 #define DPE_CERT_ID_INVALID 0
 #define DPE_ROT_CERT_ID 0x100
 #define DPE_CERT_ID_SAME_AS_PARENT 0xFFFFFFFF
+#define DICE_CERT_SIZE  3072
+#define DICE_CERT_CHAIN_SIZE  5600
 
 /**
  * \brief Performs the DICE computation to derive a new context and optionally

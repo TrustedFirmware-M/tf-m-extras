@@ -12,23 +12,23 @@
 
 #define CALL_DERIVE_CONTEXT_WITH_TEST_PARAM() \
         dpe_derive_context_with_test_param(retained_rot_ctx_handle, /* input_ctx_handle */  \
-            DPE_PLATFORM_CERT_ID,     /* cert_id */                                          \
+            DPE_PLATFORM_CERT_ID,    /* cert_id */                                          \
             true,                    /* retain_parent_context */                            \
             true,                    /* allow_new_context_to_derive */                      \
             false,                   /* create_certificate */                               \
             &dice_inputs,            /* dice_inputs */                                      \
             0,                       /* target_locality */                                  \
-            false,                   /* return_certificate */                               \
+            return_certificate,      /* return_certificate */                               \
             true,                    /* allow_new_context_to_export */                      \
             false,                   /* export_cdi */                                       \
             &out_ctx_handle,         /* new_context_handle */                               \
             &out_parent_handle,      /* new_parent_context_handle */                        \
-            NULL,                    /* new_certificate_buf */                              \
-            0,                       /* new_certificate_buf_size */                         \
-            NULL,                    /* new_certificate_actual_size */                      \
-            NULL,                    /* exported_cdi_buf */                                 \
-            0,                       /* exported_cdi_buf_size */                            \
-            NULL,                    /* exported_cdi_actual_size */                         \
+            certificate_buf,         /* new_certificate_buf */                              \
+            sizeof(certificate_buf), /* new_certificate_buf_size */                         \
+            &certificate_actual_size,/* new_certificate_actual_size */                      \
+            exported_cdi_buf,        /* exported_cdi_buf */                                 \
+            sizeof(exported_cdi_buf),/* exported_cdi_buf_size */                            \
+            &exported_cdi_actual_size,/* exported_cdi_actual_size */                        \
             &test_params);           /* test_parameters */
 
 extern int retained_rot_ctx_handle;
@@ -362,6 +362,11 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     dpe_error_t dpe_err;
     int out_ctx_handle;
     int out_parent_handle;
+    uint8_t certificate_buf[DICE_CERT_SIZE];
+    size_t certificate_actual_size;
+    uint8_t exported_cdi_buf[DICE_MAX_ENCODED_CDI_SIZE];
+    size_t exported_cdi_actual_size;
+    bool return_certificate = false;
 
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
     struct dpe_derive_context_test_params_t test_params = {0};
@@ -418,10 +423,15 @@ void derive_context_invalid_cbor_encoded_input_test(struct test_result_t *ret)
     dpe_error_t dpe_err;
     int out_ctx_handle;
     int out_parent_handle;
+    uint8_t certificate_buf[DICE_CERT_SIZE];
+    size_t certificate_actual_size;
+    uint8_t exported_cdi_buf[DICE_MAX_ENCODED_CDI_SIZE];
+    size_t exported_cdi_actual_size;
+    bool return_certificate = false;
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
     struct dpe_derive_context_test_params_t test_params = {0};
 
-    test_params.corrupt_encoded_cbor = true;
+    test_params.is_encoded_cbor_corrupt = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
     if (dpe_err != DPE_INVALID_COMMAND) {
         TEST_FAIL("DPE DeriveContext test: Invalid CBOR construct "
@@ -811,6 +821,118 @@ void derive_context_without_cert_id_test(struct test_result_t *ret)
     if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: Without optional parameter cert_id should "
                   "return invalid argument");
+        return;
+    }
+
+    ret->val = TEST_PASSED;
+}
+
+void derive_context_without_optional_args_test(struct test_result_t *ret)
+{
+    dpe_error_t dpe_err;
+    int out_ctx_handle;
+    int out_parent_handle;
+    uint8_t certificate_buf[DICE_CERT_SIZE];
+    size_t certificate_actual_size;
+    uint8_t exported_cdi_buf[DICE_MAX_ENCODED_CDI_SIZE];
+    size_t exported_cdi_actual_size;
+    bool return_certificate = false;
+    DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
+    struct dpe_derive_context_test_params_t test_params = {0};
+
+    test_params.is_allow_new_context_to_derive_missing = true;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
+        return;
+    }
+
+    /* Default value of allow_new_context_to_derive = true, hence it should
+     * return valid context handle
+     */
+    if (out_ctx_handle == INVALID_HANDLE) {
+        TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
+        return;
+    }
+
+    retained_rot_ctx_handle = out_parent_handle;
+    test_params.is_allow_new_context_to_derive_missing = false;
+    test_params.is_create_certificate_missing = true;
+    return_certificate = true;
+    certificate_actual_size = 0;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
+        return;
+    }
+    /* Default value of create_certificate = true, hence it should return
+     * valid certificate
+     */
+    if (certificate_actual_size == 0) {
+        TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
+        return;
+    }
+
+    retained_rot_ctx_handle = out_parent_handle;
+    test_params.is_create_certificate_missing = false;
+    test_params.is_return_certificate_missing = true;
+    certificate_actual_size = 0;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
+        return;
+    }
+    /* Default value of return_certificate = false, hence it should NOT
+     * return valid certificate
+     */
+    if (certificate_actual_size != 0) {
+        TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
+        return;
+    }
+
+    retained_rot_ctx_handle = out_parent_handle;
+    test_params.is_return_certificate_missing = false;
+    test_params.is_allow_new_context_to_export_missing = true;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
+        return;
+    }
+    //TODO: Side effect validation as below
+    // Will need to call DeriveContext again and check if CDI cannot be exported,
+    // but it also depends on few other arguments which will make this test case complex.
+
+    retained_rot_ctx_handle = out_parent_handle;
+    test_params.is_allow_new_context_to_export_missing = false;
+    test_params.is_export_cdi_missing = true;
+    exported_cdi_actual_size = 0;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
+        return;
+    }
+    /* Default value of export_cdi = false, hence it should NOT return CDI */
+    if (exported_cdi_actual_size != 0) {
+        TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
+        return;
+    }
+
+    retained_rot_ctx_handle = out_parent_handle;
+    test_params.is_export_cdi_missing = false;
+    test_params.is_retain_parent_context_missing = true;
+    /* This test will create undestroyable context as default value of
+     * retain_parent_context is false
+     */
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
+        return;
+    }
+    /* Default value of retain_parent_context = false, hence it should NOT
+     * return valid parent handle
+     */
+    if (out_parent_handle != INVALID_HANDLE) {
+        TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
         return;
     }
 
