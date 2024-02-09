@@ -16,6 +16,12 @@
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
 
+#define CHECK_CBOR_ERROR(decode_ctx)                                                \
+    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);                           \
+    if ((qcbor_err != QCBOR_SUCCESS) && (qcbor_err != QCBOR_ERR_LABEL_NOT_FOUND)) { \
+        return DPE_INVALID_COMMAND;                                                 \
+    }
+
 /*
  * The goal to reuse the cmd_buf allocated in dpe_req_mngr.c to create the
  * big objects (certificate, certificate_chain) in place rather then allocate
@@ -129,7 +135,6 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
     return DPE_NO_ERROR;
 }
 
-//TODO: Handle the omission of parameters from DPE commands.
 static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
                                          QCBOREncodeContext *encode_ctx,
                                          int32_t client_id)
@@ -154,6 +159,17 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     size_t new_certificate_actual_size = 0;
     size_t exported_cdi_actual_size = 0;
 
+    /* Initialise optional parameters with their default value in case
+     * they are not encoded in the input command
+     */
+    cert_id = DPE_CERT_ID_INVALID;
+    retain_parent_context = false;
+    allow_new_context_to_derive = true;
+    create_certificate = true;
+    return_certificate = false;
+    allow_new_context_to_export = false;
+    export_cdi = false;
+
     /* Decode DeriveContext command */
     QCBORDecode_EnterMap(decode_ctx, NULL);
 
@@ -167,19 +183,19 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
 
     QCBORDecode_GetUInt64InMapN(decode_ctx, DPE_DERIVE_CONTEXT_CERT_ID, &cert_id);
     /* Check if cert_id was encoded in the received command buffer */
-    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
-    if (qcbor_err != QCBOR_SUCCESS) {
-        cert_id = DPE_CERT_ID_INVALID;
-    }
+    CHECK_CBOR_ERROR(decode_ctx);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_RETAIN_PARENT_CONTEXT,
                               &retain_parent_context);
+    CHECK_CBOR_ERROR(decode_ctx);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_ALLOW_NEW_CONTEXT_TO_DERIVE,
                               &allow_new_context_to_derive);
+    CHECK_CBOR_ERROR(decode_ctx);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_CREATE_CERTIFICATE,
                               &create_certificate);
+    CHECK_CBOR_ERROR(decode_ctx);
 
     dpe_err = decode_dice_inputs(decode_ctx, &dice_inputs);
     if (dpe_err != DPE_NO_ERROR) {
@@ -195,12 +211,15 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_RETURN_CERTIFICATE,
                               &return_certificate);
+    CHECK_CBOR_ERROR(decode_ctx);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_ALLOW_NEW_CONTEXT_TO_EXPORT,
                               &allow_new_context_to_export);
+    CHECK_CBOR_ERROR(decode_ctx);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_EXPORT_CDI,
                               &export_cdi);
+    CHECK_CBOR_ERROR(decode_ctx);
 
     QCBORDecode_ExitMap(decode_ctx);
 
@@ -318,9 +337,9 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
     dpe_error_t dpe_err;
     int context_handle;
     bool retain_context;
-    const uint8_t *public_key;
+    const uint8_t *public_key = NULL;
     size_t public_key_size;
-    const uint8_t *label;
+    const uint8_t *label = NULL;
     size_t label_size;
     uint8_t *certificate_buf = REUSE_CMD_BUF(DICE_CERT_SIZE);
     size_t certificate_actual_size;
@@ -328,27 +347,50 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
     size_t derived_public_key_actual_size;
     int new_context_handle;
 
+    /* Initialise optional parameters with their default value in case
+     * they are not encoded in the input command
+     */
+    retain_context = false;
+    public_key_size = 0;
+    label_size = 0;
+
     /* Decode CertifyKey command */
     QCBORDecode_EnterMap(decode_ctx, NULL);
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_CERTIFY_KEY_CONTEXT_HANDLE,
                                     &out);
-    if (out.len != sizeof(context_handle)) {
+    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
+    if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(context_handle))) {
         return DPE_INVALID_COMMAND;
     }
     memcpy(&context_handle, out.ptr, out.len);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_CERTIFY_KEY_RETAIN_CONTEXT,
                               &retain_context);
+    CHECK_CBOR_ERROR(decode_ctx);
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_CERTIFY_KEY_PUBLIC_KEY,
                                     &out);
-    public_key = out.ptr;
-    public_key_size = out.len;
+    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
+    if (qcbor_err == QCBOR_SUCCESS) {
+        public_key = out.ptr;
+        public_key_size = out.len;
+    } else if (qcbor_err == QCBOR_ERR_LABEL_NOT_FOUND) {
+        /* Do nothing - argument already initialised to default value */
+    } else {
+        return DPE_INVALID_COMMAND;
+    }
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_CERTIFY_KEY_LABEL, &out);
-    label = out.ptr;
-    label_size = out.len;
+    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
+    if (qcbor_err == QCBOR_SUCCESS) {
+        label = out.ptr;
+        label_size = out.len;
+    } else if (qcbor_err == QCBOR_ERR_LABEL_NOT_FOUND) {
+        /* Do nothing - argument already initialised to default value */
+    } else {
+        return DPE_INVALID_COMMAND;
+    }
 
     QCBORDecode_ExitMap(decode_ctx);
 
@@ -415,21 +457,30 @@ static dpe_error_t decode_get_certificate_chain(QCBORDecodeContext *decode_ctx,
     size_t certificate_chain_actual_size;
     int new_context_handle;
 
+    /* Initialise optional parameters with their default value in case
+     * they are not encoded in the input command
+     */
+    retain_context = false;
+    clear_from_context = false;
+
     /* Decode GetCertificateChain command */
     QCBORDecode_EnterMap(decode_ctx, NULL);
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_GET_CERTIFICATE_CHAIN_CONTEXT_HANDLE,
                                     &out);
-    if (out.len != sizeof(context_handle)) {
+    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
+    if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(context_handle))) {
         return DPE_INVALID_COMMAND;
     }
     memcpy(&context_handle, out.ptr, out.len);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_GET_CERTIFICATE_CHAIN_RETAIN_CONTEXT,
                               &retain_context);
+    CHECK_CBOR_ERROR(decode_ctx);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_GET_CERTIFICATE_CHAIN_CLEAR_FROM_CONTEXT,
                               &clear_from_context);
+    CHECK_CBOR_ERROR(decode_ctx);
 
     QCBORDecode_ExitMap(decode_ctx);
 
