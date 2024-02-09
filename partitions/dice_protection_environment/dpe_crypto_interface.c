@@ -36,6 +36,11 @@ static psa_status_t perform_derivation(psa_key_id_t base_key,
            (base_key != 0) && (key_attr != NULL) &&
            (salt_len != 0) && (salt != NULL));
 
+    if (*out_key_id != PSA_KEY_ID_NULL) {
+        /* Remove any previously derived keys */
+        (void)psa_destroy_key(*out_key_id);
+    }
+
     status = psa_key_derivation_setup(&op, PSA_ALG_HKDF(PSA_ALG_SHA_256));
     if (status != PSA_SUCCESS) {
         return status;
