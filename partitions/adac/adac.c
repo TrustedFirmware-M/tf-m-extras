@@ -27,7 +27,7 @@ static uint32_t read_persistent_debug_state(void)
     uint32_t reg_value;
     uint32_t debug_state;
 
-    struct rss_sysctrl_t *sysctrl = (struct rss_sysctrl_t *)RSS_SYSCTRL_BASE_S;
+    struct rse_sysctrl_t *sysctrl = (struct rse_sysctrl_t *)RSE_SYSCTRL_BASE_S;
     reg_value = sysctrl->reset_syndrome;
 
     /* Bits 24:31 (SWSYN) are allocated for software defined reset syndrome */
@@ -43,7 +43,7 @@ static uint32_t read_persistent_debug_state(void)
 
 static void write_persistent_debug_state(uint32_t debug_state)
 {
-    struct rss_sysctrl_t *sysctrl = (struct rss_sysctrl_t *)RSS_SYSCTRL_BASE_S;
+    struct rse_sysctrl_t *sysctrl = (struct rse_sysctrl_t *)RSE_SYSCTRL_BASE_S;
     uint32_t reg_value = sysctrl->swreset;
 
     /* Clear bits 24:31 (SWSYN)in SWRESET reg */
@@ -107,7 +107,7 @@ psa_status_t adac_service_request(uint32_t debug_request)
     }
 
     /* Authenticate incoming debug request */
-    rc = tfm_to_psa_adac_rss_secure_debug(secure_debug_rotpk, ROTPK_SIZE);
+    rc = tfm_to_psa_adac_rse_secure_debug(secure_debug_rotpk, ROTPK_SIZE);
     if (rc != 0) {
         /* Authentication failure */
         return PSA_ERROR_NOT_PERMITTED;

@@ -16,7 +16,7 @@ measured_boot
 *************
 
 Measured boot partition for extending and retrieving software component
-measurements for RSS platform.
+measurements for RSE platform.
 
 **Maintainers**
 
@@ -73,7 +73,7 @@ adac
 ***********
 Description
 ***********
-ADAC partition for authenticated debug and access control for RSS platform.
+ADAC partition for authenticated debug and access control for RSE platform.
 
 ***********
 Maintainers

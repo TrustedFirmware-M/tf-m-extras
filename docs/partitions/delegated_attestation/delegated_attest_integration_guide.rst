@@ -113,7 +113,7 @@ The system MUST have a pre-provisioned seed programmed at chip manufacturing
 time. Several keys could be derived from this seed. The key derivation happens
 in two phases:
 
-- Boot phase: Done by the bootloader, BL1_1 on RSS platform. The input is
+- Boot phase: Done by the bootloader, BL1_1 on RSE platform. The input is
   the device lifecycle, hash of BL1_2 bootloader, etc.
 - Runtime phase: Delegated attestation and crypto services are responsible
   for the derivation. Delegated attestation computes the inputs from

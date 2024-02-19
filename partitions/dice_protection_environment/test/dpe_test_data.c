@@ -15,7 +15,7 @@ const struct dpe_derive_context_test_data_t
     derive_context_test_dataset_1[DERIVE_CONTEXT_TEST_DATA1_SIZE] = {
     {
         {
-            /* Derive RSS_BL2, Caller/Parent RSS BL1_2 */
+            /* Derive RSE_BL2, Caller/Parent RSE BL1_2 */
             .use_parent_handle = false,
             .retain_parent_context = true,
             .allow_new_context_to_derive = true,
@@ -24,7 +24,7 @@ const struct dpe_derive_context_test_data_t
     },
     {
         {
-            /* Derive SCP_BL1 (1st derived context of RSS BL2) */
+            /* Derive SCP_BL1 (1st derived context of RSE BL2) */
             .use_parent_handle = true,
             .retain_parent_context = true,
             .allow_new_context_to_derive = false,
@@ -33,7 +33,7 @@ const struct dpe_derive_context_test_data_t
     },
     {
         {
-            /* Derive AP_BL1, (2nd and final derived context of RSS BL2) */
+            /* Derive AP_BL1, (2nd and final derived context of RSE BL2) */
             .use_parent_handle = true,
             .retain_parent_context = true,
             .allow_new_context_to_derive = true,
@@ -45,7 +45,7 @@ const struct dpe_derive_context_test_data_t
 /* Below dataset is used for CertifyKey command test */
 const struct dpe_derive_context_test_data_t derive_context_test_dataset_2 = {
     {
-        /* Derive RSS_BL2, Caller/Parent RSS BL1_2 */
+        /* Derive RSE_BL2, Caller/Parent RSE BL1_2 */
         .use_parent_handle = false,
         .retain_parent_context = true,
         .allow_new_context_to_derive = true,

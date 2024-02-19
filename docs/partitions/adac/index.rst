@@ -6,7 +6,7 @@ Authenticated Debug Access Control
     :maxdepth: 1
 
     ADAC Service Integration Guide <adac_integration_guide>
-    ADAC Implementation for RSS <adac_impl_for_rss>
+    ADAC Implementation for RSE <adac_impl_for_rse>
 
 --------------
 

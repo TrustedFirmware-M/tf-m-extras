@@ -133,9 +133,9 @@ The API to initiate the connection with host debugger and to perform
 authentication process is platform specific. It requires secure debug keys as
 input for authentication.
 
-For example for RSS platform, the API to integrate is:
+For example for RSE platform, the API to integrate is:
 
-- ``tfm_to_psa_adac_rss_secure_debug()``
+- ``tfm_to_psa_adac_rse_secure_debug()``
 
 Please follow the below link for further information on SDA implementation.
 

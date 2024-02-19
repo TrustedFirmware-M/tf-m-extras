@@ -1,17 +1,17 @@
 ####################################
-ADAC implementation for RSS platform
+ADAC implementation for RSE platform
 ####################################
 
-ADAC Requirements for RSS
+ADAC Requirements for RSE
 =========================
 
-For RSS, ADAC design and implementation must meet below requirements.
+For RSE, ADAC design and implementation must meet below requirements.
 
-1. Since RSS is HES (Hardware Enforced Security) host for CCA (Confidential
-   Compute Architecture) system, ADAC functionality must be implemented by RSS.
+1. Since RSE is HES (Hardware Enforced Security) host for CCA (Confidential
+   Compute Architecture) system, ADAC functionality must be implemented by RSE.
 2. By default, CCA HES and other trusted subsystems debug should be disabled
    all the time.
-3. When in a secured (trustworthy) state, no debug should be allowed to RSS,
+3. When in a secured (trustworthy) state, no debug should be allowed to RSE,
    and other components of CCA System security Domain.
 4. If life cycle is not in a secured state and if a CCA component debug is
    requested, a new debug session should be initiated.
@@ -19,7 +19,7 @@ For RSS, ADAC design and implementation must meet below requirements.
    and a system reset is required to return to the previous state.
 6. Depending on current policy, the debug start and stop request may require
    a system reset for the request to be processed in a distinct debug session.
-   For RSS, a system reset is required for handling debug requests for any
+   For RSE, a system reset is required for handling debug requests for any
    components of CCA security domain.
 7. Finally, CCA Platform Attestation token should be different if any CCA debug
    is enabled.
@@ -77,7 +77,7 @@ Hardware abstraction layer Interface
 ====================================
 
 Classification of various debug zones is platform/system specific.
-For system with RSS subsystem, these are mainly classified into CCA security
+For system with RSE subsystem, these are mainly classified into CCA security
 domain debug and Non-CCA debug zones.
 
 - ``tfm_debug_zones``: enumerates 2 CCA and 4 Non-CCA debug zones.
@@ -95,7 +95,7 @@ The ADAC runtime service requires to convey debug state information between
 runtime service and bootloader. This needs be in platform specific
 predefined persistent area as this information needs to be retained after reset.
 
-For RSS platform, this functionality is provided by RESET_SYNDROME register.
+For RSE platform, this functionality is provided by RESET_SYNDROME register.
 8 bits field, SWSYN, of above register is allocated to convey debug state
 information between bootloader and runtime service
 
@@ -108,13 +108,13 @@ information between bootloader and runtime service
 ADAC Protocol (SDA) integration
 ===============================
 
-- ``tfm_to_psa_adac_rss_secure_debug()``: Initiates the connection with the
+- ``tfm_to_psa_adac_rse_secure_debug()``: Initiates the connection with the
   host debugger and performs secure debug authentication process.
 
 Enable Secure Debug
 ===================
 
-To enable ADAC on RSS, below options must be configured:
+To enable ADAC on RSE, below options must be configured:
 
 - ``-DPLATFORM_PSA_ADAC_SECURE_DEBUG=ON``
 
