@@ -739,15 +739,43 @@ void derive_context_with_parent_leaf_component_test(struct test_result_t *ret)
         return;
     }
 
-    if (out_ctx_handle != INVALID_HANDLE) {
-        TEST_FAIL("DPE DeriveContext test: Should only return "
-                  "invalid handle for a leaf component");
+    saved_handle = out_ctx_handle;
+    /* Save the last handle for the subsequent test */
+    retained_rot_ctx_handle = out_parent_handle;
+
+    /* Try to further derive context with parent not allowed to derive as above */
+    dpe_err = dpe_derive_context(out_ctx_handle,                /* input_ctx_handle */
+                                 DPE_PLATFORM_CERT_ID,           /* cert_id */
+                                 false,                         /* retain_parent_context */
+                                 false,                         /* allow_new_context_to_derive */
+                                 false,                         /* create_certificate */
+                                 &dice_inputs,                  /* dice_inputs */
+                                 0,                             /* target_locality */
+                                 false,                         /* return_certificate */
+                                 true,                          /* allow_new_context_to_export */
+                                 false,                         /* export_cdi */
+                                 &out_ctx_handle,               /* new_context_handle */
+                                 &out_parent_handle,            /* new_parent_context_handle */
+                                 NULL,                          /* new_certificate_buf */
+                                 0,                             /* new_certificate_buf_size */
+                                 NULL,                          /* new_certificate_actual_size */
+                                 NULL,                          /* exported_cdi_buf */
+                                 0,                             /* exported_cdi_buf_size */
+                                 NULL);                         /* exported_cdi_actual_size */
+
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
+        TEST_FAIL("DPE DeriveContext test: Trying to derive context with parent as leaf should "
+                  "return invalid argument ");
+        return;
     }
 
-    /* Note: since we have used the handle with allow_new_context_to_derive
-     * as false, we have created a context which cannot be destroyed
-     */
-    ret->val = TEST_PASSED;
+    dpe_err = dpe_destroy_context(saved_handle, false);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
+    }
+
+   ret->val = TEST_PASSED;
 }
 
 void derive_context_without_cert_id_test(struct test_result_t *ret)
