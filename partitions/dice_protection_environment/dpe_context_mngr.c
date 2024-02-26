@@ -882,13 +882,19 @@ dpe_error_t certify_key_request(int input_ctx_handle,
            layer_ctx->data.cert_buf_len);
     *certificate_actual_size = layer_ctx->data.cert_buf_len;
 
-    /* Renew handle for the same context */
-    *new_context_handle = input_ctx_handle;
-    status = renew_nonce(new_context_handle);
-    if (status != PSA_SUCCESS) {
-        return DPE_INTERNAL_ERROR;
+    /* Renew handle for the same context, if requested */
+    if (retain_context) {
+        *new_context_handle = input_ctx_handle;
+        status = renew_nonce(new_context_handle);
+        if (status != PSA_SUCCESS) {
+            return DPE_INTERNAL_ERROR;
+        }
+        component_ctx_array[input_ctx_idx].nonce = GET_NONCE(*new_context_handle);
+
+    } else {
+        *new_context_handle = INVALID_HANDLE;
+        component_ctx_array[input_ctx_idx].nonce = INVALID_NONCE_VALUE;
     }
-    component_ctx_array[input_ctx_idx].nonce = GET_NONCE(*new_context_handle);
 
     /* Clear the context label and key contents */
     memset(&layer_ctx->data.external_key_deriv_label[0], 0u,

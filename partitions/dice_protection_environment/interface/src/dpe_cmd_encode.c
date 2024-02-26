@@ -554,9 +554,7 @@ dpe_error_t dpe_certify_key(int context_handle,
         *derived_public_key_actual_size = out_args.derived_public_key_size;
     }
 
-    if (retain_context) {
-        *new_context_handle = out_args.new_context_handle;
-    }
+    *new_context_handle = out_args.new_context_handle;
 
     return DPE_NO_ERROR;
 }
