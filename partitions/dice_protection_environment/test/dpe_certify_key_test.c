@@ -238,7 +238,7 @@ void certify_key_retain_context_test(struct test_result_t *ret)
 {
     dpe_error_t dpe_err;
     int out_ctx_handle;
-    uint8_t certificate_buf[1100];
+    uint8_t certificate_buf[1300];
     size_t certificate_actual_size;
     uint8_t derived_public_key_buf[DPE_ATTEST_PUB_KEY_SIZE];
     size_t derived_public_key_actual_size;
@@ -297,12 +297,7 @@ void certify_key_retain_context_test(struct test_result_t *ret)
         return;
     }
 
-    /* Destroy other derived contexts for subsequent test */
-    dpe_err = dpe_destroy_context(new_context_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    /* Since retain_context is false, it will create undestroyable context */
     ret->val = TEST_PASSED;
 }
 
