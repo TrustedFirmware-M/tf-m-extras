@@ -16,6 +16,14 @@ extern "C" {
 #define INVALID_COMPONENT_IDX 0xFFFF
 
 #define DPE_PLATFORM_CERT_ID 0x200
+/* Certificate IDs used for tests where layers are finalized and undestroyable
+ * contexts are created (i.e. no valid handle is returned for the context)
+ */
+#define DPE_UNDESTROYABLE_CTX_CERT_ID_1 0x901
+#define DPE_UNDESTROYABLE_CTX_CERT_ID_2 0x902
+#define DPE_UNDESTROYABLE_CTX_CERT_ID_3 0x903
+#define DPE_UNDESTROYABLE_CTX_CERT_ID_4 0x904
+#define DPE_UNDESTROYABLE_CTX_CERT_ID_5 0x905
 
 #define DERIVE_CONTEXT_TEST_DATA1_SIZE 3
 #define DERIVE_CONTEXT_TEST_DATA2_SIZE 1

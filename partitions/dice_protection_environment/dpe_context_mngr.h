@@ -29,9 +29,13 @@ extern "C" {
 
 /* Below configuration defines are platform dependent */
 #define MAX_NUM_OF_COMPONENTS 20
-#define MAX_NUM_OF_LAYERS 4
 #define DPE_PLATFORM_LAYER_IDX 1
 #define DPE_SECURE_WORLD_AND_HYPERVISOR_LAYER_IDX 2
+#ifdef DPE_TEST_MODE
+#define MAX_NUM_OF_LAYERS 6
+#else
+#define MAX_NUM_OF_LAYERS 4
+#endif /* DPE_TEST_MODE */
 
 /* Below threshold defines the threshold below which a context cannot be destroyed */
 #define DPE_DESTROY_CONTEXT_THRESHOLD_LAYER_IDX DPE_SECURE_WORLD_AND_HYPERVISOR_LAYER_IDX

@@ -12,7 +12,7 @@
 
 #define CALL_DERIVE_CONTEXT_WITH_TEST_PARAM() \
         dpe_derive_context_with_test_param(retained_rot_ctx_handle, /* input_ctx_handle */  \
-            DPE_PLATFORM_CERT_ID,    /* cert_id */                                          \
+            cert_id,                 /* cert_id */                                          \
             true,                    /* retain_parent_context */                            \
             true,                    /* allow_new_context_to_derive */                      \
             false,                   /* create_certificate */                               \
@@ -367,6 +367,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     uint8_t exported_cdi_buf[DICE_MAX_ENCODED_CDI_SIZE];
     size_t exported_cdi_actual_size;
     bool return_certificate = false;
+    uint32_t cert_id = DPE_PLATFORM_CERT_ID;
 
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
     struct dpe_derive_context_test_params_t test_params = {0};
@@ -430,6 +431,7 @@ void derive_context_invalid_cbor_encoded_input_test(struct test_result_t *ret)
     bool return_certificate = false;
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
     struct dpe_derive_context_test_params_t test_params = {0};
+    uint32_t cert_id = DPE_PLATFORM_CERT_ID;
 
     test_params.is_encoded_cbor_corrupt = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
@@ -504,7 +506,7 @@ void derive_context_smaller_cdi_buffer_test(struct test_result_t *ret)
      * hence use invalid cert id.
      */
     dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
-                                 DPE_PLATFORM_CERT_ID,          /* cert_id */
+                                 DPE_UNDESTROYABLE_CTX_CERT_ID_1, /* cert_id */
                                  true,                          /* retain_parent_context */
                                  true,                          /* allow_new_context_to_derive */
                                  true,                          /* create_certificate */
@@ -682,7 +684,7 @@ void derive_context_check_export_cdi_test(struct test_result_t *ret)
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
 
     dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
-                                 DPE_PLATFORM_CERT_ID,          /* cert_id */
+                                 DPE_UNDESTROYABLE_CTX_CERT_ID_2, /* cert_id */
                                  true,                          /* retain_parent_context */
                                  true,                          /* allow_new_context_to_derive */
                                  true,                          /* create_certificate */
@@ -839,6 +841,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
     bool return_certificate = false;
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
     struct dpe_derive_context_test_params_t test_params = {0};
+    uint32_t cert_id = DPE_PLATFORM_CERT_ID;
 
     test_params.is_allow_new_context_to_derive_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
@@ -852,6 +855,11 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
      */
     if (out_ctx_handle == INVALID_HANDLE) {
         TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
+        return;
+    }
+    dpe_err = dpe_destroy_context(out_ctx_handle, false);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DestroyContext call failed");
         return;
     }
 
@@ -872,6 +880,11 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
         TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
         return;
     }
+    dpe_err = dpe_destroy_context(out_ctx_handle, false);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
+    }
 
     retained_rot_ctx_handle = out_parent_handle;
     test_params.is_create_certificate_missing = false;
@@ -889,6 +902,11 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
         TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
         return;
     }
+    dpe_err = dpe_destroy_context(out_ctx_handle, false);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
+    }
 
     retained_rot_ctx_handle = out_parent_handle;
     test_params.is_return_certificate_missing = false;
@@ -901,6 +919,11 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
     //TODO: Side effect validation as below
     // Will need to call DeriveContext again and check if CDI cannot be exported,
     // but it also depends on few other arguments which will make this test case complex.
+    dpe_err = dpe_destroy_context(out_ctx_handle, false);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
+    }
 
     retained_rot_ctx_handle = out_parent_handle;
     test_params.is_allow_new_context_to_export_missing = false;
@@ -916,6 +939,11 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
         TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
         return;
     }
+    dpe_err = dpe_destroy_context(out_ctx_handle, false);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
+    }
 
     retained_rot_ctx_handle = out_parent_handle;
     test_params.is_export_cdi_missing = false;
@@ -923,6 +951,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
     /* This test will create undestroyable context as default value of
      * retain_parent_context is false
      */
+    cert_id = DPE_UNDESTROYABLE_CTX_CERT_ID_5;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
     if (dpe_err != DPE_NO_ERROR) {
         TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");

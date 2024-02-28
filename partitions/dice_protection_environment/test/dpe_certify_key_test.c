@@ -247,7 +247,7 @@ void certify_key_retain_context_test(struct test_result_t *ret)
     int out_parent_handle;
 
     dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* context_handle */
-                                 DPE_PLATFORM_CERT_ID,          /* cert_id */
+                                 DPE_UNDESTROYABLE_CTX_CERT_ID_3, /* cert_id */
                                  true,                          /* retain_parent_context */
                                  true,                          /* allow_new_context_to_derive */
                                  true,                          /* create_certificate */
@@ -434,6 +434,15 @@ void certify_key_smaller_cert_buffer_test(struct test_result_t *ret)
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
 
+    /* Since certificate buffer size is checked by client side API implementation,
+     * it derives a valid DPE context within the service, so destroy that context
+     */
+    dpe_err = dpe_destroy_context(new_context_handle, false);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
+    }
+
     ret->val = TEST_PASSED;
 }
 
@@ -491,6 +500,15 @@ void certify_key_smaller_derived_pub_key_buffer_test(struct test_result_t *ret)
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
 
+    /* Since public key buffer size is checked by client side API implementation,
+     * it derives a valid DPE context within the service, so destroy that context
+     */
+    dpe_err = dpe_destroy_context(new_context_handle, false);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
+    }
+
     ret->val = TEST_PASSED;
 }
 
@@ -536,6 +554,13 @@ void certify_key_invalid_cbor_encoded_input_test(struct test_result_t *ret)
         return;
     }
 
+    /* Destroy other derived contexts for subsequent test */
+    dpe_err = dpe_destroy_context(out_ctx_handle, false);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
+    }
+
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
 
@@ -554,7 +579,7 @@ void certify_key_without_optional_args_test(struct test_result_t *ret)
     struct dpe_certify_key_test_params_t test_params = {0};
 
     dpe_err = dpe_derive_context(retained_rot_ctx_handle,       /* input_ctx_handle */
-                                 DPE_PLATFORM_CERT_ID,          /* cert_id */
+                                 DPE_UNDESTROYABLE_CTX_CERT_ID_4, /* cert_id */
                                  true,                          /* retain_parent_context */
                                  true,                          /* allow_new_context_to_derive */
                                  true,                          /* create_certificate */

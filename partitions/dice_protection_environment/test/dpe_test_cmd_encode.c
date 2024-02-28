@@ -442,6 +442,13 @@ dpe_error_t dpe_certify_key_with_test_param(int context_handle,
     }
 
     /* Copy returned values into caller's memory */
+    /* Output buffer sizes are checked by client side API implementation and
+     * not by DPE service. Until allocated buffer sizes are passed to the service,
+     * and checked if their size is sufficient, return output handle
+     * from the command
+     */
+    *new_context_handle = out_args.new_context_handle;
+
     if (out_args.certificate_chain_size > certificate_chain_buf_size) {
         return DPE_INVALID_ARGUMENT;
     }
@@ -456,10 +463,6 @@ dpe_error_t dpe_certify_key_with_test_param(int context_handle,
         memcpy(derived_public_key_buf, out_args.derived_public_key,
                out_args.derived_public_key_size);
         *derived_public_key_actual_size = out_args.derived_public_key_size;
-    }
-
-    if (retain_context) {
-        *new_context_handle = out_args.new_context_handle;
     }
 
     return DPE_NO_ERROR;
