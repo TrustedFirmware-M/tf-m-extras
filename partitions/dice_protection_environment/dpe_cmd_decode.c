@@ -16,10 +16,17 @@
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
 
-#define CHECK_CBOR_ERROR(decode_ctx)                                                \
-    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);                           \
-    if ((qcbor_err != QCBOR_SUCCESS) && (qcbor_err != QCBOR_ERR_LABEL_NOT_FOUND)) { \
-        return DPE_INVALID_COMMAND;                                                 \
+#define COUNT_ARGS(arg)  (arg)++
+
+#define CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx)                          \
+    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);                      \
+    if (qcbor_err == QCBOR_SUCCESS) {                                          \
+        /* Valid label found - optional argument present */                    \
+        COUNT_ARGS(num_of_valid_arguments);                                    \
+    } else if (qcbor_err != QCBOR_ERR_LABEL_NOT_FOUND) {                       \
+        return DPE_INVALID_COMMAND;                                            \
+    } else {                                                                   \
+        /* We have NOT found the optional argument, do not update the count */ \
     }
 
 /*
@@ -158,6 +165,8 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     uint32_t cert_id;
     size_t new_certificate_actual_size = 0;
     size_t exported_cdi_actual_size = 0;
+    QCBORItem item;
+    uint16_t num_of_input_arguments, num_of_valid_arguments = 0;
 
     /* Initialise optional parameters with their default value in case
      * they are not encoded in the input command
@@ -171,55 +180,69 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     export_cdi = false;
 
     /* Decode DeriveContext command */
-    QCBORDecode_EnterMap(decode_ctx, NULL);
+    QCBORDecode_EnterMap(decode_ctx, &item);
+    qcbor_err = QCBORDecode_GetError(decode_ctx);
+    if ((qcbor_err != QCBOR_SUCCESS) ||
+        (item.uDataType != QCBOR_TYPE_MAP)) {
+            /* We expect a map of Derive Context command arguments here */
+            return DPE_INVALID_COMMAND;
+    }
+    /* Save the number of items found in the map */
+    num_of_input_arguments = item.val.uCount;
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_DERIVE_CONTEXT_CONTEXT_HANDLE,
                                     &out);
-    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
+    qcbor_err = QCBORDecode_GetError(decode_ctx);
     if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(context_handle))) {
         return DPE_INVALID_COMMAND;
     }
     memcpy(&context_handle, out.ptr, out.len);
+    COUNT_ARGS(num_of_valid_arguments);
 
     QCBORDecode_GetUInt64InMapN(decode_ctx, DPE_DERIVE_CONTEXT_CERT_ID, &cert_id);
     /* Check if cert_id was encoded in the received command buffer */
-    CHECK_CBOR_ERROR(decode_ctx);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_RETAIN_PARENT_CONTEXT,
                               &retain_parent_context);
-    CHECK_CBOR_ERROR(decode_ctx);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_ALLOW_NEW_CONTEXT_TO_DERIVE,
                               &allow_new_context_to_derive);
-    CHECK_CBOR_ERROR(decode_ctx);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_CREATE_CERTIFICATE,
                               &create_certificate);
-    CHECK_CBOR_ERROR(decode_ctx);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
 
     dpe_err = decode_dice_inputs(decode_ctx, &dice_inputs);
     if (dpe_err != DPE_NO_ERROR) {
         return dpe_err;
     }
+    COUNT_ARGS(num_of_valid_arguments);
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_DERIVE_CONTEXT_TARGET_LOCALITY,
                                     &out);
-    if (out.len != sizeof(target_locality)) {
-        return DPE_INVALID_COMMAND;
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
+    if (qcbor_err == QCBOR_SUCCESS) {
+        /* Valid argument was found */
+        if (out.len != sizeof(target_locality)) {
+            return DPE_INVALID_ARGUMENT;
+        }
+        memcpy(&target_locality, out.ptr, out.len);
     }
-    memcpy(&target_locality, out.ptr, out.len);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_RETURN_CERTIFICATE,
                               &return_certificate);
-    CHECK_CBOR_ERROR(decode_ctx);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_ALLOW_NEW_CONTEXT_TO_EXPORT,
                               &allow_new_context_to_export);
-    CHECK_CBOR_ERROR(decode_ctx);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DERIVE_CONTEXT_EXPORT_CDI,
                               &export_cdi);
-    CHECK_CBOR_ERROR(decode_ctx);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
 
     QCBORDecode_ExitMap(decode_ctx);
 
@@ -230,6 +253,11 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     qcbor_err = QCBORDecode_Finish(decode_ctx);
     if (qcbor_err != QCBOR_SUCCESS) {
         return DPE_INVALID_COMMAND;
+    }
+
+    if (num_of_input_arguments > num_of_valid_arguments) {
+        /* Extra unsupported arguments encoded in command map */
+        return DPE_INVALID_ARGUMENT;
     }
 
     dpe_err = derive_context_request(context_handle, cert_id, retain_parent_context,
@@ -346,6 +374,8 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
     uint8_t derived_public_key_buf[DPE_ATTEST_PUB_KEY_SIZE];
     size_t derived_public_key_actual_size;
     int new_context_handle;
+    QCBORItem item;
+    uint16_t num_of_input_arguments, num_of_valid_arguments = 0;
 
     /* Initialise optional parameters with their default value in case
      * they are not encoded in the input command
@@ -355,41 +385,44 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
     label_size = 0;
 
     /* Decode CertifyKey command */
-    QCBORDecode_EnterMap(decode_ctx, NULL);
+    QCBORDecode_EnterMap(decode_ctx, &item);
+    qcbor_err = QCBORDecode_GetError(decode_ctx);
+    if ((qcbor_err != QCBOR_SUCCESS) ||
+        (item.uDataType != QCBOR_TYPE_MAP)) {
+            /* We expect a map of Certify Key command arguments here */
+            return DPE_INVALID_COMMAND;
+    }
+    /* Save the number of items found in the map */
+    num_of_input_arguments = item.val.uCount;
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_CERTIFY_KEY_CONTEXT_HANDLE,
                                     &out);
-    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
+    qcbor_err = QCBORDecode_GetError(decode_ctx);
     if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(context_handle))) {
         return DPE_INVALID_COMMAND;
     }
     memcpy(&context_handle, out.ptr, out.len);
+    COUNT_ARGS(num_of_valid_arguments);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_CERTIFY_KEY_RETAIN_CONTEXT,
                               &retain_context);
-    CHECK_CBOR_ERROR(decode_ctx);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_CERTIFY_KEY_PUBLIC_KEY,
                                     &out);
-    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
     if (qcbor_err == QCBOR_SUCCESS) {
+        /* Valid argument was found */
         public_key = out.ptr;
         public_key_size = out.len;
-    } else if (qcbor_err == QCBOR_ERR_LABEL_NOT_FOUND) {
-        /* Do nothing - argument already initialised to default value */
-    } else {
-        return DPE_INVALID_COMMAND;
     }
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_CERTIFY_KEY_LABEL, &out);
-    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
     if (qcbor_err == QCBOR_SUCCESS) {
+        /* Valid argument was found */
         label = out.ptr;
         label_size = out.len;
-    } else if (qcbor_err == QCBOR_ERR_LABEL_NOT_FOUND) {
-        /* Do nothing - argument already initialised to default value */
-    } else {
-        return DPE_INVALID_COMMAND;
     }
 
     QCBORDecode_ExitMap(decode_ctx);
@@ -401,6 +434,11 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
     qcbor_err = QCBORDecode_Finish(decode_ctx);
     if (qcbor_err != QCBOR_SUCCESS) {
         return DPE_INVALID_COMMAND;
+    }
+
+    if (num_of_input_arguments > num_of_valid_arguments) {
+        /* Extra unsupported arguments encoded in command map */
+        return DPE_INVALID_ARGUMENT;
     }
 
     dpe_err = certify_key_request(context_handle, retain_context, public_key,
@@ -456,6 +494,8 @@ static dpe_error_t decode_get_certificate_chain(QCBORDecodeContext *decode_ctx,
     uint8_t *certificate_chain_buf = REUSE_CMD_BUF(DICE_CERT_CHAIN_SIZE);
     size_t certificate_chain_actual_size;
     int new_context_handle;
+    QCBORItem item;
+    uint16_t num_of_input_arguments, num_of_valid_arguments = 0;
 
     /* Initialise optional parameters with their default value in case
      * they are not encoded in the input command
@@ -464,23 +504,32 @@ static dpe_error_t decode_get_certificate_chain(QCBORDecodeContext *decode_ctx,
     clear_from_context = false;
 
     /* Decode GetCertificateChain command */
-    QCBORDecode_EnterMap(decode_ctx, NULL);
+    QCBORDecode_EnterMap(decode_ctx, &item);
+    qcbor_err = QCBORDecode_GetError(decode_ctx);
+    if ((qcbor_err != QCBOR_SUCCESS) ||
+        (item.uDataType != QCBOR_TYPE_MAP)) {
+            /* We expect a map of Get Certificate Chain command arguments here */
+            return DPE_INVALID_COMMAND;
+    }
+    /* Save the number of items found in the map */
+    num_of_input_arguments = item.val.uCount;
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_GET_CERTIFICATE_CHAIN_CONTEXT_HANDLE,
                                     &out);
-    qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
+    qcbor_err = QCBORDecode_GetError(decode_ctx);
     if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(context_handle))) {
         return DPE_INVALID_COMMAND;
     }
     memcpy(&context_handle, out.ptr, out.len);
+    COUNT_ARGS(num_of_valid_arguments);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_GET_CERTIFICATE_CHAIN_RETAIN_CONTEXT,
                               &retain_context);
-    CHECK_CBOR_ERROR(decode_ctx);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_GET_CERTIFICATE_CHAIN_CLEAR_FROM_CONTEXT,
                               &clear_from_context);
-    CHECK_CBOR_ERROR(decode_ctx);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
 
     QCBORDecode_ExitMap(decode_ctx);
 
@@ -491,6 +540,11 @@ static dpe_error_t decode_get_certificate_chain(QCBORDecodeContext *decode_ctx,
     qcbor_err = QCBORDecode_Finish(decode_ctx);
     if (qcbor_err != QCBOR_SUCCESS) {
         return DPE_INVALID_COMMAND;
+    }
+
+    if (num_of_input_arguments > num_of_valid_arguments) {
+        /* Extra unsupported arguments encoded in command map */
+        return DPE_INVALID_ARGUMENT;
     }
 
     dpe_err = get_certificate_chain_request(context_handle,
