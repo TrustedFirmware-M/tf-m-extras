@@ -151,6 +151,13 @@ void derive_context_single_use_handle_test(struct test_result_t *ret);
 void derive_context_without_cert_id_test(struct test_result_t *ret);
 
 /**
+ * \brief Test the DPE DeriveContext with unsupported parameters.
+ *
+ * \param[out] ret  Test result
+ */
+void derive_context_with_unsupported_params_test(struct test_result_t *ret);
+
+/**
  * \brief Test the DPE DeriveContext for leaf component.
  *
  * \param[out] ret  Test result
@@ -227,6 +234,13 @@ void certify_key_invalid_cbor_encoded_input_test(struct test_result_t *ret);
  * \param[out] ret  Test result
  */
 void certify_key_without_optional_args_test(struct test_result_t *ret);
+
+/**
+ * \brief Test the DPE CertifyKey with unsupported parameters.
+ *
+ * \param[out] ret  Test result
+ */
+void certify_key_with_unsupported_params_test(struct test_result_t *ret);
 
 #ifdef __cplusplus
 }

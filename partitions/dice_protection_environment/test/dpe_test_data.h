@@ -70,6 +70,7 @@ struct dpe_derive_context_test_params_t {
     bool is_return_certificate_missing;
     bool is_allow_new_context_to_export_missing;
     bool is_export_cdi_missing;
+    bool is_unsupported_params_added;
 };
 
 struct dpe_certify_key_test_params_t {
@@ -77,6 +78,7 @@ struct dpe_certify_key_test_params_t {
     bool is_retain_context_missing;
     bool is_public_key_missing;
     bool is_label_missing;
+    bool is_unsupported_params_added;
 };
 
 dpe_error_t

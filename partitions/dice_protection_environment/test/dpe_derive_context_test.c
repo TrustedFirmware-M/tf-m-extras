@@ -829,6 +829,31 @@ void derive_context_without_cert_id_test(struct test_result_t *ret)
     ret->val = TEST_PASSED;
 }
 
+void derive_context_with_unsupported_params_test(struct test_result_t *ret)
+{
+    dpe_error_t dpe_err;
+    int out_ctx_handle;
+    int out_parent_handle;
+    uint8_t certificate_buf[DICE_CERT_SIZE];
+    size_t certificate_actual_size;
+    uint8_t exported_cdi_buf[DICE_MAX_ENCODED_CDI_SIZE];
+    size_t exported_cdi_actual_size;
+    bool return_certificate = false;
+    bool export_cdi = false;
+    DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
+    struct dpe_derive_context_test_params_t test_params = {0};
+    uint32_t cert_id = DPE_PLATFORM_CERT_ID;
+
+    test_params.is_unsupported_params_added = true;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
+        TEST_FAIL("DPE DeriveContext test: with unsupported parameters should fail");
+        return;
+    }
+
+    ret->val = TEST_PASSED;
+}
+
 void derive_context_without_optional_args_test(struct test_result_t *ret)
 {
     dpe_error_t dpe_err;

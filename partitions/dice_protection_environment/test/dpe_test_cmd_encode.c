@@ -14,6 +14,8 @@
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
 
+#define DPE_UNSUPPORTED_PARAMS_LABEL 900
+
 static void encode_dice_inputs(QCBOREncodeContext *encode_ctx,
                                const DiceInputValues *input,
                                struct dpe_derive_context_test_params_t *test_params)
@@ -77,6 +79,7 @@ static QCBORError encode_derive_context(const struct derive_context_input_t *arg
                                         struct dpe_derive_context_test_params_t *test_params)
 {
     QCBOREncodeContext encode_ctx;
+    bool unsupported_param_val = true;
 
     QCBOREncode_Init(&encode_ctx, buf);
 
@@ -122,6 +125,11 @@ static QCBORError encode_derive_context(const struct derive_context_input_t *arg
     if (!test_params->is_export_cdi_missing) {
         QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_DERIVE_CONTEXT_EXPORT_CDI,
                                   args->export_cdi);
+    }
+    if (test_params->is_unsupported_params_added) {
+        /* Encode additional unsupported params */
+        QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_UNSUPPORTED_PARAMS_LABEL,
+                                  unsupported_param_val);
     }
 
     QCBOREncode_CloseMap(&encode_ctx);
@@ -198,6 +206,7 @@ static QCBORError encode_certify_key(const struct certify_key_input_t *args,
                                      struct dpe_certify_key_test_params_t *test_params)
 {
     QCBOREncodeContext encode_ctx;
+    bool unsupported_param_val = true;
 
     QCBOREncode_Init(&encode_ctx, buf);
 
@@ -222,6 +231,12 @@ static QCBORError encode_certify_key(const struct certify_key_input_t *args,
         QCBOREncode_AddBytesToMapN(&encode_ctx, DPE_CERTIFY_KEY_LABEL,
                                    (UsefulBufC){ args->label, args->label_size} );
     }
+    if (test_params->is_unsupported_params_added) {
+        /* Encode additional unsupported params */
+        QCBOREncode_AddBoolToMapN(&encode_ctx, DPE_UNSUPPORTED_PARAMS_LABEL,
+                                  unsupported_param_val);
+    }
+
     QCBOREncode_CloseMap(&encode_ctx);
 
     if (test_params->is_encoded_cbor_corrupt) {
