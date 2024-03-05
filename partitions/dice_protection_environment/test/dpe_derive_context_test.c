@@ -374,7 +374,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
 
     test_params.is_code_hash_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
-    if (dpe_err != DPE_INVALID_COMMAND) {
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: Invalid dice input (missing hash) "
                   "should return invalid command");
         return;
@@ -383,7 +383,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     test_params.is_code_hash_missing = false;
     test_params.is_config_descriptor_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
-    if (dpe_err != DPE_INVALID_COMMAND) {
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: Invalid dice input (missing config descriptor) "
                   "should return invalid command");
         return;
@@ -392,7 +392,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     test_params.is_config_descriptor_missing = false;
     test_params.is_authority_hash_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
-    if (dpe_err != DPE_INVALID_COMMAND) {
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: Invalid dice input (missing authority hash) "
                   "should return invalid command");
         return;
@@ -401,7 +401,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     test_params.is_authority_hash_missing = false;
     test_params.is_mode_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
-    if (dpe_err != DPE_INVALID_COMMAND) {
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: Invalid dice input (missing mode) "
                   "should return invalid command");
         return;
@@ -410,7 +410,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     test_params.is_mode_missing = false;
     test_params.is_input_dice_data_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
-    if (dpe_err != DPE_INVALID_COMMAND) {
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: Missing dice input "
                   "should return invalid command");
         return;
