@@ -24,7 +24,7 @@
         /* Valid label found - optional argument present */                    \
         COUNT_ARGS(num_of_valid_arguments);                                    \
     } else if (qcbor_err != QCBOR_ERR_LABEL_NOT_FOUND) {                       \
-        return DPE_INVALID_COMMAND;                                            \
+        return DPE_INVALID_ARGUMENT;                                           \
     } else {                                                                   \
         /* We have NOT found the optional argument, do not update the count */ \
     }
@@ -65,7 +65,7 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DICE_CODE_HASH, &out);
     if (out.len != sizeof(input->code_hash)) {
-        return DPE_INVALID_COMMAND;
+        return DPE_INVALID_ARGUMENT;
     }
     memcpy(input->code_hash, out.ptr, out.len);
 
@@ -78,12 +78,12 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
     /* Check error state before interpreting config type */
     qcbor_err = QCBORDecode_GetError(decode_ctx);
     if (qcbor_err != QCBOR_SUCCESS) {
-        return DPE_INVALID_COMMAND;
+        return DPE_INVALID_ARGUMENT;
     }
 
     if (out_int < kDiceConfigTypeInline ||
         out_int > kDiceConfigTypeDescriptor) {
-        return DPE_INVALID_COMMAND;
+        return DPE_INVALID_ARGUMENT;
     }
     input->config_type = (DiceConfigType)out_int;
 
@@ -91,7 +91,7 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
     if (input->config_type == kDiceConfigTypeInline) {
         QCBORDecode_GetByteStringInMapN(decode_ctx, DICE_CONFIG_VALUE, &out);
         if (out.len != sizeof(input->config_value)) {
-            return DPE_INVALID_COMMAND;
+            return DPE_INVALID_ARGUMENT;
         }
         memcpy(input->config_value, out.ptr, out.len);
 
@@ -110,7 +110,7 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DICE_AUTHORITY_HASH, &out);
     if (out.len != sizeof(input->authority_hash)) {
-        return DPE_INVALID_COMMAND;
+        return DPE_INVALID_ARGUMENT;
     }
     memcpy(input->authority_hash, out.ptr, out.len);
 
@@ -121,13 +121,13 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
 
     QCBORDecode_GetInt64InMapN(decode_ctx, DICE_MODE, &out_int);
     if (out_int < kDiceModeNotInitialized || out_int > kDiceModeMaintenance) {
-        return DPE_INVALID_COMMAND;
+        return DPE_INVALID_ARGUMENT;
     }
     input->mode = (DiceMode)out_int;
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DICE_HIDDEN, &out);
     if (out.len != sizeof(input->hidden)) {
-        return DPE_INVALID_COMMAND;
+        return DPE_INVALID_ARGUMENT;
     }
     memcpy(input->hidden, out.ptr, out.len);
 
@@ -136,7 +136,7 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
 
     qcbor_err = QCBORDecode_GetError(decode_ctx);
     if (qcbor_err != QCBOR_SUCCESS) {
-        return DPE_INVALID_COMMAND;
+        return DPE_INVALID_ARGUMENT;
     }
 
     return DPE_NO_ERROR;
@@ -194,7 +194,7 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
                                     &out);
     qcbor_err = QCBORDecode_GetError(decode_ctx);
     if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(context_handle))) {
-        return DPE_INVALID_COMMAND;
+        return DPE_INVALID_ARGUMENT;
     }
     memcpy(&context_handle, out.ptr, out.len);
     COUNT_ARGS(num_of_valid_arguments);
@@ -342,7 +342,7 @@ static dpe_error_t decode_destroy_context(QCBORDecodeContext *decode_ctx,
                                     &out);
     qcbor_err = QCBORDecode_GetError(decode_ctx);
     if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(context_handle))) {
-        return DPE_INVALID_COMMAND;
+        return DPE_INVALID_ARGUMENT;
     }
     memcpy(&context_handle, out.ptr, out.len);
     COUNT_ARGS(num_of_valid_arguments);
@@ -422,7 +422,7 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
                                     &out);
     qcbor_err = QCBORDecode_GetError(decode_ctx);
     if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(context_handle))) {
-        return DPE_INVALID_COMMAND;
+        return DPE_INVALID_ARGUMENT;
     }
     memcpy(&context_handle, out.ptr, out.len);
     COUNT_ARGS(num_of_valid_arguments);
@@ -541,7 +541,7 @@ static dpe_error_t decode_get_certificate_chain(QCBORDecodeContext *decode_ctx,
                                     &out);
     qcbor_err = QCBORDecode_GetError(decode_ctx);
     if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(context_handle))) {
-        return DPE_INVALID_COMMAND;
+        return DPE_INVALID_ARGUMENT;
     }
     memcpy(&context_handle, out.ptr, out.len);
     COUNT_ARGS(num_of_valid_arguments);
