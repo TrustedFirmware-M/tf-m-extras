@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -30,7 +30,7 @@ extern "C" {
 /* The theoretical maximum image version is: "255.255.65535\0" */
 #define VERSION_MAX_SIZE                    14U
 /* Example sw_type: "TFM_BLX, AP_BL1, etc." */
-#define SW_TYPE_MAX_SIZE                    20U
+#define SW_TYPE_MAX_SIZE                    32U
 
 #define NUM_OF_MEASUREMENT_SLOTS            32U
 
