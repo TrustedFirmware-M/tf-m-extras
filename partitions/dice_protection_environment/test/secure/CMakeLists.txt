@@ -9,6 +9,7 @@ cmake_policy(SET CMP0079 NEW)
 
 target_sources(tfm_test_suite_extra_s
     PRIVATE
+        ../dpe_certificate_decode.c
         ../dpe_derive_context_test.c
         ../dpe_certify_key_test.c
         ../dpe_test_data.c
@@ -24,4 +25,5 @@ target_include_directories(tfm_test_suite_extra_s
 target_link_libraries(tfm_test_suite_extra_s
     PRIVATE
         qcbor
+        tfm_t_cose_s
 )
