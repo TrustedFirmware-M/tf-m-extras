@@ -199,15 +199,32 @@ static void encode_public_key(struct dpe_cert_encode_ctx *me,
                                DPE_CERT_LABEL_COSE_KEY_EC2_CURVE,
                                cose_key_ec2_curve_value);
 
-    /* Add the subject public key x and y coordinates */
+    /*
+     * From psa/crypto.h:
+     *
+     * For other elliptic curve public keys (key types for which
+     *   #PSA_KEY_TYPE_IS_ECC_PUBLIC_KEY is true), the format is the uncompressed
+     *   representation defined by SEC1 &sect;2.3.3 as the content of an ECPoint.
+     *   Let `m` be the bit size associated with the curve, i.e. the bit size of
+     *   `q` for a curve over `F_q`. The representation consists of:
+     *      - The byte 0x04;
+     *      - `x_P` as a `ceiling(m/8)`-byte string, big-endian;
+     *      - `y_P` as a `ceiling(m/8)`-byte string, big-endian.
+
+     * Furthermore, as per rfc5480 section-2.2:
+     *
+     * The first octet of the OCTET STRING indicates whether the key is
+     * compressed or uncompressed. The uncompressed form is indicated by 0x04
+     * and the compressed form is indicated by either 0x02 or 0x03.
+     */
     QCBOREncode_AddBytesToMapN(&me->cbor_enc_ctx,
                                DPE_CERT_LABEL_COSE_KEY_EC2_X,
-                               (UsefulBufC){ &pub_key[0],
+                               (UsefulBufC){ &pub_key[1],
                                              pub_key_size / 2 });
 
     QCBOREncode_AddBytesToMapN(&me->cbor_enc_ctx,
                                DPE_CERT_LABEL_COSE_KEY_EC2_Y,
-                               (UsefulBufC){ &pub_key[pub_key_size / 2],
+                               (UsefulBufC){ &pub_key[1 + (pub_key_size / 2)],
                                              pub_key_size / 2 });
 
     QCBOREncode_CloseMap(&me->cbor_enc_ctx);
