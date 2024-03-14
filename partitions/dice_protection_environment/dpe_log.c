@@ -58,6 +58,12 @@ void log_derive_rot_context(const DiceInputValues *dice_inputs)
     log_dice_inputs(dice_inputs);
 }
 
+static void log_handle(int context_handle)
+{
+    LOG_DBGFMT(" index - %d,", GET_IDX(context_handle));
+    LOG_DBGFMT(" nonce - 0x%x\r\n", GET_NONCE(context_handle));
+}
+
 void log_derive_context(int context_handle,
                         uint32_t cert_id,
                         bool retain_parent_context,
@@ -67,8 +73,8 @@ void log_derive_context(int context_handle,
                         int32_t client_id)
 {
     LOG_DBGFMT("DPE DeriveContext:\r\n");
-    LOG_DBGFMT(" - context_handle index = %d\r\n", GET_IDX(context_handle));
-    LOG_DBGFMT(" - context_handle nonce = 0x%x\r\n", GET_NONCE(context_handle));
+    LOG_DBGFMT(" - input context handle:");
+    log_handle(context_handle);
     LOG_DBGFMT(" - cert_id = 0x%x\r\n", cert_id);
     LOG_DBGFMT(" - retain_parent_context = %s\r\n", LOG_BOOL_VAL(retain_parent_context));
     LOG_DBGFMT(" - allow_new_context_to_derive = %s\r\n", LOG_BOOL_VAL(allow_new_context_to_derive));
@@ -80,8 +86,8 @@ void log_derive_context(int context_handle,
 void log_destroy_context(int context_handle, bool destroy_recursively)
 {
     LOG_DBGFMT("DPE DestroyContext:\r\n");
-    LOG_DBGFMT(" - context_handle index = %d\r\n", GET_IDX(context_handle));
-    LOG_DBGFMT(" - context_handle nonce = 0x%x\r\n", GET_NONCE(context_handle));
+    LOG_DBGFMT(" - input context handle:");
+    log_handle(context_handle);
     LOG_DBGFMT(" - destroy_recursively = %s\r\n", LOG_BOOL_VAL(destroy_recursively));
 }
 
@@ -93,8 +99,8 @@ void log_certify_key(int context_handle,
                      size_t label_size)
 {
     LOG_DBGFMT("DPE CertifyKey:\r\n");
-    LOG_DBGFMT(" - context_handle index = %d\r\n", GET_IDX(context_handle));
-    LOG_DBGFMT(" - context_handle nonce = 0x%x\r\n", GET_NONCE(context_handle));
+    LOG_DBGFMT(" - input context handle:");
+    log_handle(context_handle);
     LOG_DBGFMT(" - retain_context = %s\r\n", LOG_BOOL_VAL(retain_context));
     LOG_DBGFMT(" - public_key =");
     print_byte_array(public_key, public_key_size);
@@ -108,8 +114,8 @@ void log_get_certificate_chain(int context_handle,
                                size_t cert_chain_buf_size)
 {
     LOG_DBGFMT("DPE GetCertificateChain:\r\n");
-    LOG_DBGFMT(" - context_handle index = %d\r\n", GET_IDX(context_handle));
-    LOG_DBGFMT(" - context_handle nonce = 0x%x\r\n", GET_NONCE(context_handle));
+    LOG_DBGFMT(" - input context handle:");
+    log_handle(context_handle);
     LOG_DBGFMT(" - retain_context = %s\r\n", LOG_BOOL_VAL(retain_context));
     LOG_DBGFMT(" - clear_from_context = %s\r\n", LOG_BOOL_VAL(clear_from_context));
     LOG_DBGFMT(" - cert_chain_buf_size = %d\r\n", cert_chain_buf_size);
@@ -131,6 +137,30 @@ void log_certificate_chain(const uint8_t *certificate_chain_buf,
     LOG_DBGFMT("DPE Certificate Chain:\r\n");
     LOG_DBGFMT(" - size = %d\r\n", certificate_chain_size);
     print_byte_array(certificate_chain_buf, certificate_chain_size);
+}
+
+void log_derive_context_output_handles(int parent_context_handle,
+                                       int new_context_handle)
+{
+    LOG_DBGFMT("DPE DeriveContext output handles:\r\n");
+    LOG_DBGFMT(" - parent context handle:");
+    log_handle(parent_context_handle);
+    LOG_DBGFMT(" - new context handle:");
+    log_handle(new_context_handle);
+}
+
+void log_certify_key_output_handle(int new_context_handle)
+{
+    LOG_DBGFMT("DPE CertifyKey output handle:\r\n");
+    LOG_DBGFMT(" - new context handle:");
+    log_handle(new_context_handle);
+}
+
+void log_get_certificate_chain_output_handle(int new_context_handle)
+{
+    LOG_DBGFMT("DPE GetCertificateChain output handle:\r\n");
+    LOG_DBGFMT(" - new context handle:");
+    log_handle(new_context_handle);
 }
 
 #endif /* TFM_PARTITION_LOG_LEVEL */

@@ -70,6 +70,22 @@ void log_intermediate_certificate(uint16_t layer_idx,
 void log_certificate_chain(const uint8_t *certificate_chain_buf,
                            size_t certificate_chain_size);
 
+/**
+ * \brief Log derive context output handles.
+ */
+void log_derive_context_output_handles(int parent_context_handle,
+                                       int new_context_handle);
+
+/**
+ * \brief Log certify key output handle.
+ */
+void log_certify_key_output_handle(int new_context_handle);
+
+/**
+ * \brief Log get certificate chain output handle.
+ */
+void log_get_certificate_chain_output_handle(int new_context_handle);
+
 #else /* TFM_PARTITION_LOG_LEVEL */
 
 #define log_derive_rot_context(...)
@@ -79,6 +95,9 @@ void log_certificate_chain(const uint8_t *certificate_chain_buf,
 #define log_get_certificate_chain(...)
 #define log_intermediate_certificate(...)
 #define log_certificate_chain(...)
+#define log_derive_context_output_handles(...)
+#define log_certify_key_output_handle(...)
+#define log_get_certificate_chain_output_handle(...)
 
 #endif /* TFM_PARTITION_LOG_LEVEL */
 

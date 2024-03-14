@@ -699,6 +699,8 @@ dpe_error_t derive_context_request(int input_ctx_handle,
             return err;
         }
     }
+    log_derive_context_output_handles(*new_parent_context_handle,
+                                      *new_context_handle);
 
     return DPE_NO_ERROR;
 }
@@ -899,6 +901,7 @@ dpe_error_t certify_key_request(int input_ctx_handle,
            layer_ctx->data.external_key_deriv_label_len);
     memset(&layer_ctx->data.attest_pub_key[0], 0u,
            layer_ctx->data.attest_pub_key_len);
+    log_certify_key_output_handle(*new_context_handle);
 
     return DPE_NO_ERROR;
 }
@@ -959,6 +962,7 @@ dpe_error_t get_certificate_chain_request(int input_ctx_handle,
         *new_context_handle = INVALID_HANDLE;
         component_ctx_array[input_ctx_idx].nonce = INVALID_NONCE_VALUE;
     }
+    log_get_certificate_chain_output_handle(*new_context_handle);
 
     return DPE_NO_ERROR;
 }
