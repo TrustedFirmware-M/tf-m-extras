@@ -9,12 +9,16 @@
 #include "../dpe_certificate_common.h"
 #include "../dpe_crypto_config.h"
 #include "dpe_certificate_decode.h"
+#include "dpe_certificate_log.h"
 #include "psa/crypto.h"
 #include "psa/error.h"
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
 #include "t_cose_sign1_verify.h"
 #include "test_framework.h"
+
+/* Uncomment this define to print the certificate chain */
+//#define PRINT_CERT_CHAIN
 
 #define COSE_SIGN1_ARRAY_LEN    4
 
@@ -480,6 +484,10 @@ int verify_certificate_chain(UsefulBufC cert_chain_buf,
     if (qcbor_err != QCBOR_SUCCESS) {
         return -1;
     }
+
+#ifdef PRINT_CERT_CHAIN
+    print_certificate_chain(cert_chain);
+#endif
 
     return 0;
 }
