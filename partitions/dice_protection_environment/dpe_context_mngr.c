@@ -348,10 +348,6 @@ static dpe_error_t create_layer_certificate(uint16_t layer_idx)
         return err;
     }
 
-    log_intermediate_certificate(layer_idx,
-                                 &layer_ctx->data.cert_buf[0],
-                                 layer_ctx->data.cert_buf_len);
-
     return store_layer_certificate(layer_ctx);
 }
 
@@ -660,10 +656,10 @@ dpe_error_t derive_context_request(int input_ctx_handle,
         derived_ctx->nonce = INVALID_NONCE_VALUE;
     }
 
+    linked_layer_idx = derived_ctx->linked_layer_idx;
+    assert(linked_layer_idx < MAX_NUM_OF_LAYERS);
+    layer_ctx = &layer_ctx_array[linked_layer_idx];
     if (create_certificate) {
-        linked_layer_idx = derived_ctx->linked_layer_idx;
-        assert(linked_layer_idx < MAX_NUM_OF_LAYERS);
-        layer_ctx = &layer_ctx_array[linked_layer_idx];
         layer_ctx->is_cdi_to_be_exported = export_cdi;
 
         /* Finalise the layer */
@@ -701,6 +697,15 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     }
     log_derive_context_output_handles(*new_parent_context_handle,
                                       *new_context_handle);
+
+    /* Log context and layer info and certificate if no error */
+    log_dpe_component_ctx_metadata(derived_ctx, free_component_idx);
+    log_dpe_layer_metadata(layer_ctx, linked_layer_idx);
+    if (create_certificate) {
+        log_intermediate_certificate(linked_layer_idx,
+                                     &layer_ctx->data.cert_buf[0],
+                                     layer_ctx->data.cert_buf_len);
+    }
 
     return DPE_NO_ERROR;
 }
@@ -902,6 +907,9 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     memset(&layer_ctx->data.attest_pub_key[0], 0u,
            layer_ctx->data.attest_pub_key_len);
     log_certify_key_output_handle(*new_context_handle);
+    log_intermediate_certificate(input_layer_idx,
+                                 &layer_ctx->data.cert_buf[0],
+                                 layer_ctx->data.cert_buf_len);
 
     return DPE_NO_ERROR;
 }

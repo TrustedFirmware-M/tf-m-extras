@@ -163,4 +163,33 @@ void log_get_certificate_chain_output_handle(int new_context_handle)
     log_handle(new_context_handle);
 }
 
+void log_dpe_component_ctx_metadata(const struct component_context_t *ctx_ptr,
+                                    int component_index)
+{
+    LOG_DBGFMT(" DPE component_ctx_array[%d]: \r\n", component_index);
+    LOG_DBGFMT("  - in_use = %s\r\n", LOG_BOOL_VAL(ctx_ptr->in_use));
+    LOG_DBGFMT("  - is_allowed_to_derive = %s\r\n",
+                LOG_BOOL_VAL(ctx_ptr->is_allowed_to_derive));
+    LOG_DBGFMT("  - is_export_cdi_allowed = %s\r\n",
+                LOG_BOOL_VAL(ctx_ptr->is_export_cdi_allowed));
+    LOG_DBGFMT("  - nonce = 0x%x\r\n", ctx_ptr->nonce);
+    LOG_DBGFMT("  - parent_idx = %d\r\n", ctx_ptr->parent_idx);
+    LOG_DBGFMT("  - linked_layer_idx = %d\r\n", ctx_ptr->linked_layer_idx);
+    LOG_DBGFMT("  - target_locality = %d\r\n", ctx_ptr->target_locality);
+    LOG_DBGFMT("  - expected_mhu_id = %u\r\n", ctx_ptr->expected_mhu_id);
+}
+
+void log_dpe_layer_metadata(const struct layer_context_t *ctx_ptr,
+                            uint16_t layer_idx)
+{
+    LOG_DBGFMT(" DPE layer_ctx_array[%d]: \r\n", layer_idx);
+    LOG_DBGFMT("  - cert_id = 0x%x\r\n", ctx_ptr->cert_id);
+    LOG_DBGFMT("  - parent_layer_idx = %d\r\n", ctx_ptr->parent_layer_idx);
+    LOG_DBGFMT("  - state = %d\r\n", ctx_ptr->state);
+    LOG_DBGFMT("  - is_external_pub_key_provided = %s\r\n",
+                LOG_BOOL_VAL(ctx_ptr->is_external_pub_key_provided));
+    LOG_DBGFMT("  - is_cdi_to_be_exported = %s\r\n",
+                LOG_BOOL_VAL(ctx_ptr->is_cdi_to_be_exported));
+}
+
 #endif /* TFM_PARTITION_LOG_LEVEL */

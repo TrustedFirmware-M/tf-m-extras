@@ -9,6 +9,7 @@
 #define __DPE_LOG_H__
 
 #include "dice_protection_environment.h"
+#include "dpe_context_mngr.h"
 #include "tfm_sp_log.h"
 
 #ifdef __cplusplus
@@ -86,6 +87,18 @@ void log_certify_key_output_handle(int new_context_handle);
  */
 void log_get_certificate_chain_output_handle(int new_context_handle);
 
+/**
+ * \brief Log component context metadata.
+ */
+void log_dpe_component_ctx_metadata(const struct component_context_t *ctx_ptr,
+                                    int component_idx);
+
+/**
+ * \brief Log layer context metadata.
+ */
+void log_dpe_layer_metadata(const struct layer_context_t *ctx_ptr,
+                            uint16_t layer_idx);
+
 #else /* TFM_PARTITION_LOG_LEVEL */
 
 #define log_derive_rot_context(...)
@@ -98,6 +111,8 @@ void log_get_certificate_chain_output_handle(int new_context_handle);
 #define log_derive_context_output_handles(...)
 #define log_certify_key_output_handle(...)
 #define log_get_certificate_chain_output_handle(...)
+#define log_dpe_component_ctx_metadata(...)
+#define log_dpe_layer_metadata(...)
 
 #endif /* TFM_PARTITION_LOG_LEVEL */
 
