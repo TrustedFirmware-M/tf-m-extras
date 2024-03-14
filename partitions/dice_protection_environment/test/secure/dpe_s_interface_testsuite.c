@@ -66,6 +66,8 @@ static struct test_t dpe_s_tests[] = {
      "DPE CertifyKey - with unsupported parameters"},
     {&derive_context_with_parent_leaf_component_test, "DPE_S_TEST_1028",
      "DPE DeriveContext - Leaf component"},
+    {&get_certificate_chain_test, "DPE_S_TEST_1029",
+     "DPE GetCertificateChain - validate certificate chain"},
 
     /*
      * This destroys the RoT handle since retain_parent_context is false,

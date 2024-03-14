@@ -242,6 +242,13 @@ void certify_key_without_optional_args_test(struct test_result_t *ret);
  */
 void certify_key_with_unsupported_params_test(struct test_result_t *ret);
 
+/**
+ * \brief Test the DPE GetCertificateChain API.
+ *
+ * \param[out] ret  Test result
+ */
+void get_certificate_chain_test(struct test_result_t *ret);
+
 #ifdef __cplusplus
 }
 #endif
