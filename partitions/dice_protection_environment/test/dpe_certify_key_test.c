@@ -86,6 +86,7 @@ static void call_certify_key_with_test_data(
         if (i == 0) {
             /* Save RoT context handle for subsequent tests */
             retained_rot_ctx_handle = out_parent_handle;
+            TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
         }
 
         if (test_data->inputs.retain_parent_context) {
@@ -230,6 +231,7 @@ void certify_key_api_test(struct test_result_t *ret)
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     ret->val = TEST_PASSED;
 }
@@ -271,6 +273,7 @@ void certify_key_retain_context_test(struct test_result_t *ret)
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     dpe_err = dpe_certify_key(out_ctx_handle,                   /* input_ctx_handle */
                               false,                            /* retain_context */
@@ -362,6 +365,7 @@ void certify_key_incorrect_handle_test(struct test_result_t *ret)
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     ret->val = TEST_PASSED;
 }
@@ -433,6 +437,7 @@ void certify_key_smaller_cert_buffer_test(struct test_result_t *ret)
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     /* Since certificate buffer size is checked by client side API implementation,
      * it derives a valid DPE context within the service, so destroy that context
@@ -499,6 +504,7 @@ void certify_key_smaller_derived_pub_key_buffer_test(struct test_result_t *ret)
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     /* Since public key buffer size is checked by client side API implementation,
      * it derives a valid DPE context within the service, so destroy that context
@@ -563,6 +569,7 @@ void certify_key_invalid_cbor_encoded_input_test(struct test_result_t *ret)
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     ret->val = TEST_PASSED;
 }
@@ -623,6 +630,7 @@ void certify_key_without_optional_args_test(struct test_result_t *ret)
         return;
     }
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     test_params.is_public_key_missing = true;
     dpe_err = CALL_CERTIFY_KEY_WITH_TEST_PARAM();

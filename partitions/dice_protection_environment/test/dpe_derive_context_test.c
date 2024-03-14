@@ -63,9 +63,6 @@ void derive_context_api_test(struct test_result_t *ret)
         return;
     }
 
-    TEST_LOG("out_ctx_handle = %d\r\n", out_ctx_handle);
-    TEST_LOG("out_parent_handle = %d\r\n", out_parent_handle);
-
     dpe_err = dpe_destroy_context(out_ctx_handle, false);
     if (dpe_err != DPE_NO_ERROR) {
         TEST_FAIL("DPE DestroyContext call failed");
@@ -74,6 +71,7 @@ void derive_context_api_test(struct test_result_t *ret)
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     ret->val = TEST_PASSED;
 }
@@ -107,6 +105,7 @@ void derive_rot_layer_context(struct test_result_t *ret)
         return;
     }
 
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
     ret->val = TEST_PASSED;
 }
 
@@ -143,6 +142,7 @@ void derive_context_single_use_handle_test(struct test_result_t *ret)
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     /* Use the previously used handle again */
     dpe_err = dpe_derive_context(in_handle,                     /* input_ctx_handle */
@@ -489,6 +489,7 @@ void derive_context_smaller_cert_buffer_test(struct test_result_t *ret)
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     ret->val = TEST_PASSED;
 }
@@ -532,6 +533,7 @@ void derive_context_smaller_cdi_buffer_test(struct test_result_t *ret)
     /* NOTE: When CDI is exported, it creates an undestroyable context */
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     ret->val = TEST_PASSED;
 }
@@ -568,6 +570,7 @@ void derive_context_prevent_cdi_export_test(struct test_result_t *ret)
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     /* Try to export CDI with parent not allowed to export */
     dpe_err = dpe_derive_context(out_ctx_handle,                /* input_ctx_handle */
@@ -715,6 +718,7 @@ void derive_context_check_export_cdi_test(struct test_result_t *ret)
      */
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     ret->val = TEST_PASSED;
 }
@@ -754,6 +758,7 @@ void derive_context_with_parent_leaf_component_test(struct test_result_t *ret)
     saved_handle = out_ctx_handle;
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     /* Try to further derive context with parent not allowed to derive as above */
     dpe_err = dpe_derive_context(out_ctx_handle,                /* input_ctx_handle */
@@ -889,6 +894,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
     }
 
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
     test_params.is_allow_new_context_to_derive_missing = false;
     test_params.is_create_certificate_missing = true;
     return_certificate = true;
@@ -912,6 +918,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
     }
 
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
     test_params.is_create_certificate_missing = false;
     test_params.is_return_certificate_missing = true;
     certificate_actual_size = 0;
@@ -934,6 +941,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
     }
 
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
     test_params.is_return_certificate_missing = false;
     test_params.is_allow_new_context_to_export_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
@@ -951,6 +959,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
     }
 
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
     test_params.is_allow_new_context_to_export_missing = false;
     test_params.is_export_cdi_missing = true;
     exported_cdi_actual_size = 0;
@@ -971,6 +980,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
     }
 
     retained_rot_ctx_handle = out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
     test_params.is_export_cdi_missing = false;
     test_params.is_retain_parent_context_missing = true;
     /* This test will create undestroyable context as default value of
