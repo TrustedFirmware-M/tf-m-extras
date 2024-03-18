@@ -319,19 +319,37 @@ static dpe_error_t decode_destroy_context(QCBORDecodeContext *decode_ctx,
     UsefulBufC out;
     int context_handle;
     bool destroy_recursively;
+    QCBORItem item;
+    uint16_t num_of_input_arguments, num_of_valid_arguments = 0;
+
+    /* Initialise optional parameters with their default value in case
+     * they are not encoded in the input command
+     */
+    destroy_recursively = false;
 
     /* Decode Destroy context command */
-    QCBORDecode_EnterMap(decode_ctx, NULL);
+    QCBORDecode_EnterMap(decode_ctx, &item);
+    qcbor_err = QCBORDecode_GetError(decode_ctx);
+    if ((qcbor_err != QCBOR_SUCCESS) ||
+        (item.uDataType != QCBOR_TYPE_MAP)) {
+            /* We expect a map of Derive Context command arguments here */
+            return DPE_INVALID_COMMAND;
+    }
+    /* Save the number of items found in the map */
+    num_of_input_arguments = item.val.uCount;
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DPE_DESTROY_CONTEXT_HANDLE,
                                     &out);
-    if (out.len != sizeof(context_handle)) {
+    qcbor_err = QCBORDecode_GetError(decode_ctx);
+    if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(context_handle))) {
         return DPE_INVALID_COMMAND;
     }
     memcpy(&context_handle, out.ptr, out.len);
+    COUNT_ARGS(num_of_valid_arguments);
 
     QCBORDecode_GetBoolInMapN(decode_ctx, DPE_DESTROY_CONTEXT_RECURSIVELY,
                               &destroy_recursively);
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
 
     QCBORDecode_ExitMap(decode_ctx);
 
@@ -342,6 +360,11 @@ static dpe_error_t decode_destroy_context(QCBORDecodeContext *decode_ctx,
     qcbor_err = QCBORDecode_Finish(decode_ctx);
     if (qcbor_err != QCBOR_SUCCESS) {
         return DPE_INVALID_COMMAND;
+    }
+
+    if (num_of_input_arguments > num_of_valid_arguments) {
+        /* Extra unsupported arguments encoded in command map */
+        return DPE_INVALID_ARGUMENT;
     }
 
     dpe_err = destroy_context_request(context_handle, destroy_recursively);
