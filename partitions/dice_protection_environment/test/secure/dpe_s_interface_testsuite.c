@@ -66,7 +66,14 @@ static struct test_t dpe_s_tests[] = {
      "DPE CertifyKey - with unsupported parameters"},
     {&derive_context_with_parent_leaf_component_test, "DPE_S_TEST_1028",
      "DPE DeriveContext - Leaf component"},
-    {&derive_context_without_optional_args_test, "DPE_S_TEST_1029",
+
+    /*
+     * This destroys the RoT handle since retain_parent_context is false,
+     * hence RoT context handle is destroyed. As a result the
+     * retained_rot_handle variable cannot be used anymore between subsequent
+     * test cases to pass a valid handle.
+     */
+    {&derive_context_without_optional_args_test, "DPE_S_TEST_MUST_BE_THE_LAST",
      "DPE DeriveContext - without optional arguments"},
 };
 
