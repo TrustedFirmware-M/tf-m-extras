@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include "dice_protection_environment.h"
 #include "dpe_crypto_config.h"
+#include "platform_locality.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +47,9 @@ extern "C" {
 
 #define SET_IDX(handle, idx) ((handle & 0xffff0000) | idx)
 #define SET_NONCE(handle, nonce) ((handle & 0x00ffff) | (nonce << 16))
+
+/* Current locality by default */
+#define DEFAULT_TARGET_LOCALITY  LOCALITY_NONE
 
 struct component_context_data_t {
     uint8_t        measurement_value[DICE_HASH_SIZE];

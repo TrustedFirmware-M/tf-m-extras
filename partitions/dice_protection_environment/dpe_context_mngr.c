@@ -103,8 +103,7 @@ static void set_context_to_default(int i)
     component_ctx_array[i].parent_idx = INVALID_COMPONENT_IDX;
     component_ctx_array[i].linked_layer_idx = INVALID_LAYER_IDX;
     (void)memset(&component_ctx_array[i].data, 0, sizeof(struct component_context_data_t));
-    //TODO: Question: how to initialise MHU Id mapping?
-    component_ctx_array[i].target_locality = 0;
+    component_ctx_array[i].target_locality = DEFAULT_TARGET_LOCALITY;
     /* Allow component to be derived by default */
 }
 
@@ -502,6 +501,8 @@ static dpe_error_t create_rot_context(int *rot_ctx_handle)
     rot_layer_ctx->data.cdi_key_id = dpe_plat_get_rot_cdi_key_id();
     /* Init RoT context, ready to be derived in next call to DeriveContext */
     rot_comp_ctx->nonce = 0;
+    /* Set the target locality for RoT context */
+    rot_comp_ctx->target_locality = LOCALITY_RSE_S;
     /* Parent component index for derived RoT context is same */
     rot_comp_ctx->parent_idx = 0;
     /* Link context to RoT Layer */

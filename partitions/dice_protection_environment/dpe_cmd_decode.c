@@ -230,6 +230,7 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     return_certificate = false;
     allow_new_context_to_export = false;
     export_cdi = false;
+    target_locality = DEFAULT_TARGET_LOCALITY;
 
     /* Decode DeriveContext command */
     QCBORDecode_EnterMap(decode_ctx, &item);
