@@ -22,15 +22,17 @@ extern "C" {
 /**
  * \brief Encodes and signs the certificate for a layer
  *
- * \param[in] layer_idx         Index of the current layer context.
- * \param[in] layer_ctx         Pointer to current layer context.
- * \param[in] parent_layer_ctx  Pointer to parent layer context.
- *
+ * \param[in]  layer_idx         Index of the current layer context.
+ * \param[out] cert_buf          Pointer to the output cert buffer.
+ * \param[in]  cert_buf_size     Size of the output cert buffer.
+ * \param[out] cert_actual_size  Actual size of the final certificate.
+ * *
  * \return Returns error code of type dpe_error_t
  */
 dpe_error_t encode_layer_certificate(uint16_t layer_idx,
-                                     struct layer_context_t *layer_ctx,
-                                     const struct layer_context_t *parent_layer_ctx);
+                                     uint8_t *cert_buf,
+                                     size_t cert_buf_size,
+                                     size_t *cert_actual_size);
 
 /**
  * \brief Stores signed certificate for a layer
@@ -72,33 +74,6 @@ dpe_error_t encode_cdi(const uint8_t cdi_attest_buf[DICE_CDI_SIZE],
                        uint8_t *encoded_cdi_buf,
                        size_t encoded_cdi_buf_size,
                        size_t *encoded_cdi_actual_size);
-
-/**
- * \brief Clears the certificate chain.
- *
- * \param[in] layer_idx  Index of the current layer context.
- * \param[in] layer_ctx  Pointer to current layer context.
- *
- */
-void clear_certificate_chain(uint16_t layer_idx,
-                             struct layer_context_t *layer_ctx);
-
-/**
- * \brief Adds already encoded certificate to the array.
- *
- * \param[in]  cert_buf                  Pointer to the input cert buffer.
- * \param[in]  cert_buf_size             Size of the input cert buffer.
- * \param[out] encoded_cert_buf          Pointer to the output encoded cert buffer.
- * \param[in]  encoded_cert_buf_size     Size of the encoded cert buffer.
- * \param[out] encoded_cert_actual_size  Actual size of the encoded cert byte array.
- *
- * \return Returns error code of type dpe_error_t
- */
-dpe_error_t add_encoded_layer_certificate(const uint8_t *cert_buf,
-                                          size_t cert_buf_size,
-                                          uint8_t *encoded_cert_buf,
-                                          size_t encoded_cert_buf_size,
-                                          size_t *encoded_cert_actual_size);
 
 #ifdef __cplusplus
 }

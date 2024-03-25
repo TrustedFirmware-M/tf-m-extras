@@ -83,8 +83,6 @@ struct layer_context_data_t {
     size_t attest_pub_key_len;
     uint8_t external_key_deriv_label[DPE_EXTERNAL_LABEL_MAX_SIZE];
     size_t external_key_deriv_label_len;
-    uint8_t cert_buf[DICE_CERT_SIZE];
-    size_t cert_buf_len;
 };
 
 enum layer_state_t {

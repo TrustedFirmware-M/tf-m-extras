@@ -308,7 +308,7 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
                                              sizeof(new_parent_context_handle) });
 
     /* The certificate is already encoded into a CBOR array by the function
-     * add_encoded_layer_certificate. Add it as a byte string so that its
+     * encode_layer_certificate(). Add it as a byte string so that its
      * decoding can be skipped and the CBOR returned to the caller.
      */
     CHECK_OVERFLOW_TO_TEMP_BUF;

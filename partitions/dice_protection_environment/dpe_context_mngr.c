@@ -289,11 +289,10 @@ static dpe_error_t get_encoded_cdi_to_export(struct layer_context_t *layer_ctx,
     return DPE_NO_ERROR;
 }
 
-static dpe_error_t create_layer_certificate(uint16_t layer_idx)
+static dpe_error_t prepare_layer_certificate(uint16_t layer_idx)
 {
     uint16_t parent_layer_idx;
     psa_status_t status;
-    dpe_error_t err;
     struct layer_context_t *layer_ctx, *parent_layer_ctx;
 
     assert(layer_idx < MAX_NUM_OF_LAYERS);
@@ -341,14 +340,7 @@ static dpe_error_t create_layer_certificate(uint16_t layer_idx)
         return DPE_INTERNAL_ERROR;
     }
 
-    err = encode_layer_certificate(layer_idx,
-                                   layer_ctx,
-                                   parent_layer_ctx);
-    if (err != DPE_NO_ERROR) {
-        return err;
-    }
-
-    return store_layer_certificate(layer_ctx);
+    return DPE_NO_ERROR;
 }
 
 static uint16_t open_new_layer(void)
@@ -664,22 +656,17 @@ dpe_error_t derive_context_request(int input_ctx_handle,
 
         /* Finalise the layer */
         layer_ctx->state = LAYER_STATE_FINALISED;
-        err = create_layer_certificate(linked_layer_idx);
+        err = prepare_layer_certificate(linked_layer_idx);
         if (err != DPE_NO_ERROR) {
             return err;
         }
 
         if (return_certificate) {
-            if (new_certificate_buf_size < layer_ctx->data.cert_buf_len) {
-                return DPE_INVALID_ARGUMENT;
-            }
-
             /* Encode and return generated layer certificate */
-            err = add_encoded_layer_certificate(layer_ctx->data.cert_buf,
-                                                layer_ctx->data.cert_buf_len,
-                                                new_certificate_buf,
-                                                new_certificate_buf_size,
-                                                new_certificate_actual_size);
+            err = encode_layer_certificate(linked_layer_idx,
+                                           new_certificate_buf,
+                                           new_certificate_buf_size,
+                                           new_certificate_actual_size);
             if (err != DPE_NO_ERROR) {
                 return err;
             }
@@ -703,8 +690,8 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     log_dpe_layer_metadata(layer_ctx, linked_layer_idx);
     if (create_certificate) {
         log_intermediate_certificate(linked_layer_idx,
-                                     &layer_ctx->data.cert_buf[0],
-                                     layer_ctx->data.cert_buf_len);
+                                     new_certificate_buf,
+                                     *new_certificate_actual_size);
     }
 
     return DPE_NO_ERROR;
@@ -859,7 +846,15 @@ dpe_error_t certify_key_request(int input_ctx_handle,
      * derive context command
      */
     /* Create leaf certificate */
-    err = create_layer_certificate(input_layer_idx);
+    err = prepare_layer_certificate(input_layer_idx);
+    if (err != DPE_NO_ERROR) {
+        return err;
+    }
+
+    err = encode_layer_certificate(input_layer_idx,
+                                   certificate_buf,
+                                   certificate_buf_size,
+                                   certificate_actual_size);
     if (err != DPE_NO_ERROR) {
         return err;
     }
@@ -877,15 +872,6 @@ dpe_error_t certify_key_request(int input_ctx_handle,
            &parent_layer_ctx->data.attest_pub_key[0],
            parent_layer_ctx->data.attest_pub_key_len);
     *derived_public_key_actual_size = parent_layer_ctx->data.attest_pub_key_len;
-
-    /* Get certificate */
-    if (certificate_buf_size < layer_ctx->data.cert_buf_len) {
-        return DPE_INVALID_ARGUMENT;
-    }
-    memcpy(certificate_buf,
-           &layer_ctx->data.cert_buf[0],
-           layer_ctx->data.cert_buf_len);
-    *certificate_actual_size = layer_ctx->data.cert_buf_len;
 
     /* Renew handle for the same context, if requested */
     if (retain_context) {
@@ -908,8 +894,8 @@ dpe_error_t certify_key_request(int input_ctx_handle,
            layer_ctx->data.attest_pub_key_len);
     log_certify_key_output_handle(*new_context_handle);
     log_intermediate_certificate(input_layer_idx,
-                                 &layer_ctx->data.cert_buf[0],
-                                 layer_ctx->data.cert_buf_len);
+                                 certificate_buf,
+                                 *certificate_actual_size);
 
     return DPE_NO_ERROR;
 }
@@ -962,8 +948,10 @@ dpe_error_t get_certificate_chain_request(int input_ctx_handle,
         component_ctx_array[input_ctx_idx].nonce = GET_NONCE(*new_context_handle);
 
         if (clear_from_context) {
-            /* Clear all the accumulated certificate information so far */
-            clear_certificate_chain(input_layer_idx, layer_ctx);
+        //TODO: Reimplement the clear_from_context functionality after memory
+        //      optimization; Certificates are not ready made and they are not
+        //      stored in the layer context anymore. They are created on-the-fly
+        //      when requested. Add a test as well.
         }
 
     } else {
