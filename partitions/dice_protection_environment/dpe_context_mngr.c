@@ -840,8 +840,8 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     uint16_t input_ctx_idx, input_layer_idx, parent_layer_idx;
     dpe_error_t err;
     psa_status_t status;
-    struct layer_context_t *parent_layer_ctx, *layer_ctx;
-    struct layer_context_t leaf_layer;
+    struct layer_context_t *parent_layer_ctx, *input_layer_ctx;
+    struct layer_context_t leaf_layer = {0};
 
     log_certify_key(input_ctx_handle, retain_context, public_key, public_key_size,
                     label, label_size);
@@ -860,10 +860,20 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     /* Get current linked layer idx */
     input_layer_idx = component_ctx_array[input_ctx_idx].linked_layer_idx;
     assert(input_layer_idx < MAX_NUM_OF_LAYERS);
+    input_layer_ctx = &layer_ctx_array[input_layer_idx];
 
-    layer_ctx = &layer_ctx_array[input_layer_idx];
-    /* Create leaf layer as copy of input context linked layer */
-    memcpy(&leaf_layer, layer_ctx, sizeof(leaf_layer));
+    if (input_layer_ctx->state == LAYER_STATE_FINALISED) {
+        /* Input layer is finalised, new leaf layer is its child now */
+        leaf_layer.parent_layer_idx = input_layer_idx;
+        /* Linked components count already initialised to 0 */
+
+    } else {
+        /* Input layer is not finalised, new leaf layer share the same
+         * components as in the input layer
+         */
+        memcpy(&leaf_layer.linked_components, &input_layer_ctx->linked_components,
+                sizeof(input_layer_ctx->linked_components));
+    }
 
     if (public_key_size > sizeof(leaf_layer.data.attest_pub_key)) {
         return DPE_INVALID_ARGUMENT;
@@ -945,6 +955,8 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     log_intermediate_certificate(input_layer_idx,
                                  certificate_buf,
                                  *certificate_actual_size);
+
+    destroy_layer_keys(&leaf_layer);
 
     return DPE_NO_ERROR;
 }

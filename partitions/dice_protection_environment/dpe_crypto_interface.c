@@ -335,3 +335,16 @@ psa_status_t get_rot_cdi_input(uint8_t rot_cdi_input[DICE_CDI_SIZE], size_t rot_
 
     return status;
 }
+
+void destroy_layer_keys(const struct layer_context_t *layer_ctx)
+{
+    if (layer_ctx->data.cdi_key_id != PSA_KEY_ID_NULL) {
+        /* Remove any previously derived keys */
+        (void)psa_destroy_key(layer_ctx->data.cdi_key_id);
+    }
+
+    if (layer_ctx->data.attest_key_id != PSA_KEY_ID_NULL) {
+        /* Remove any previously derived keys */
+        (void)psa_destroy_key(layer_ctx->data.attest_key_id);
+    }
+}

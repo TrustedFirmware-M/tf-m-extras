@@ -110,6 +110,15 @@ psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
  */
 psa_status_t get_rot_cdi_input(uint8_t rot_cdi_input[DICE_CDI_SIZE],
                                size_t rot_cdi_input_size);
+
+/**
+ * @brief Destroy the CDI and attestation keys for a layer.
+ *
+ * \param[in] layer_ctx  Pointer to current layer context.
+ *
+ */
+void destroy_layer_keys(const struct layer_context_t *layer_ctx);
+
 #ifdef __cplusplus
 }
 #endif
