@@ -123,12 +123,13 @@ void log_get_certificate_chain(int context_handle,
 
 void log_intermediate_certificate(uint16_t layer_idx,
                                   const uint8_t *cert_buf,
-                                  size_t cert_buf_size)
+                                  size_t cert_size)
 {
     LOG_DBGFMT("DPE Intermediate Certificate:\r\n");
     LOG_DBGFMT(" - layer index = %d\r\n", layer_idx);
+    LOG_DBGFMT(" - size = %d\r\n", cert_size);
     LOG_DBGFMT(" - certificate =");
-    print_byte_array(cert_buf, cert_buf_size);
+    print_byte_array(cert_buf, cert_size);
 }
 
 void log_certificate_chain(const uint8_t *certificate_chain_buf,
