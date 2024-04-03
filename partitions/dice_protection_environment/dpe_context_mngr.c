@@ -928,6 +928,13 @@ dpe_error_t get_certificate_chain_request(int input_ctx_handle,
     assert(input_layer_idx < MAX_NUM_OF_LAYERS);
 
     layer_ctx = &layer_ctx_array[input_layer_idx];
+    if (layer_ctx->state != LAYER_STATE_FINALISED) {
+        /* If the context has accumulated info and not yet part of a certificate,
+         * return an invalid-argument error
+         */
+        return DPE_INVALID_ARGUMENT;
+    }
+
     err = get_certificate_chain(input_layer_idx,
                                 certificate_chain_buf,
                                 certificate_chain_buf_size,
