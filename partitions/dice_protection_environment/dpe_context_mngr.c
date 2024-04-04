@@ -466,7 +466,6 @@ static dpe_error_t create_rot_context(int *rot_ctx_handle)
 #ifdef DPE_TEST_MODE
     uint8_t rot_cdi_input[DICE_CDI_SIZE] = TEST_ROT_CDI_VAL;
 #else
-    int ret;
     uint8_t rot_cdi_input[DICE_CDI_SIZE];
 #endif /* DPE_TEST_MODE */
     psa_status_t status;
@@ -478,9 +477,8 @@ static dpe_error_t create_rot_context(int *rot_ctx_handle)
 
 #ifndef DPE_TEST_MODE
     /* Get the RoT CDI input for the RoT layer */
-    ret = dpe_plat_get_rot_cdi(&rot_cdi_input[0],
-                               sizeof(rot_cdi_input));
-    if (ret != 0) {
+    status = get_rot_cdi_input(&rot_cdi_input[0], sizeof(rot_cdi_input));
+    if (status != PSA_SUCCESS) {
         return DPE_INTERNAL_ERROR;
     }
 #endif /* DPE_TEST_MODE */

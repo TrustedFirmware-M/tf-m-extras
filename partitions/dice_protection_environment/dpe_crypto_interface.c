@@ -13,6 +13,7 @@
 #include "dpe_crypto_config.h"
 #include "psa/crypto.h"
 #include "tfm_crypto_defs.h"
+#include "dpe_plat.h"
 
 static const char attest_cdi_label[] = DPE_ATTEST_CDI_LABEL;
 static const char exported_attest_cdi_label[] = DPE_ATTEST_EXPORTED_CDI_LABEL;
@@ -316,6 +317,21 @@ psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
                             &cdi_attest_actual_size);
 
     assert(cdi_attest_actual_size == DICE_CDI_SIZE);
+
+    return status;
+}
+
+psa_status_t get_rot_cdi_input(uint8_t rot_cdi_input[DICE_CDI_SIZE], size_t rot_cdi_input_size)
+{
+    psa_status_t status;
+    size_t rot_cdi_input_actual_size;
+
+    status = psa_export_key(dpe_plat_get_rot_cdi_key_id(),
+                            &rot_cdi_input[0],
+                            rot_cdi_input_size,
+                            &rot_cdi_input_actual_size);
+
+    assert(rot_cdi_input_actual_size == DICE_CDI_SIZE);
 
     return status;
 }

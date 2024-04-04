@@ -100,6 +100,16 @@ psa_status_t derive_cdi_id(psa_key_id_t attest_key_id, uint8_t *cdi_id,
 psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
                                  uint8_t cdi_attest_buf[DICE_CDI_SIZE],
                                  uint8_t cdi_seal_buf[DICE_CDI_SIZE]);
+/**
+ * @brief Get the RoT CDI input
+ *
+ * @param[out] rot_cdi_input      Buffer to contain the retrieved RoT CDI key
+ * @param[in]  rot_cdi_input_size Size in bytes of the \a rot_cdi_input buffer
+ *
+ * @return psa_status_t
+ */
+psa_status_t get_rot_cdi_input(uint8_t rot_cdi_input[DICE_CDI_SIZE],
+                               size_t rot_cdi_input_size);
 #ifdef __cplusplus
 }
 #endif
