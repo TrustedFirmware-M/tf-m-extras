@@ -792,6 +792,7 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     dpe_error_t err;
     psa_status_t status;
     struct layer_context_t *parent_layer_ctx, *layer_ctx;
+    struct layer_context_t leaf_layer;
 
     log_certify_key(input_ctx_handle, retain_context, public_key, public_key_size,
                     label, label_size);
@@ -812,34 +813,37 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     assert(input_layer_idx < MAX_NUM_OF_LAYERS);
 
     layer_ctx = &layer_ctx_array[input_layer_idx];
-    if (public_key_size > sizeof(layer_ctx->data.attest_pub_key)) {
+    /* Create leaf layer as copy of input context linked layer */
+    memcpy(&leaf_layer, layer_ctx, sizeof(leaf_layer));
+
+    if (public_key_size > sizeof(leaf_layer.data.attest_pub_key)) {
         return DPE_INVALID_ARGUMENT;
     }
 
     if ((public_key_size > 0) && (public_key != NULL)) {
-        layer_ctx->is_external_pub_key_provided = true;
+        leaf_layer.is_external_pub_key_provided = true;
         /* Copy the public key provided */
-        memcpy(&layer_ctx->data.attest_pub_key[0],
+        memcpy(&leaf_layer.data.attest_pub_key[0],
                public_key,
                public_key_size);
-        layer_ctx->data.attest_pub_key_len = public_key_size;
+        leaf_layer.data.attest_pub_key_len = public_key_size;
 
         /* If public key is provided, then provided label (if any) is ignored */
-        layer_ctx->data.external_key_deriv_label_len = 0;
+        leaf_layer.data.external_key_deriv_label_len = 0;
 
     } else {
         /* No external public key is provided */
-        layer_ctx->is_external_pub_key_provided = false;
+        leaf_layer.is_external_pub_key_provided = false;
 
         if ((label_size > 0) && (label != NULL)) {
             /* Copy the label provided */
-            memcpy(&layer_ctx->data.external_key_deriv_label[0],
+            memcpy(&leaf_layer.data.external_key_deriv_label[0],
                    label,
                    label_size);
-            layer_ctx->data.external_key_deriv_label_len = label_size;
+            leaf_layer.data.external_key_deriv_label_len = label_size;
 
         } else {
-            layer_ctx->data.external_key_deriv_label_len = 0;
+            leaf_layer.data.external_key_deriv_label_len = 0;
         }
     }
 
@@ -847,12 +851,12 @@ dpe_error_t certify_key_request(int input_ctx_handle,
      * derive context command
      */
     /* Create leaf certificate */
-    err = prepare_layer_certificate(layer_ctx);
+    err = prepare_layer_certificate(&leaf_layer);
     if (err != DPE_NO_ERROR) {
         return err;
     }
 
-    err = encode_layer_certificate(layer_ctx,
+    err = encode_layer_certificate(&leaf_layer,
                                    certificate_buf,
                                    certificate_buf_size,
                                    certificate_actual_size);
@@ -861,7 +865,7 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     }
 
     /* Get parent layer derived public key to verify the certificate signature */
-    parent_layer_idx = layer_ctx_array[input_layer_idx].parent_layer_idx;
+    parent_layer_idx = leaf_layer.parent_layer_idx;
     assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
     parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
 
@@ -888,11 +892,6 @@ dpe_error_t certify_key_request(int input_ctx_handle,
         component_ctx_array[input_ctx_idx].nonce = INVALID_NONCE_VALUE;
     }
 
-    /* Clear the context label and key contents */
-    memset(&layer_ctx->data.external_key_deriv_label[0], 0u,
-           layer_ctx->data.external_key_deriv_label_len);
-    memset(&layer_ctx->data.attest_pub_key[0], 0u,
-           layer_ctx->data.attest_pub_key_len);
     log_certify_key_output_handle(*new_context_handle);
     log_intermediate_certificate(input_layer_idx,
                                  certificate_buf,
