@@ -93,6 +93,7 @@ enum layer_state_t {
 
 struct layer_context_t {
     struct layer_context_data_t data;
+    uint16_t idx;
     uint16_t parent_layer_idx;
     uint8_t attest_cdi_hash_input[DPE_HASH_ALG_SIZE];
     enum layer_state_t state;

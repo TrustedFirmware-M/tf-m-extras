@@ -22,14 +22,14 @@ extern "C" {
 /**
  * \brief Encodes and signs the certificate for a layer
  *
- * \param[in]  layer_idx         Index of the current layer context.
+ * \param[in]  layer_ctx         Pointer to certificate layer context.
  * \param[out] cert_buf          Pointer to the output cert buffer.
  * \param[in]  cert_buf_size     Size of the output cert buffer.
  * \param[out] cert_actual_size  Actual size of the final certificate.
  * *
  * \return Returns error code of type dpe_error_t
  */
-dpe_error_t encode_layer_certificate(uint16_t layer_idx,
+dpe_error_t encode_layer_certificate(const struct layer_context_t *layer_ctx,
                                      uint8_t *cert_buf,
                                      size_t cert_buf_size,
                                      size_t *cert_actual_size);
@@ -41,19 +41,19 @@ dpe_error_t encode_layer_certificate(uint16_t layer_idx,
  *
  * \return Returns error code of type dpe_error_t
  */
-dpe_error_t store_layer_certificate(struct layer_context_t *layer_ctx);
+dpe_error_t store_layer_certificate(const struct layer_context_t *layer_ctx);
 
 /**
  * \brief Returns the encoded certificate chain from leaf layer to the RoT layer.
  *
- * \param[in]  layer_idx               Index of the current leaf layer context.
+ * \param[in]  layer_ctx               Pointer to the current leaf layer context.
  * \param[out] cert_chain_buf          Pointer to certificate chain buffer.
  * \param[in]  cert_chain_buf_size     Size of certificate chain buffer.
  * \param[out] cert_chain_actual_size  Actual size of the chain.
  *
  * \return Returns error code of type dpe_error_t
  */
-dpe_error_t get_certificate_chain(uint16_t layer_idx,
+dpe_error_t get_certificate_chain(const struct layer_context_t *layer_ctx,
                                   uint8_t *cert_chain_buf,
                                   size_t cert_chain_buf_size,
                                   size_t *cert_chain_actual_size);

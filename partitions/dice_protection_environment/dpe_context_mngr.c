@@ -80,6 +80,7 @@ static void set_context_to_default(int i)
 
 static void invalidate_layer(int i)
 {
+    layer_ctx_array[i].idx = i;
     layer_ctx_array[i].state = LAYER_STATE_CLOSED;
     layer_ctx_array[i].parent_layer_idx = INVALID_LAYER_IDX;
     layer_ctx_array[i].is_cdi_to_be_exported = false;
@@ -207,7 +208,7 @@ static psa_status_t get_component_data_for_attest_cdi(uint8_t *dest_buf,
     return PSA_SUCCESS;
 }
 
-static psa_status_t compute_layer_cdi_attest_input(uint16_t curr_layer_idx)
+static psa_status_t compute_layer_cdi_attest_input(struct layer_context_t *layer_ctx)
 {
     psa_status_t status;
     uint8_t component_ctx_data[CONTEXT_DATA_MAX_SIZE];
@@ -227,7 +228,7 @@ static psa_status_t compute_layer_cdi_attest_input(uint16_t curr_layer_idx)
      * and hash it.
      */
     for (idx = 0; idx < MAX_NUM_OF_COMPONENTS; idx++) {
-        if (component_ctx_array[idx].linked_layer_idx == curr_layer_idx) {
+        if (component_ctx_array[idx].linked_layer_idx == layer_ctx->idx) {
             /* This component belongs to current layer */
             /* Concatenate all context data for this component */
             status = get_component_data_for_attest_cdi(component_ctx_data,
@@ -248,8 +249,8 @@ static psa_status_t compute_layer_cdi_attest_input(uint16_t curr_layer_idx)
     }
 
     status = psa_hash_finish(&hash_op,
-                             &layer_ctx_array[curr_layer_idx].attest_cdi_hash_input[0],
-                             sizeof(layer_ctx_array[curr_layer_idx].attest_cdi_hash_input),
+                             &layer_ctx->attest_cdi_hash_input[0],
+                             sizeof(layer_ctx->attest_cdi_hash_input),
                              &hash_len);
 
     assert(hash_len == DPE_HASH_ALG_SIZE);
@@ -289,14 +290,14 @@ static dpe_error_t get_encoded_cdi_to_export(struct layer_context_t *layer_ctx,
     return DPE_NO_ERROR;
 }
 
-static dpe_error_t prepare_layer_certificate(uint16_t layer_idx)
+static dpe_error_t prepare_layer_certificate(struct layer_context_t *layer_ctx)
 {
-    uint16_t parent_layer_idx;
+    uint16_t layer_idx, parent_layer_idx;
     psa_status_t status;
-    struct layer_context_t *layer_ctx, *parent_layer_ctx;
+    struct layer_context_t *parent_layer_ctx;
 
+    layer_idx = layer_ctx->idx;
     assert(layer_idx < MAX_NUM_OF_LAYERS);
-    layer_ctx = &layer_ctx_array[layer_idx];
     parent_layer_idx = layer_ctx->parent_layer_idx;
     assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
     parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
@@ -307,7 +308,7 @@ static dpe_error_t prepare_layer_certificate(uint16_t layer_idx)
 
         /* Except for RoT Layer with no external public key supplied */
 
-        status = compute_layer_cdi_attest_input(layer_idx);
+        status = compute_layer_cdi_attest_input(layer_ctx);
         if (status != PSA_SUCCESS) {
             return DPE_INTERNAL_ERROR;
         }
@@ -656,14 +657,14 @@ dpe_error_t derive_context_request(int input_ctx_handle,
 
         /* Finalise the layer */
         layer_ctx->state = LAYER_STATE_FINALISED;
-        err = prepare_layer_certificate(linked_layer_idx);
+        err = prepare_layer_certificate(layer_ctx);
         if (err != DPE_NO_ERROR) {
             return err;
         }
 
         if (return_certificate) {
             /* Encode and return generated layer certificate */
-            err = encode_layer_certificate(linked_layer_idx,
+            err = encode_layer_certificate(layer_ctx,
                                            new_certificate_buf,
                                            new_certificate_buf_size,
                                            new_certificate_actual_size);
@@ -846,12 +847,12 @@ dpe_error_t certify_key_request(int input_ctx_handle,
      * derive context command
      */
     /* Create leaf certificate */
-    err = prepare_layer_certificate(input_layer_idx);
+    err = prepare_layer_certificate(layer_ctx);
     if (err != DPE_NO_ERROR) {
         return err;
     }
 
-    err = encode_layer_certificate(input_layer_idx,
+    err = encode_layer_certificate(layer_ctx,
                                    certificate_buf,
                                    certificate_buf_size,
                                    certificate_actual_size);
@@ -935,7 +936,7 @@ dpe_error_t get_certificate_chain_request(int input_ctx_handle,
         return DPE_INVALID_ARGUMENT;
     }
 
-    err = get_certificate_chain(input_layer_idx,
+    err = get_certificate_chain(layer_ctx,
                                 certificate_chain_buf,
                                 certificate_chain_buf_size,
                                 certificate_chain_actual_size);

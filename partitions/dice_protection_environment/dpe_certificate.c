@@ -115,7 +115,7 @@ static void add_label_claim(QCBOREncodeContext *cbor_enc_ctx,
 }
 
 static void add_cdi_export_claim(QCBOREncodeContext *cbor_enc_ctx,
-                                 struct layer_context_t *layer_ctx)
+                                 const struct layer_context_t *layer_ctx)
 {
     QCBOREncode_AddBoolToMapN(cbor_enc_ctx,
                               DPE_CERT_LABEL_CDI_EXPORT,
@@ -123,7 +123,7 @@ static void add_cdi_export_claim(QCBOREncodeContext *cbor_enc_ctx,
 }
 
 static void add_subject_claim(QCBOREncodeContext *cbor_enc_ctx,
-                              struct layer_context_t *layer_ctx)
+                              const struct layer_context_t *layer_ctx)
 {
     char cdi_id_hex[ID_HEX_SIZE];
 
@@ -397,14 +397,14 @@ static dpe_error_t add_issuer_claim(QCBOREncodeContext *cbor_enc_ctx,
     return DPE_NO_ERROR;
 }
 
-static dpe_error_t encode_layer_certificate_internal(uint16_t layer_idx,
+static dpe_error_t encode_layer_certificate_internal(const struct layer_context_t *layer_ctx,
                                                      QCBOREncodeContext *cbor_enc_ctx,
                                                      bool finish_cbor_encoding,
                                                      size_t *cert_actual_size)
 {
     struct t_cose_sign1_sign_ctx signer_ctx;
-    struct layer_context_t *layer_ctx, *parent_layer_ctx;
-    uint16_t parent_layer_idx;
+    struct layer_context_t *parent_layer_ctx;
+    uint16_t parent_layer_idx, layer_idx;
     dpe_error_t err;
     UsefulBufC completed_cert;
     psa_key_id_t attest_key_id;
@@ -412,9 +412,8 @@ static dpe_error_t encode_layer_certificate_internal(uint16_t layer_idx,
     /* Valid options: true & !NULL OR false & NULL */
     assert(finish_cbor_encoding ^ (cert_actual_size == NULL));
 
+    layer_idx = layer_ctx->idx;
     assert(layer_idx < MAX_NUM_OF_LAYERS);
-    layer_ctx = get_layer_ctx_ptr(layer_idx);
-
     parent_layer_idx = layer_ctx->parent_layer_idx;
     assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
     parent_layer_ctx = get_layer_ctx_ptr(parent_layer_idx);
@@ -492,7 +491,7 @@ static dpe_error_t encode_layer_certificate_internal(uint16_t layer_idx,
     return err;
 }
 
-dpe_error_t encode_layer_certificate(uint16_t layer_idx,
+dpe_error_t encode_layer_certificate(const struct layer_context_t *layer_ctx,
                                      uint8_t *cert_buf,
                                      size_t cert_buf_size,
                                      size_t *cert_actual_size)
@@ -504,11 +503,11 @@ dpe_error_t encode_layer_certificate(uint16_t layer_idx,
                                   cert_buf_size });
 
     /* Only a single certificate is encoded */
-    return encode_layer_certificate_internal(layer_idx, &cbor_enc_ctx,
+    return encode_layer_certificate_internal(layer_ctx, &cbor_enc_ctx,
                                              true, cert_actual_size);
 }
 
-dpe_error_t store_layer_certificate(struct layer_context_t *layer_ctx)
+dpe_error_t store_layer_certificate(const struct layer_context_t *layer_ctx)
 {
     //TODO:
     (void)layer_ctx;
@@ -569,17 +568,17 @@ static dpe_error_t add_root_attestation_public_key(QCBOREncodeContext *cbor_enc_
     return DPE_NO_ERROR;
 }
 
-dpe_error_t get_certificate_chain(uint16_t layer_idx,
+dpe_error_t get_certificate_chain(const struct layer_context_t *layer_ctx,
                                   uint8_t *cert_chain_buf,
                                   size_t cert_chain_buf_size,
                                   size_t *cert_chain_actual_size)
 {
-    struct layer_context_t *layer_ctx;
     QCBOREncodeContext cbor_enc_ctx;
     dpe_error_t err;
     int i;
     uint16_t layer_chain[MAX_NUM_OF_LAYERS];
     uint16_t layer_cnt = 0;
+    uint16_t layer_idx = layer_ctx->idx;
 
     open_certificate_chain(&cbor_enc_ctx,
                            cert_chain_buf,
@@ -612,8 +611,9 @@ dpe_error_t get_certificate_chain(uint16_t layer_idx,
 
     /* Add certificate from RoT to leaf layer order */
     while (i >= DPE_ROT_LAYER_IDX) {
+        layer_ctx = get_layer_ctx_ptr(layer_chain[i]);
         /* Might multiple certificate is encoded */
-        err = encode_layer_certificate_internal(layer_chain[i], &cbor_enc_ctx,
+        err = encode_layer_certificate_internal(layer_ctx, &cbor_enc_ctx,
                                                 false, NULL);
         if (err != DPE_NO_ERROR) {
             return err;
