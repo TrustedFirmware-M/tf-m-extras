@@ -2,6 +2,11 @@
 Readme
 ######
 
+.. toctree::
+    :maxdepth: 1
+
+    DMA-350 privilege separation <dma350_privilege_separation>
+
 TF-M application root of trust partition example for the unprivileged DMA-350
 library. It is expected to be used in Isolation Level 2, as the unprivileged API
 checks the access rights based on the MPU configuration.

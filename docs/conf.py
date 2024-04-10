@@ -13,7 +13,6 @@
 # http://www.sphinx-doc.org/en/master/config
 
 import os
-import sys
 import re
 from subprocess import check_output
 
@@ -91,9 +90,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'readme.rst',
-                    'platform/cypress/psoc64/security/keys/readme.rst',
-                    'lib/ext/**']
+exclude_patterns = ['_build', 'Thumbs.db', 'readme.rst']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'

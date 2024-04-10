@@ -2,6 +2,11 @@
 ADAC (Authenticated Debug Access Control)
 #########################################
 
+.. toctree::
+    :maxdepth: 1
+
+    ADAC Implementation for RSE <adac_impl_for_rse>
+
 ************
 Introduction
 ************
