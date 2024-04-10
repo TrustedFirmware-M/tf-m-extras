@@ -364,7 +364,7 @@ static psa_status_t register_pub_key(UsefulBufC pub_key,
     return psa_err;
 }
 
-static inline psa_status_t unregister_pub_key(psa_key_id_t pub_key_id)
+inline psa_status_t unregister_pub_key(psa_key_id_t pub_key_id)
 {
     psa_status_t psa_err;
 
@@ -402,7 +402,8 @@ static psa_status_t update_public_key(UsefulBufC pub_key,
  *
  */
 int verify_certificate_chain(UsefulBufC cert_chain_buf,
-                             struct certificate_chain *cert_chain)
+                             struct certificate_chain *cert_chain,
+                             psa_key_id_t *last_pub_key_id)
 {
     int i, err;
     QCBORError qcbor_err;
@@ -472,10 +473,14 @@ int verify_certificate_chain(UsefulBufC cert_chain_buf,
         }
     }
 
-    /* The last pub_key won't be used for verification */
-    psa_err = unregister_pub_key(pub_key_id);
-    if (psa_err != PSA_SUCCESS) {
-        return -3;
+    /* The last pub_key might not used for verification */
+    if (last_pub_key_id == NULL) {
+        psa_err = unregister_pub_key(pub_key_id);
+        if (psa_err != PSA_SUCCESS) {
+            return -3;
+        }
+    } else {
+        *last_pub_key_id = pub_key_id;
     }
 
     QCBORDecode_ExitArray(&decode_ctx);

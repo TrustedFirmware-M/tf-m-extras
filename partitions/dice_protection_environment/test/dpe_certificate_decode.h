@@ -63,7 +63,10 @@ int verify_certificate(UsefulBufC cert_buf,
                        struct certificate *cert);
 
 int verify_certificate_chain(UsefulBufC cert_chain_buf,
-                             struct certificate_chain *cert_chain);
+                             struct certificate_chain *cert_chain,
+                             psa_key_id_t *last_pub_key_id);
+
+psa_status_t unregister_pub_key(psa_key_id_t pub_key_id);
 
 #ifdef __cplusplus
 }

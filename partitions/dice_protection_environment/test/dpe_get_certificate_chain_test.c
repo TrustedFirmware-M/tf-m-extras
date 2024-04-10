@@ -137,7 +137,7 @@ void get_certificate_chain_test(struct test_result_t *ret)
     cert_chain_buf = (UsefulBufC){ certificate_chain_buf,
                                    certificate_chain_actual_size };
 
-    err = verify_certificate_chain(cert_chain_buf, &cert_chain);
+    err = verify_certificate_chain(cert_chain_buf, &cert_chain, NULL);
     if (err) {
         TEST_FAIL("DPE certificate chain verification failed");
         return;
