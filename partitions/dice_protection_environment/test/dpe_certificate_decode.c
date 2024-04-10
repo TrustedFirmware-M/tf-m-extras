@@ -132,12 +132,58 @@ static QCBORError get_next_certificate(QCBORDecodeContext *decode_ctx,
     return QCBOR_SUCCESS;
 }
 
+static QCBORError decode_sw_components(QCBORDecodeContext *decode_ctx,
+                                       struct certificate *cert)
+{
+    QCBORError qcbor_err;
+    QCBORItem item;
+    struct component *curr_component;
+
+    QCBORDecode_EnterArrayFromMapN(decode_ctx, DPE_CERT_LABEL_SW_COMPONENTS);
+
+    while (true) {
+        QCBORDecode_VPeekNext(decode_ctx, &item);
+
+        qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
+        if (qcbor_err == QCBOR_ERR_NO_MORE_ITEMS) {
+            /* Reached the end of the array, all item was consumed */
+            break;
+        } else if (qcbor_err != QCBOR_SUCCESS) {
+            return qcbor_err;
+        }
+
+        QCBORDecode_EnterMap(decode_ctx, NULL);
+
+        assert(cert->component_cnt < MAX_SW_COMPONENT_NUM);
+        curr_component = &cert->component_arr[cert->component_cnt];
+
+        QCBORDecode_GetByteStringInMapN(decode_ctx,
+                                        DPE_CERT_LABEL_CODE_HASH,
+                                        &curr_component->code_hash);
+
+        QCBORDecode_GetByteStringInMapN(decode_ctx,
+                                        DPE_CERT_LABEL_AUTHORITY_HASH,
+                                        &curr_component->authority_hash);
+
+        QCBORDecode_GetByteStringInMapN(decode_ctx,
+                                        DPE_CERT_LABEL_CODE_DESCRIPTOR,
+                                        &curr_component->code_descriptor);
+
+        QCBORDecode_ExitMap(decode_ctx);
+
+        /* Variable number of components can be encoded into a single cert */
+        cert->component_cnt++;
+    }
+
+    QCBORDecode_ExitArray(decode_ctx);
+
+    return QCBOR_SUCCESS;
+}
+
 static QCBORError decode_payload(QCBORDecodeContext *decode_ctx,
                                  struct certificate *cert)
 {
-     QCBORError qcbor_err = QCBOR_SUCCESS;
-     QCBORItem item;
-     struct component *curr_component;
+    QCBORError qcbor_err;
 
     QCBORDecode_EnterBstrWrapped(decode_ctx, QCBOR_TAG_REQUIREMENT_NOT_A_TAG, NULL);
 
@@ -186,52 +232,10 @@ static QCBORError decode_payload(QCBORDecodeContext *decode_ctx,
     }
 
     /* Continue with the SW_COMPONENTS array */
-    QCBORDecode_EnterArrayFromMapN(decode_ctx, DPE_CERT_LABEL_SW_COMPONENTS);
-
-    while (true) {
-        QCBORDecode_VPeekNext(decode_ctx, &item);
-
-        qcbor_err = QCBORDecode_GetAndResetError(decode_ctx);
-        if (qcbor_err == QCBOR_ERR_NO_MORE_ITEMS) {
-            /* Reached the end of the array, all item was consumed */
-            break;
-        } else if (qcbor_err != QCBOR_SUCCESS) {
-            return qcbor_err;
-        }
-
-        QCBORDecode_EnterMap(decode_ctx, NULL);
-
-        assert(cert->component_cnt < MAX_SW_COMPONENT_NUM);
-        curr_component = &cert->component_arr[cert->component_cnt];
-
-        QCBORDecode_GetByteStringInMapN(decode_ctx,
-                                        DPE_CERT_LABEL_CODE_HASH,
-                                        &curr_component->code_hash);
-
-        QCBORDecode_GetByteStringInMapN(decode_ctx,
-                                        DPE_CERT_LABEL_AUTHORITY_HASH,
-                                        &curr_component->authority_hash);
-
-        QCBORDecode_GetByteStringInMapN(decode_ctx,
-                                        DPE_CERT_LABEL_CODE_DESCRIPTOR,
-                                        &curr_component->code_descriptor);
-
-        QCBORDecode_ExitMap(decode_ctx);
-
-        /* Variable number of components can be encoded into a single cert */
-        cert->component_cnt++;
+    qcbor_err = decode_sw_components(decode_ctx, cert);
+    if (qcbor_err != QCBOR_SUCCESS) {
+        return qcbor_err;
     }
-
-    if (cert->component_cnt == 0) {
-        /* There is no SW component in the array */
-        return QCBOR_ERR_LABEL_NOT_FOUND;
-    }
-
-    QCBORDecode_ExitArray(decode_ctx);
-
-    QCBORDecode_GetByteStringInMapN(decode_ctx,
-                                    DPE_CERT_LABEL_SUBJECT_PUBLIC_KEY,
-                                    &cert->pub_key);
 
     QCBORDecode_ExitMap(decode_ctx);
     QCBORDecode_ExitBstrWrapped(decode_ctx);
