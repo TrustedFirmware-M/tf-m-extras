@@ -2,6 +2,12 @@
 Non-Secure DMA350 example for FreeRTOS
 ######################################
 
+.. toctree::
+  :maxdepth: 1
+  :titlesonly:
+
+  DMA-350 Triggering interface <triggering_example>
+
 FreeRTOS example to demonstrate the DMA-350 privileged and unprivileged APIs.
 The privileged task demonstrates a way of using of command linking feature.
 The unprivileged task demonstrates the usage of the unprivileged DMA API through

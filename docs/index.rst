@@ -88,7 +88,6 @@ Additional requirements
 
 .. toctree::
   :caption: Links
-  :maxdepth: 1
   :hidden:
 
   Trusted Firmware-M <https://trustedfirmware-m.readthedocs.io/en/latest/>
