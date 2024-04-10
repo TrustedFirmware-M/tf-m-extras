@@ -172,12 +172,20 @@ void derive_context_with_parent_leaf_component_test(struct test_result_t *ret);
 void derive_context_without_optional_args_test(struct test_result_t *ret);
 
 /**
- * \brief Test the DPE CertifyKey functionality.
+ * \brief Test the DPE CertifyKey with finalized layers.
  *        Note: this test will create context(s) which cannot be destroyed.
  *
  * \param[out] ret  Test result
  */
-void certify_key_core_functionality_test(struct test_result_t *ret);
+void certify_key_core_functionality_test_01(struct test_result_t *ret);
+
+/**
+ * \brief Test the DPE CertifyKey with unfinished layer.
+ *        Note: this test will create context(s) which cannot be destroyed.
+ *
+ * \param[out] ret  Test result
+ */
+void certify_key_core_functionality_test_02(struct test_result_t *ret);
 
 /**
  * \brief Test the DPE CertifyKey with invalid handle.

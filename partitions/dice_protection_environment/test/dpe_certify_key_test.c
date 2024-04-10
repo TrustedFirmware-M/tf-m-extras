@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include "dice_protection_environment.h"
+#include "dpe_certificate_decode.h"
 #include "dpe_test.h"
 #include "dpe_test_data.h"
 
@@ -32,22 +33,19 @@ extern struct dpe_derive_context_test_data_t
               derive_context_test_dataset_2;
 extern int retained_rot_ctx_handle;
 
-static void call_certify_key_with_test_data(
+static void call_derive_context_with_test_data(
                         struct test_result_t *ret,
                         struct dpe_derive_context_test_data_t *test_data,
-                        int test_count)
+                        int test_count,
+                        int *saved_handles,
+                        int *saved_handles_cnt,
+                        int *out_ctx_handle)
 {
     dpe_error_t dpe_err;
-    int in_handle, out_ctx_handle, out_parent_handle, new_context_handle;
+    int in_handle, out_parent_handle;
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
-    int saved_handles_cnt, i, j;
-    uint8_t certificate_buf[DICE_CERT_SIZE];
-    size_t certificate_actual_size;
-    uint8_t derived_public_key_buf[DPE_ATTEST_PUB_KEY_SIZE];
-    size_t derived_public_key_actual_size;
-    int saved_handles[MAX_NUM_OF_COMPONENTS] = {0};
+    int i, j;
 
-    saved_handles_cnt = 0;
     in_handle = retained_rot_ctx_handle;
 
     for (i = 0; i < test_count; i++, test_data++) {
@@ -62,7 +60,7 @@ static void call_certify_key_with_test_data(
                                      false,                     /* return_certificate */
                                      true,                      /* allow_new_context_to_export */
                                      false,                     /* export_cdi */
-                                     &out_ctx_handle,           /* new_context_handle */
+                                     out_ctx_handle,            /* new_context_handle */
                                      &out_parent_handle,        /* new_parent_context_handle */
                                      NULL,                      /* new_certificate_buf */
                                      0,                         /* new_certificate_buf_size */
@@ -76,8 +74,8 @@ static void call_certify_key_with_test_data(
             return;
         }
 
-        if ((GET_IDX(out_ctx_handle) == GET_IDX(out_parent_handle)) &&
-            (out_ctx_handle != INVALID_HANDLE)) {
+        if ((GET_IDX(*out_ctx_handle) == GET_IDX(out_parent_handle)) &&
+            (*out_ctx_handle != INVALID_HANDLE)) {
             TEST_FAIL("DPE DeriveContext core test failed,"
                       "Derived & parent handle cannot share same component");
             return;
@@ -90,7 +88,7 @@ static void call_certify_key_with_test_data(
         }
 
         if (test_data->inputs.retain_parent_context) {
-            for (j = 0; j < saved_handles_cnt; j++) {
+            for (j = 0; j < *saved_handles_cnt; j++) {
                 if(GET_IDX(out_parent_handle) ==  GET_IDX(saved_handles[j])) {
                     saved_handles[j] = out_parent_handle;
                 }
@@ -98,19 +96,78 @@ static void call_certify_key_with_test_data(
         }
 
         if (test_data->inputs.allow_new_context_to_derive) {
-            saved_handles[saved_handles_cnt++] = out_ctx_handle;
+            saved_handles[(*saved_handles_cnt)++] = *out_ctx_handle;
         }
 
         /* Update the input handle for next iteration */
         if (test_data->inputs.use_parent_handle) {
             in_handle = out_parent_handle;
         } else {
-            in_handle = out_ctx_handle;
+            in_handle = *out_ctx_handle;
+        }
+    }
+}
+
+static void get_and_verify_certificate_chain(
+                        struct test_result_t *ret,
+                        int in_handle,
+                        psa_key_id_t *pub_key_id,
+                        int *saved_handles,
+                        int *saved_handles_cnt,
+                        int *out_ctx_handle)
+{
+    uint8_t certificate_buf[1650];
+    size_t certificate_actual_size;
+    UsefulBufC cert_chain_buf;
+    dpe_error_t dpe_err;
+    struct certificate_chain cert_chain = {0};
+    int err, i;
+
+    dpe_err = dpe_get_certificate_chain(in_handle,
+                                        true, /* retain_context */
+                                        false, /* clear_from_context */
+                                        certificate_buf,
+                                        sizeof(certificate_buf),
+                                        &certificate_actual_size,
+                                        out_ctx_handle);
+
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE GetCertificateChain call failed");
+        return;
+    }
+
+    /* Update renewed output handle from GetCertificateChain command */
+    for (i = 0; i < *saved_handles_cnt; i++) {
+        if (GET_IDX(*out_ctx_handle) == GET_IDX(saved_handles[i])) {
+            saved_handles[i] = *out_ctx_handle;
         }
     }
 
-    /* Use the last derived context handle for CertifyKey call */
-    in_handle = out_ctx_handle;
+    cert_chain_buf = (UsefulBufC){ certificate_buf,
+                                   certificate_actual_size };
+
+    err = verify_certificate_chain(cert_chain_buf, &cert_chain, pub_key_id);
+    if (err) {
+        TEST_FAIL("DPE certificate chain verification failed");
+        return;
+    }
+}
+
+static void get_and_verify_leaf_certificate(
+                        struct test_result_t *ret,
+                        int in_handle,
+                        psa_key_id_t pub_key_id,
+                        int *saved_handles,
+                        int *saved_handles_cnt)
+{
+    uint8_t certificate_buf[1650];
+    size_t certificate_actual_size;
+    uint8_t derived_public_key_buf[DPE_ATTEST_PUB_KEY_SIZE];
+    size_t derived_public_key_actual_size;
+    UsefulBufC cert_buf;
+    int new_context_handle, err, i;
+    dpe_error_t dpe_err;
+    struct certificate cert = {0};
 
     dpe_err = dpe_certify_key(in_handle,                        /* input_ctx_handle */
                               true,                             /* retain_context/ */
@@ -136,13 +193,75 @@ static void call_certify_key_with_test_data(
     }
 
     /* Update renewed output handle from CertifyKey command */
-    for (i = 0; i < saved_handles_cnt; i++) {
+    for (i = 0; i < *saved_handles_cnt; i++) {
         if (GET_IDX(new_context_handle) == GET_IDX(saved_handles[i])) {
             saved_handles[i] = new_context_handle;
         }
     }
 
-    //TODO: Verify the output certificate
+    cert_buf = (UsefulBufC){ certificate_buf,
+                             certificate_actual_size };
+    err = verify_certificate(cert_buf, pub_key_id, &cert);
+    if (err) {
+        TEST_FAIL("DPE certificate chain verification failed");
+        return;
+    }
+
+    err = unregister_pub_key(pub_key_id);
+    if (err) {
+        TEST_FAIL("DPE public key unregistration failed");
+        return;
+    }
+}
+
+/*
+ * Test with finalized layer:
+ *   - Build up the certificate chain based on derive_context_test_dataset_1.
+ *   - Query the certificate chain and verify it. Get a reference to the
+ *     public key in the last certificate.
+ *   - Send a CertifyKey command to get a leaf certificate and verify it
+ *     with the held reference to the public key coming from the last
+ *     certificate.
+ */
+void certify_key_core_functionality_test_01(struct test_result_t *ret)
+{
+    dpe_error_t dpe_err;
+    psa_key_id_t pub_key_id;
+    int in_handle, out_ctx_handle;
+    int i, saved_handles_cnt = 0;
+    int saved_handles[MAX_NUM_OF_COMPONENTS] = {0};
+
+    call_derive_context_with_test_data(
+            ret,
+            &derive_context_test_dataset_1[0],
+            DERIVE_CONTEXT_TEST_DATA1_SIZE,
+            saved_handles,
+            &saved_handles_cnt,
+            &out_ctx_handle);
+    if (ret->val != TEST_PASSED) {
+        return;
+    }
+
+    in_handle = out_ctx_handle;
+    get_and_verify_certificate_chain(ret,
+                                     in_handle,
+                                     &pub_key_id,
+                                     saved_handles,
+                                     &saved_handles_cnt,
+                                     &out_ctx_handle);
+    if (ret->val != TEST_PASSED) {
+        return;
+    }
+
+    in_handle = out_ctx_handle;
+    get_and_verify_leaf_certificate(ret,
+                                    in_handle,
+                                    pub_key_id,
+                                    saved_handles,
+                                    &saved_handles_cnt);
+    if (ret->val != TEST_PASSED) {
+        return;
+    }
 
     /* Destroy the saved contexts for the subsequent test */
     for (i = 0; i < saved_handles_cnt; i++) {
@@ -156,17 +275,69 @@ static void call_certify_key_with_test_data(
     ret->val = TEST_PASSED;
 }
 
-void certify_key_core_functionality_test(struct test_result_t *ret)
+/*
+ * Test with unfinished layer:
+ *   - Query the certificate chain, contains only the RoT certificate, and
+ *     verify it. Get a reference to the public key in the last certificate.
+ *   - Build up the certificate chain based on derive_context_test_dataset_2.
+ *   - Send a CertifyKey command to get a leaf certificate and verify it
+ *     with the held reference to the public key coming from the last
+ *     certificate.
+ */
+void certify_key_core_functionality_test_02(struct test_result_t *ret)
 {
-    call_certify_key_with_test_data(
-            ret,
-            &derive_context_test_dataset_1[0],
-            sizeof(derive_context_test_dataset_1)/sizeof(derive_context_test_dataset_1[0]));
+    dpe_error_t dpe_err;
+    psa_key_id_t pub_key_id;
+    int in_handle, out_ctx_handle;
+    int i, saved_handles_cnt = 0;
+    int saved_handles[MAX_NUM_OF_COMPONENTS] = {0};
 
-    call_certify_key_with_test_data(
+    saved_handles_cnt = 0;
+    in_handle = retained_rot_ctx_handle;
+    get_and_verify_certificate_chain(ret,
+                                     in_handle,
+                                     &pub_key_id,
+                                     saved_handles,
+                                     &saved_handles_cnt,
+                                     &out_ctx_handle);
+    if (ret->val != TEST_PASSED) {
+        return;
+    }
+
+    retained_rot_ctx_handle = out_ctx_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
+
+    call_derive_context_with_test_data(
             ret,
             &derive_context_test_dataset_2,
-            DERIVE_CONTEXT_TEST_DATA2_SIZE);
+            DERIVE_CONTEXT_TEST_DATA2_SIZE,
+            saved_handles,
+            &saved_handles_cnt,
+            &out_ctx_handle);
+    if (ret->val != TEST_PASSED) {
+        return;
+    }
+
+    in_handle = out_ctx_handle;
+    get_and_verify_leaf_certificate(ret,
+                                    in_handle,
+                                    pub_key_id,
+                                    saved_handles,
+                                    &saved_handles_cnt);
+    if (ret->val != TEST_PASSED) {
+        return;
+    }
+
+    /* Destroy the saved contexts for the subsequent test */
+    for (i = 0; i < saved_handles_cnt; i++) {
+        dpe_err = dpe_destroy_context(saved_handles[i], false);
+        if (dpe_err != DPE_NO_ERROR) {
+            TEST_FAIL("DPE DestroyContext call failed");
+            return;
+        }
+    }
+
+    ret->val = TEST_PASSED;
 }
 
 void certify_key_api_test(struct test_result_t *ret)
