@@ -689,7 +689,7 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     /* Log context and layer info and certificate if no error */
     log_dpe_component_ctx_metadata(derived_ctx, free_component_idx);
     log_dpe_layer_metadata(layer_ctx, linked_layer_idx);
-    if (create_certificate) {
+    if (return_certificate) {
         log_intermediate_certificate(linked_layer_idx,
                                      new_certificate_buf,
                                      *new_certificate_actual_size);
