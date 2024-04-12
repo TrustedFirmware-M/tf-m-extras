@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2023, Arm Limited. All rights reserved.
+# Copyright (c) 2023-2024, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -50,7 +50,7 @@ target_include_directories(tfm_app_rot_partition_dpe
 
 target_compile_definitions(tfm_app_rot_partition_dpe
     PRIVATE
-        $<$<BOOL:${TFM_S_REG_TEST}>:DPE_TEST_MODE>
+        $<$<OR:$<BOOL:${TFM_S_REG_TEST}>,$<BOOL:${TFM_NS_REG_TEST}>>:DPE_TEST_MODE>
 )
 
 target_link_libraries(tfm_app_rot_partition_dpe
@@ -80,26 +80,6 @@ target_link_libraries(tfm_sprt
         qcbor
 )
 
-############################ Non-secure API ####################################
-
-add_library(dpe_api_ns INTERFACE)
-
-target_sources(dpe_api_ns
-    INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/interface/src/dpe_cmd_encode.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/interface/src/dpe_client.c
-)
-
-target_include_directories(dpe_api_ns
-    INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/interface/include
-)
-
-target_link_libraries(dpe_api_ns
-    INTERFACE
-        tfm_qcbor_ns
-)
-
 ############################ Partition Defs ####################################
 
 target_link_libraries(tfm_partitions
@@ -116,6 +96,5 @@ install(FILES       ${CMAKE_CURRENT_SOURCE_DIR}/interface/src/dpe_cmd_encode.c
                     ${CMAKE_CURRENT_SOURCE_DIR}/interface/src/dpe_client.c
         DESTINATION ${INSTALL_INTERFACE_SRC_DIR})
 
-install(FILES       ${CMAKE_CURRENT_SOURCE_DIR}/interface/include/dice_protection_environment.h
-                    ${CMAKE_CURRENT_SOURCE_DIR}/interface/include/dpe_client.h
+install(DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}/interface/include/
         DESTINATION ${INSTALL_INTERFACE_INC_DIR})
