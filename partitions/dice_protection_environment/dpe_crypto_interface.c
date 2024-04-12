@@ -163,24 +163,6 @@ psa_status_t derive_attestation_key(struct layer_context_t *layer_ctx)
                                  &layer_ctx->data.attest_pub_key_len);
 }
 
-psa_status_t create_layer_cdi_key(struct layer_context_t *layer_ctx,
-                                  const uint8_t *cdi_input,
-                                  size_t cdi_input_size)
-{
-    psa_key_attributes_t base_attributes = PSA_KEY_ATTRIBUTES_INIT;
-
-    /* Set key attributes for CDI key */
-    psa_set_key_type(&base_attributes, DPE_CDI_KEY_TYPE);
-    psa_set_key_algorithm(&base_attributes, DPE_CDI_KEY_ALG);
-    psa_set_key_bits(&base_attributes, DPE_CDI_KEY_BITS);
-    psa_set_key_usage_flags(&base_attributes, DPE_CDI_KEY_USAGE);
-
-    return psa_import_key(&base_attributes,
-                          cdi_input,
-                          cdi_input_size,
-                          &layer_ctx->data.cdi_key_id);
-}
-
 psa_status_t derive_sealing_cdi(struct layer_context_t *layer_ctx)
 {
     //TODO:
@@ -317,21 +299,6 @@ psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
                             &cdi_attest_actual_size);
 
     assert(cdi_attest_actual_size == DICE_CDI_SIZE);
-
-    return status;
-}
-
-psa_status_t get_rot_cdi_input(uint8_t rot_cdi_input[DICE_CDI_SIZE], size_t rot_cdi_input_size)
-{
-    psa_status_t status;
-    size_t rot_cdi_input_actual_size;
-
-    status = psa_export_key(dpe_plat_get_rot_cdi_key_id(),
-                            &rot_cdi_input[0],
-                            rot_cdi_input_size,
-                            &rot_cdi_input_actual_size);
-
-    assert(rot_cdi_input_actual_size == DICE_CDI_SIZE);
 
     return status;
 }

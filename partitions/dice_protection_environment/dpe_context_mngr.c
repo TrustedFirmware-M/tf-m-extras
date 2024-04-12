@@ -17,15 +17,6 @@
 #include "dpe_plat.h"
 #include "psa/crypto.h"
 
-#ifdef DPE_TEST_MODE
-#define TEST_ROT_CDI_VAL {                                                  \
-                            0xD2, 0x90, 0x66, 0x07, 0x2A, 0x2D, 0x2A, 0x00, \
-                            0x91, 0x9D, 0xD9, 0x15, 0x14, 0xBE, 0x2D, 0xCC, \
-                            0xA3, 0x9F, 0xDE, 0xC3, 0x35, 0x75, 0x84, 0x6E, \
-                            0x4C, 0xB9, 0x28, 0xAC, 0x7A, 0x4E, 0X00, 0x7F  \
-                         }
-#endif /* DPE_TEST_MODE */
-
 #define CONTEXT_DATA_MAX_SIZE sizeof(struct component_context_data_t)
 
 static struct component_context_t component_ctx_array[MAX_NUM_OF_COMPONENTS];
@@ -117,7 +108,7 @@ static void set_context_to_default(int i)
     /* Allow component to be derived by default */
 }
 
-static void invalidate_layer(int i)
+static void initialise_layer(int i)
 {
     int j;
 
@@ -129,13 +120,19 @@ static void invalidate_layer(int i)
     layer_ctx_array[i].cert_id = DPE_CERT_ID_INVALID;
     (void)memset(&layer_ctx_array[i].attest_cdi_hash_input, 0,
                  sizeof(layer_ctx_array[i].attest_cdi_hash_input));
-    (void)psa_destroy_key(layer_ctx_array[i].data.cdi_key_id);
-    (void)psa_destroy_key(layer_ctx_array[i].data.attest_key_id);
     (void)memset(&layer_ctx_array[i].data, 0, sizeof(struct layer_context_data_t));
+    layer_ctx_array[i].data.cdi_key_id = PSA_KEY_ID_NULL;
+    layer_ctx_array[i].data.attest_key_id = PSA_KEY_ID_NULL;
     layer_ctx_array[i].linked_components.count = 0;
     for (j = 0; j < ARRAY_SIZE(layer_ctx_array[i].linked_components.idx); j++) {
         layer_ctx_array[i].linked_components.idx[j] = INVALID_COMPONENT_IDX;
     }
+}
+
+static void close_layer(int i)
+{
+    destroy_layer_keys(&layer_ctx_array[i]);
+    initialise_layer(i);
 }
 
 static dpe_error_t copy_dice_input(struct component_context_t *dest_ctx,
@@ -495,35 +492,14 @@ static dpe_error_t assign_layer_to_context(struct component_context_t *new_ctx,
  */
 static dpe_error_t create_rot_context(int *rot_ctx_handle)
 {
-#ifdef DPE_TEST_MODE
-    uint8_t rot_cdi_input[DICE_CDI_SIZE] = TEST_ROT_CDI_VAL;
-#else
-    uint8_t rot_cdi_input[DICE_CDI_SIZE];
-#endif /* DPE_TEST_MODE */
-    psa_status_t status;
     struct component_context_t *rot_comp_ctx = &component_ctx_array[0];
     struct layer_context_t *rot_layer_ctx = &layer_ctx_array[DPE_ROT_LAYER_IDX];
 
     rot_layer_ctx->is_rot_layer = true;
     /* Parent layer for RoT context's layer is same */
     rot_layer_ctx->parent_layer_idx = DPE_ROT_LAYER_IDX;
-
-#ifndef DPE_TEST_MODE
-    /* Get the RoT CDI input for the RoT layer */
-    status = get_rot_cdi_input(&rot_cdi_input[0], sizeof(rot_cdi_input));
-    if (status != PSA_SUCCESS) {
-        return DPE_INTERNAL_ERROR;
-    }
-#endif /* DPE_TEST_MODE */
-
-    /* Import the CDI key for the RoT layer */
-    status = create_layer_cdi_key(&layer_ctx_array[DPE_ROT_LAYER_IDX],
-                                  &rot_cdi_input[0],
-                                  sizeof(rot_cdi_input));
-    if (status != PSA_SUCCESS) {
-        return DPE_INTERNAL_ERROR;
-    }
-
+    /* Get the RoT CDI key for the RoT layer */
+    rot_layer_ctx->data.cdi_key_id = dpe_plat_get_rot_cdi_key_id();
     /* Init RoT context, ready to be derived in next call to DeriveContext */
     rot_comp_ctx->nonce = 0;
     /* Parent component index for derived RoT context is same */
@@ -545,7 +521,7 @@ dpe_error_t initialise_context_mngr(int *rot_ctx_handle)
     }
 
     for (i = 0; i < MAX_NUM_OF_LAYERS; i++) {
-        invalidate_layer(i);
+        initialise_layer(i);
     }
 
     return create_rot_context(rot_ctx_handle);
@@ -580,17 +556,6 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     log_derive_context(input_ctx_handle, cert_id, retain_parent_context,
                        allow_new_context_to_derive, create_certificate, dice_inputs,
                        client_id);
-
-#ifdef DPE_TEST_MODE
-    if ((input_ctx_handle == 0) &&
-        (layer_ctx_array[DPE_ROT_LAYER_IDX].state != LAYER_STATE_FINALISED)) {
-        /* Deriving RoT context for tests */
-        err = create_rot_context(&input_ctx_handle);
-        if (err != DPE_NO_ERROR) {
-            return err;
-        }
-    }
-#endif /* DPE_TEST_MODE */
 
     if (export_cdi && !create_certificate) {
         return DPE_INVALID_ARGUMENT;
@@ -797,7 +762,7 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
     }
 
     if (is_layer_empty) {
-        invalidate_layer(linked_layer_idx);
+        close_layer(linked_layer_idx);
     }
 
     return DPE_NO_ERROR;

@@ -27,19 +27,6 @@ extern "C" {
 psa_status_t derive_attestation_key(struct layer_context_t *layer_ctx);
 
 /**
- * \brief Creates a layer's CDI key from input.
- *
- * \param[in] layer_ctx       Pointer to layer context.
- * \param[in] cdi_input       Pointer to the input buffer.
- * \param[in] cdi_input_size  Size of the input buffer.
- *
- * \return Returns error code as specified in \ref psa_status_t
- */
-psa_status_t create_layer_cdi_key(struct layer_context_t *layer_ctx,
-                                  const uint8_t *cdi_input,
-                                  size_t cdi_input_size);
-
-/**
  * \brief Derives attestation CDI for a layer
  *
  * \param[in] layer_ctx  Pointer to current layer context.
@@ -100,16 +87,6 @@ psa_status_t derive_cdi_id(psa_key_id_t attest_key_id, uint8_t *cdi_id,
 psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
                                  uint8_t cdi_attest_buf[DICE_CDI_SIZE],
                                  uint8_t cdi_seal_buf[DICE_CDI_SIZE]);
-/**
- * @brief Get the RoT CDI input
- *
- * @param[out] rot_cdi_input      Buffer to contain the retrieved RoT CDI key
- * @param[in]  rot_cdi_input_size Size in bytes of the \a rot_cdi_input buffer
- *
- * @return psa_status_t
- */
-psa_status_t get_rot_cdi_input(uint8_t rot_cdi_input[DICE_CDI_SIZE],
-                               size_t rot_cdi_input_size);
 
 /**
  * @brief Destroy the CDI and attestation keys for a layer.
