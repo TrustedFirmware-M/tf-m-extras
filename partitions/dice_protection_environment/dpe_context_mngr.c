@@ -527,6 +527,13 @@ dpe_error_t initialise_context_mngr(int *rot_ctx_handle)
     return create_rot_context(rot_ctx_handle);
 }
 
+static void close_layer_if_empty(uint16_t layer_idx)
+{
+    if (layer_ctx_array[layer_idx].linked_components.count == 0) {
+        close_layer(layer_idx);
+    }
+}
+
 dpe_error_t derive_context_request(int input_ctx_handle,
                                    uint32_t cert_id,
                                    bool retain_parent_context,
@@ -627,12 +634,55 @@ dpe_error_t derive_context_request(int input_ctx_handle,
         return err;
     }
 
+    linked_layer_idx = derived_ctx->linked_layer_idx;
+    assert(linked_layer_idx < MAX_NUM_OF_LAYERS);
+    layer_ctx = &layer_ctx_array[linked_layer_idx];
+    err = store_linked_component(layer_ctx, free_component_idx);
+    if (err != DPE_NO_ERROR) {
+        goto clean_up_and_exit;
+    }
+    parent_layer_idx = layer_ctx->parent_layer_idx;
+    assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
+    parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
+
+    if (create_certificate) {
+        layer_ctx->is_cdi_to_be_exported = export_cdi;
+
+        /* Finalise the layer */
+        layer_ctx->state = LAYER_STATE_FINALISED;
+        err = prepare_layer_certificate(layer_ctx, parent_layer_ctx);
+        if (err != DPE_NO_ERROR) {
+            goto clean_up_and_exit;
+        }
+
+        if (return_certificate) {
+            /* Encode and return generated layer certificate */
+            err = encode_layer_certificate(layer_ctx,
+                                           new_certificate_buf,
+                                           new_certificate_buf_size,
+                                           new_certificate_actual_size);
+            if (err != DPE_NO_ERROR) {
+                goto clean_up_and_exit;
+            }
+        }
+    }
+
+    if (export_cdi) {
+        err = get_encoded_cdi_to_export(layer_ctx,
+                                        exported_cdi_buf,
+                                        exported_cdi_buf_size,
+                                        exported_cdi_actual_size);
+        if (err != DPE_NO_ERROR) {
+            goto clean_up_and_exit;
+        }
+    }
+
     if (retain_parent_context) {
         /* Retain and return parent handle with renewed nonce */
         *new_parent_context_handle = input_ctx_handle;
         err = renew_nonce(new_parent_context_handle);
         if (err != DPE_NO_ERROR) {
-            return err;
+            goto clean_up_and_exit;
         }
         parent_ctx->nonce = GET_NONCE(*new_parent_context_handle);
 
@@ -658,48 +708,6 @@ dpe_error_t derive_context_request(int input_ctx_handle,
         derived_ctx->nonce = INVALID_NONCE_VALUE;
     }
 
-    linked_layer_idx = derived_ctx->linked_layer_idx;
-    assert(linked_layer_idx < MAX_NUM_OF_LAYERS);
-    layer_ctx = &layer_ctx_array[linked_layer_idx];
-    err = store_linked_component(layer_ctx, free_component_idx);
-    if (err != DPE_NO_ERROR) {
-        return err;
-    }
-    parent_layer_idx = layer_ctx->parent_layer_idx;
-    assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
-    parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
-
-    if (create_certificate) {
-        layer_ctx->is_cdi_to_be_exported = export_cdi;
-
-        /* Finalise the layer */
-        layer_ctx->state = LAYER_STATE_FINALISED;
-        err = prepare_layer_certificate(layer_ctx, parent_layer_ctx);
-        if (err != DPE_NO_ERROR) {
-            return err;
-        }
-
-        if (return_certificate) {
-            /* Encode and return generated layer certificate */
-            err = encode_layer_certificate(layer_ctx,
-                                           new_certificate_buf,
-                                           new_certificate_buf_size,
-                                           new_certificate_actual_size);
-            if (err != DPE_NO_ERROR) {
-                return err;
-            }
-        }
-    }
-
-    if (export_cdi) {
-        err = get_encoded_cdi_to_export(layer_ctx,
-                                        exported_cdi_buf,
-                                        exported_cdi_buf_size,
-                                        exported_cdi_actual_size);
-        if (err != DPE_NO_ERROR) {
-            return err;
-        }
-    }
     log_derive_context_output_handles(*new_parent_context_handle,
                                       *new_context_handle);
 
@@ -713,14 +721,18 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     }
 
     return DPE_NO_ERROR;
+
+clean_up_and_exit:
+    set_context_to_default(free_component_idx);
+    close_layer_if_empty(linked_layer_idx);
+
+    return err;
 }
 
 dpe_error_t destroy_context_request(int input_ctx_handle,
                                     bool destroy_recursively)
 {
     uint16_t input_ctx_idx, linked_layer_idx;
-    int i;
-    bool is_layer_empty;
     struct layer_context_t *layer_ctx;
 
     log_destroy_context(input_ctx_handle, destroy_recursively);
@@ -752,18 +764,7 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
     }
 
     /* Close the layer if all of its contexts are destroyed */
-    is_layer_empty = true;
-    for (i = 0; i < MAX_NUM_OF_COMPONENTS; i++) {
-        if (component_ctx_array[i].linked_layer_idx == linked_layer_idx) {
-            /* There are active component context in the layer */
-            is_layer_empty = false;
-            break;
-        }
-    }
-
-    if (is_layer_empty) {
-        close_layer(linked_layer_idx);
-    }
+    close_layer_if_empty(linked_layer_idx);
 
     return DPE_NO_ERROR;
 }
