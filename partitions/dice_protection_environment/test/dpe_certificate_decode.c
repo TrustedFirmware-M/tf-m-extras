@@ -22,7 +22,7 @@
 
 #define COSE_SIGN1_ARRAY_LEN    4
 
-static QCBORError get_array_len(QCBORItem *item, int *array_len)
+static QCBORError get_array_len(QCBORItem *item, unsigned int *array_len)
 {
     if (item->uDataType != QCBOR_TYPE_ARRAY) {
         return QCBOR_ERR_UNEXPECTED_TYPE;
@@ -90,7 +90,7 @@ static QCBORError get_next_certificate(QCBORDecodeContext *decode_ctx,
 {
     QCBORError qcbor_err;
     QCBORItem item;
-    int array_len;
+    unsigned int array_len;
     UsefulBufC out = { NULL, 0 };
     int prev_cursor = UsefulInputBuf_Tell(&decode_ctx->InBuf);
 
@@ -248,7 +248,7 @@ static QCBORError verify_encoding(UsefulBufC cert_buf, struct certificate *cert)
     QCBORDecodeContext decode_ctx;
     QCBORError qcbor_err;
     QCBORItem item;
-    int array_len;
+    unsigned int array_len;
 
     QCBORDecode_Init(&decode_ctx, cert_buf, QCBOR_DECODE_MODE_NORMAL);
 

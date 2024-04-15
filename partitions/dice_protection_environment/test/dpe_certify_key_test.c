@@ -748,12 +748,11 @@ void certify_key_invalid_cbor_encoded_input_test(struct test_result_t *ret)
 void certify_key_with_unsupported_params_test(struct test_result_t *ret)
 {
     dpe_error_t dpe_err;
-    int out_ctx_handle, new_context_handle, out_parent_handle;
+    int out_ctx_handle, new_context_handle;
     uint8_t certificate_buf[1100];
     size_t certificate_actual_size;
     uint8_t derived_public_key_buf[1];
     size_t derived_public_key_actual_size;
-    DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
     struct dpe_certify_key_test_params_t test_params = {0};
 
     out_ctx_handle = retained_rot_ctx_handle;

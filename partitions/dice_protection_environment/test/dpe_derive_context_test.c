@@ -844,7 +844,6 @@ void derive_context_with_unsupported_params_test(struct test_result_t *ret)
     uint8_t exported_cdi_buf[DICE_MAX_ENCODED_CDI_SIZE];
     size_t exported_cdi_actual_size;
     bool return_certificate = false;
-    bool export_cdi = false;
     DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
     struct dpe_derive_context_test_params_t test_params = {0};
     uint32_t cert_id = DPE_PLATFORM_CERT_ID;

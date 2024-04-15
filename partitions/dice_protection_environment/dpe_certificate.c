@@ -281,10 +281,10 @@ static dpe_error_t certificate_encode_finish(QCBOREncodeContext *cbor_enc_ctx,
         } else if (qcbor_result != QCBOR_SUCCESS) {
             /* likely from array not closed, too many closes, ... */
             return DPE_INTERNAL_ERROR;
-        } else {
-            return DPE_NO_ERROR;
         }
     }
+
+    return DPE_NO_ERROR;
 }
 
 static void encode_sw_component_measurements(QCBOREncodeContext *encode_ctx,
