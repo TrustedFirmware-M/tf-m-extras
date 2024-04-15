@@ -71,22 +71,38 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
     QCBORError qcbor_err;
     UsefulBufC out = { NULL, 0 };
     int64_t out_int;
+    uint16_t num_of_input_arguments, num_of_valid_arguments = 0;
+    QCBORItem item;
 
     /* The DICE inputs are encoded as a map wrapped into a byte string */
     QCBORDecode_EnterBstrWrappedFromMapN(decode_ctx,
                                          DPE_DERIVE_CONTEXT_INPUT_DATA,
                                          QCBOR_TAG_REQUIREMENT_NOT_A_TAG, NULL);
-    QCBORDecode_EnterMap(decode_ctx, NULL);
+    QCBORDecode_EnterMap(decode_ctx, &item);
+    qcbor_err = QCBORDecode_GetError(decode_ctx);
+    if ((qcbor_err != QCBOR_SUCCESS) ||
+        (item.uDataType != QCBOR_TYPE_MAP)) {
+            /* We expect a map of Dice inputs here */
+            return DPE_INVALID_ARGUMENT;
+    }
+    /* Save the number of items found in the map */
+    num_of_input_arguments = item.val.uCount;
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DICE_CODE_HASH, &out);
-    if (out.len != sizeof(input->code_hash)) {
+    qcbor_err = QCBORDecode_GetError(decode_ctx);
+    if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(input->code_hash))) {
         return DPE_INVALID_ARGUMENT;
     }
     memcpy(input->code_hash, out.ptr, out.len);
+    COUNT_ARGS(num_of_valid_arguments);
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DICE_CODE_DESCRIPTOR, &out);
-    input->code_descriptor = out.ptr;
-    input->code_descriptor_size = out.len;
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
+    if (qcbor_err == QCBOR_SUCCESS) {
+        /* Valid argument was found */
+        input->code_descriptor = out.ptr;
+        input->code_descriptor_size = out.len;
+    }
 
     QCBORDecode_GetInt64InMapN(decode_ctx, DICE_CONFIG_TYPE, &out_int);
 
@@ -100,14 +116,17 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
         out_int > kDiceConfigTypeDescriptor) {
         return DPE_INVALID_ARGUMENT;
     }
+    COUNT_ARGS(num_of_valid_arguments);
     input->config_type = (DiceConfigType)out_int;
 
     /* Only one of config value or config descriptor needs to be provided */
     if (input->config_type == kDiceConfigTypeInline) {
         QCBORDecode_GetByteStringInMapN(decode_ctx, DICE_CONFIG_VALUE, &out);
-        if (out.len != sizeof(input->config_value)) {
+        qcbor_err = QCBORDecode_GetError(decode_ctx);
+        if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(input->config_value))) {
             return DPE_INVALID_ARGUMENT;
         }
+        COUNT_ARGS(num_of_valid_arguments);
         memcpy(input->config_value, out.ptr, out.len);
 
         /* Config descriptor is not provided */
@@ -116,6 +135,11 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
     } else {
         QCBORDecode_GetByteStringInMapN(decode_ctx, DICE_CONFIG_DESCRIPTOR,
                                         &out);
+        qcbor_err = QCBORDecode_GetError(decode_ctx);
+        if (qcbor_err != QCBOR_SUCCESS) {
+            return DPE_INVALID_ARGUMENT;
+        }
+        COUNT_ARGS(num_of_valid_arguments);
         input->config_descriptor = out.ptr;
         input->config_descriptor_size = out.len;
 
@@ -124,26 +148,34 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
     }
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DICE_AUTHORITY_HASH, &out);
-    if (out.len != sizeof(input->authority_hash)) {
+    qcbor_err = QCBORDecode_GetError(decode_ctx);
+    if ((qcbor_err != QCBOR_SUCCESS) || (out.len != sizeof(input->authority_hash))) {
         return DPE_INVALID_ARGUMENT;
     }
+    COUNT_ARGS(num_of_valid_arguments);
     memcpy(input->authority_hash, out.ptr, out.len);
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DICE_AUTHORITY_DESCRIPTOR,
                                     &out);
-    input->authority_descriptor = out.ptr;
-    input->authority_descriptor_size = out.len;
+    CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
+    if (qcbor_err == QCBOR_SUCCESS) {
+        /* Valid argument was found */
+        input->authority_descriptor = out.ptr;
+        input->authority_descriptor_size = out.len;
+    }
 
     QCBORDecode_GetInt64InMapN(decode_ctx, DICE_MODE, &out_int);
     if (out_int < kDiceModeNotInitialized || out_int > kDiceModeMaintenance) {
         return DPE_INVALID_ARGUMENT;
     }
+    COUNT_ARGS(num_of_valid_arguments);
     input->mode = (DiceMode)out_int;
 
     QCBORDecode_GetByteStringInMapN(decode_ctx, DICE_HIDDEN, &out);
     if (out.len != sizeof(input->hidden)) {
         return DPE_INVALID_ARGUMENT;
     }
+    COUNT_ARGS(num_of_valid_arguments);
     memcpy(input->hidden, out.ptr, out.len);
 
     QCBORDecode_ExitMap(decode_ctx);
@@ -151,6 +183,11 @@ static dpe_error_t decode_dice_inputs(QCBORDecodeContext *decode_ctx,
 
     qcbor_err = QCBORDecode_GetError(decode_ctx);
     if (qcbor_err != QCBOR_SUCCESS) {
+        return DPE_INVALID_ARGUMENT;
+    }
+
+    if (num_of_input_arguments > num_of_valid_arguments) {
+        /* Extra unsupported arguments encoded in command map */
         return DPE_INVALID_ARGUMENT;
     }
 
@@ -172,7 +209,7 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     bool return_certificate;
     bool allow_new_context_to_export;
     bool export_cdi;
-    DiceInputValues dice_inputs;
+    DiceInputValues dice_inputs = {0};
     int new_context_handle;
     int new_parent_context_handle;
     uint8_t *new_certificate_buf = ALLOC_TEMP_BUF;
