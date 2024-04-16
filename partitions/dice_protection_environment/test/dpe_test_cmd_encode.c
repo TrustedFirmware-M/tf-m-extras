@@ -20,6 +20,8 @@ static void encode_dice_inputs(QCBOREncodeContext *encode_ctx,
                                const DiceInputValues *input,
                                struct dpe_derive_context_test_params_t *test_params)
 {
+    bool unsupported_param_val = true;
+
     /* Wrap the DICE inputs into a byte string */
     QCBOREncode_BstrWrapInMapN(encode_ctx, DPE_DERIVE_CONTEXT_INPUT_DATA);
 
@@ -40,9 +42,11 @@ static void encode_dice_inputs(QCBOREncodeContext *encode_ctx,
                                input->config_type);
 
     if (input->config_type == kDiceConfigTypeInline) {
-        QCBOREncode_AddBytesToMapN(encode_ctx, DICE_CONFIG_VALUE,
-                                   (UsefulBufC){ input->config_value,
-                                                 sizeof(input->config_value) });
+        if (!test_params->is_config_value_missing) {
+            QCBOREncode_AddBytesToMapN(encode_ctx, DICE_CONFIG_VALUE,
+                                    (UsefulBufC){ input->config_value,
+                                                    sizeof(input->config_value) });
+        }
     } else {
         if (!test_params->is_config_descriptor_missing) {
             QCBOREncode_AddBytesToMapN(encode_ctx, DICE_CONFIG_DESCRIPTOR,
@@ -57,9 +61,11 @@ static void encode_dice_inputs(QCBOREncodeContext *encode_ctx,
                                                  sizeof(input->authority_hash) });
     }
 
-    QCBOREncode_AddBytesToMapN(encode_ctx, DICE_AUTHORITY_DESCRIPTOR,
-                               (UsefulBufC){ input->authority_descriptor,
-                                             input->authority_descriptor_size });
+    if (!test_params->is_authority_descriptor_missing) {
+        QCBOREncode_AddBytesToMapN(encode_ctx, DICE_AUTHORITY_DESCRIPTOR,
+                                   (UsefulBufC){ input->authority_descriptor,
+                                                 input->authority_descriptor_size });
+    }
 
     if (!test_params->is_mode_missing) {
         QCBOREncode_AddInt64ToMapN(encode_ctx, DICE_MODE, input->mode);
@@ -68,6 +74,12 @@ static void encode_dice_inputs(QCBOREncodeContext *encode_ctx,
     QCBOREncode_AddBytesToMapN(encode_ctx, DICE_HIDDEN,
                                (UsefulBufC){ input->hidden,
                                              sizeof(input->hidden) });
+
+    if (test_params->is_unsupported_dice_params_added) {
+        /* Encode additional unsupported params */
+        QCBOREncode_AddBoolToMapN(encode_ctx, DPE_UNSUPPORTED_PARAMS_LABEL,
+                                  unsupported_param_val);
+    }
 
     QCBOREncode_CloseMap(encode_ctx);
     QCBOREncode_CloseBstrWrap2(encode_ctx, true, NULL);

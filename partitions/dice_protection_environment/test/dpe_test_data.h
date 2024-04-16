@@ -58,8 +58,10 @@ struct dpe_derive_context_test_data_t {
 
 struct dpe_derive_context_test_params_t {
     bool is_code_hash_missing;
+    bool is_config_value_missing;
     bool is_config_descriptor_missing;
     bool is_authority_hash_missing;
+    bool is_authority_descriptor_missing;
     bool is_mode_missing;
     bool is_encoded_cbor_corrupt;
     bool is_input_dice_data_missing;
@@ -71,6 +73,7 @@ struct dpe_derive_context_test_params_t {
     bool is_allow_new_context_to_export_missing;
     bool is_export_cdi_missing;
     bool is_unsupported_params_added;
+    bool is_unsupported_dice_params_added;
 };
 
 struct dpe_certify_key_test_params_t {

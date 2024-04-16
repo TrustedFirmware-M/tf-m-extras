@@ -376,16 +376,57 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
     if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: Invalid dice input (missing hash) "
-                  "should return invalid command");
+                  "should return invalid argument");
         return;
     }
 
     test_params.is_code_hash_missing = false;
+    dice_inputs.config_type = kDiceConfigTypeDescriptor;
     test_params.is_config_descriptor_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
     if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: Invalid dice input (missing config descriptor) "
-                  "should return invalid command");
+                  "when config_type is 'descriptor' should return invalid argument");
+        return;
+    }
+
+    test_params.is_config_descriptor_missing = false;
+    test_params.is_config_value_missing = true;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext test: Optional dice input (missing config value) "
+                  "when config_type is 'descriptor' should NOT return any error");
+        return;
+    }
+    /* Update retained parent handle if context derived successfully in above test */
+    retained_rot_ctx_handle = out_parent_handle;
+    dpe_err = dpe_destroy_context(out_ctx_handle, false);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
+    }
+
+    dice_inputs.config_type = kDiceConfigTypeInline;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
+        TEST_FAIL("DPE DeriveContext test: Invalid dice input (missing config value) "
+                  "when config_type is 'inline' should return invalid argument");
+        return;
+    }
+
+    test_params.is_config_value_missing = false;
+    test_params.is_config_descriptor_missing = true;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext test: Optional dice input (missing config descriptor) "
+                  "when config_type is 'inline' should NOT return any error");
+        return;
+    }
+    /* Update retained parent handle if context derived successfully in above test */
+    retained_rot_ctx_handle = out_parent_handle;
+    dpe_err = dpe_destroy_context(out_ctx_handle, false);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DestroyContext call failed");
         return;
     }
 
@@ -394,16 +435,33 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
     if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: Invalid dice input (missing authority hash) "
-                  "should return invalid command");
+                  "should return invalid argument");
         return;
     }
 
     test_params.is_authority_hash_missing = false;
+    /* authority_descriptor is optional dice input */
+    test_params.is_authority_descriptor_missing = true;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext test: Optional dice input (missing authority descriptor) "
+                  "should NOT return any error");
+        return;
+    }
+    /* Update retained parent handle if context derived successfully in above test */
+    retained_rot_ctx_handle = out_parent_handle;
+    dpe_err = dpe_destroy_context(out_ctx_handle, false);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
+    }
+
+    test_params.is_authority_descriptor_missing = false;
     test_params.is_mode_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
     if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: Invalid dice input (missing mode) "
-                  "should return invalid command");
+                  "should return invalid argument");
         return;
     }
 
@@ -412,7 +470,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
     if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: Missing dice input "
-                  "should return invalid command");
+                  "should return invalid argument");
         return;
     }
 
@@ -852,6 +910,14 @@ void derive_context_with_unsupported_params_test(struct test_result_t *ret)
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
     if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: with unsupported parameters should fail");
+        return;
+    }
+
+    test_params.is_unsupported_dice_params_added = true;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
+        TEST_FAIL("DPE DeriveContext test: with unsupported DICE parameters "
+                  "should fail");
         return;
     }
 
