@@ -9,6 +9,7 @@
 #include "dice_protection_environment.h"
 #include "dpe_test.h"
 #include "dpe_test_data.h"
+#include "dpe_test_private.h"
 
 #define CALL_DERIVE_CONTEXT_WITH_TEST_PARAM() \
         dpe_derive_context_with_test_param(retained_rot_ctx_handle, /* input_ctx_handle */  \
@@ -63,11 +64,7 @@ void derive_context_api_test(struct test_result_t *ret)
         return;
     }
 
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
@@ -170,11 +167,7 @@ void derive_context_single_use_handle_test(struct test_result_t *ret)
         return;
     }
 
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     ret->val = TEST_PASSED;
 }
@@ -400,11 +393,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     }
     /* Update retained parent handle if context derived successfully in above test */
     retained_rot_ctx_handle = out_parent_handle;
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     dice_inputs.config_type = kDiceConfigTypeInline;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM();
@@ -424,11 +413,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     }
     /* Update retained parent handle if context derived successfully in above test */
     retained_rot_ctx_handle = out_parent_handle;
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     test_params.is_config_descriptor_missing = false;
     test_params.is_authority_hash_missing = true;
@@ -450,11 +435,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     }
     /* Update retained parent handle if context derived successfully in above test */
     retained_rot_ctx_handle = out_parent_handle;
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     test_params.is_authority_descriptor_missing = false;
     test_params.is_mode_missing = true;
@@ -539,11 +520,7 @@ void derive_context_smaller_cert_buffer_test(struct test_result_t *ret)
         return;
     }
 
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
@@ -655,11 +632,7 @@ void derive_context_prevent_cdi_export_test(struct test_result_t *ret)
         return;
     }
 
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
    ret->val = TEST_PASSED;
 }
@@ -844,11 +817,7 @@ void derive_context_with_parent_leaf_component_test(struct test_result_t *ret)
         return;
     }
 
-    dpe_err = dpe_destroy_context(saved_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(saved_handle);
 
    ret->val = TEST_PASSED;
 }
@@ -952,11 +921,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
         TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
         return;
     }
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     retained_rot_ctx_handle = out_parent_handle;
     TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
@@ -976,11 +941,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
         TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
         return;
     }
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     retained_rot_ctx_handle = out_parent_handle;
     TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
@@ -999,11 +960,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
         TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
         return;
     }
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     retained_rot_ctx_handle = out_parent_handle;
     TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
@@ -1017,11 +974,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
     //TODO: Side effect validation as below
     // Will need to call DeriveContext again and check if CDI cannot be exported,
     // but it also depends on few other arguments which will make this test case complex.
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     retained_rot_ctx_handle = out_parent_handle;
     TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
@@ -1038,11 +991,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
         TEST_FAIL("DPE DeriveContext test: Without optional parameter should not fail");
         return;
     }
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     retained_rot_ctx_handle = out_parent_handle;
     TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);

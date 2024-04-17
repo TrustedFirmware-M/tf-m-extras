@@ -9,6 +9,7 @@
 #include "dpe_certificate_decode.h"
 #include "dpe_test.h"
 #include "dpe_test_data.h"
+#include "dpe_test_private.h"
 
 extern struct dpe_derive_context_test_data_t
               derive_context_test_dataset_1[DERIVE_CONTEXT_TEST_DATA1_SIZE];
@@ -145,11 +146,7 @@ void get_certificate_chain_test(struct test_result_t *ret)
 
     /* Destroy the saved contexts for the subsequent test */
     for (i = 0; i < saved_handles_cnt; i++) {
-        dpe_err = dpe_destroy_context(saved_handles[i], false);
-        if (dpe_err != DPE_NO_ERROR) {
-            TEST_FAIL("DPE DestroyContext call failed");
-            return;
-        }
+        DESTROY_SINGLE_CONTEXT(saved_handles[i]);
     }
 
     ret->val = TEST_PASSED;

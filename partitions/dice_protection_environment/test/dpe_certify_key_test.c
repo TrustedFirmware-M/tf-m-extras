@@ -10,6 +10,7 @@
 #include "dpe_certificate_decode.h"
 #include "dpe_test.h"
 #include "dpe_test_data.h"
+#include "dpe_test_private.h"
 
 #define CALL_CERTIFY_KEY_WITH_TEST_PARAM() \
         dpe_certify_key_with_test_param(out_ctx_handle, /* input_ctx_handle */  \
@@ -265,11 +266,7 @@ void certify_key_core_functionality_test_01(struct test_result_t *ret)
 
     /* Destroy the saved contexts for the subsequent test */
     for (i = 0; i < saved_handles_cnt; i++) {
-        dpe_err = dpe_destroy_context(saved_handles[i], false);
-        if (dpe_err != DPE_NO_ERROR) {
-            TEST_FAIL("DPE DestroyContext call failed");
-            return;
-        }
+        DESTROY_SINGLE_CONTEXT(saved_handles[i]);
     }
 
     ret->val = TEST_PASSED;
@@ -330,11 +327,7 @@ void certify_key_core_functionality_test_02(struct test_result_t *ret)
 
     /* Destroy the saved contexts for the subsequent test */
     for (i = 0; i < saved_handles_cnt; i++) {
-        dpe_err = dpe_destroy_context(saved_handles[i], false);
-        if (dpe_err != DPE_NO_ERROR) {
-            TEST_FAIL("DPE DestroyContext call failed");
-            return;
-        }
+        DESTROY_SINGLE_CONTEXT(saved_handles[i]);
     }
 
     ret->val = TEST_PASSED;
@@ -394,11 +387,7 @@ void certify_key_api_test(struct test_result_t *ret)
         return;
     }
 
-    dpe_err = dpe_destroy_context(new_context_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(new_context_handle);
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
@@ -467,7 +456,7 @@ void certify_key_retain_context_test(struct test_result_t *ret)
     if (new_context_handle != INVALID_HANDLE) {
         TEST_FAIL("DPE CertifyKey should return invalid handle when input arg "
                   "retain_context is false");
-        (void)dpe_destroy_context(new_context_handle, false);
+        DESTROY_SINGLE_CONTEXT(new_context_handle);
         return;
     }
 
@@ -528,11 +517,7 @@ void certify_key_incorrect_handle_test(struct test_result_t *ret)
     }
 
     /* Destroy other derived contexts for subsequent test */
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
@@ -613,11 +598,7 @@ void certify_key_smaller_cert_buffer_test(struct test_result_t *ret)
     /* Since certificate buffer size is checked by client side API implementation,
      * it derives a valid DPE context within the service, so destroy that context
      */
-    dpe_err = dpe_destroy_context(new_context_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(new_context_handle);
 
     ret->val = TEST_PASSED;
 }
@@ -680,11 +661,7 @@ void certify_key_smaller_derived_pub_key_buffer_test(struct test_result_t *ret)
     /* Since public key buffer size is checked by client side API implementation,
      * it derives a valid DPE context within the service, so destroy that context
      */
-    dpe_err = dpe_destroy_context(new_context_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(new_context_handle);
 
     ret->val = TEST_PASSED;
 }
@@ -732,11 +709,7 @@ void certify_key_invalid_cbor_encoded_input_test(struct test_result_t *ret)
     }
 
     /* Destroy other derived contexts for subsequent test */
-    dpe_err = dpe_destroy_context(out_ctx_handle, false);
-    if (dpe_err != DPE_NO_ERROR) {
-        TEST_FAIL("DPE DestroyContext call failed");
-        return;
-    }
+    DESTROY_SINGLE_CONTEXT(out_ctx_handle);
 
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = out_parent_handle;
