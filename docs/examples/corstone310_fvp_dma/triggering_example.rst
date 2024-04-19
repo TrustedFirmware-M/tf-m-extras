@@ -10,17 +10,19 @@ to sleep.
 ***********
 Build steps
 ***********
-1. Run the following command in the tf-m directory:
+1. Build Secure TF-M with the following commands:
 
 .. code-block::
 
- $ cmake -S . -B cmake_build -DTFM_PLATFORM=arm/mps3/corstone310/fvp -DTFM_TOOLCHAIN_FILE=toolchain_ARMCLANG.cmake -DNS_EVALUATION_APP_PATH=<tf-m-extras root>/examples/corstone310_fvp_dma/triggering_example
+ $ cmake -S <TF-M Source Dir> -B build/spe -DTFM_PLATFORM=arm/mps3/corstone310/fvp -DTFM_PROFILE=profile_small
+ $ cmake --build build/spe -- -j$(nproc) install
 
-2. Then:
+2. Then to build the Non-Secure app:
 
 .. code-block::
 
- $ cmake --build cmake_build -- install
+ $ cmake -S <path_to_this_example> -B build/nspe -DCONFIG_SPE_PATH=<absolute_path_to>/build/spe/api_ns
+ $ cmake --build build/nspe -- -j$(nproc)
 
 *********
 Run steps
@@ -51,4 +53,4 @@ The UART overrun interrupt is turned off to prevent lock-up, but there might be 
 
 Select the FVP telnetterminal0 and type in 10 characters. The 10 characters are going to be echoed back in reverse order to the FVP telnetterminal1.
 
-*Copyright (c) 2022-2023, Arm Limited. All rights reserved.*
+*Copyright (c) 2022-2024, Arm Limited. All rights reserved.*

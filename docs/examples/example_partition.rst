@@ -87,6 +87,33 @@ commands.
 
 Refer to `Out-of-tree Secure Partition build`_ for more details.
 
+**********************************************
+Build steps for mps4/corstone315 platform
+**********************************************
+1. Build and install TF-M with the following command:
+
+.. code-block:: bash
+
+ $ cmake -S <TF-M Source Dir> \
+         -B build/spe_test \
+         -DTFM_PLATFORM=arm/mps4/corstone315 \
+         -DTFM_TOOLCHAIN_FILE=<TF-M Source Dir>/toolchain_<toolchain>.cmake \
+         -DTFM_PARTITION_INTERNAL_TRUSTED_STORAGE=ON \
+         -DTFM_PARTITION_CRYPTO=ON \
+         -DTEST_NS=ON
+         -DTEST_S=ON \
+ $ cmake --build build/spe_test -- -j$(nproc) install
+
+2. Then build the example with the following:
+
+.. code-block:: bash
+
+ $ cmake -S <this_example_path> \
+         -B build/nspe_test \
+         -DTFM_TOOLCHAIN=<toolchain> \
+         -DCONFIG_SPE_PATH=$(shell pwd)/<build_dir>/spe_test/api_ns
+ $ cmake --build build/nspe_test -- -j$(nproc)
+
 ***********
 How to Test
 ***********
@@ -141,4 +168,4 @@ References
 
 --------------
 
-*Copyright (c) 2020-2022, Arm Limited. All rights reserved.*
+*Copyright (c) 2020-2024, Arm Limited. All rights reserved.*

@@ -24,6 +24,44 @@ Folder Structure
 - `partitions`: This folder hosts the supplementary or third-party secure
   partitions for TF-M.
 
+*****************
+Building examples
+*****************
+
+Folders represented in the example:
+
+.. code-block:: bash
+
+   <TF-M Source Dir>                Full path to TF-M Source directory/repository
+   └── <toolchain-file-from-tf-m>
+   <build-dir>                      Common build directory
+   ├── spe                          Secure side build directory
+   │   └── api_ns                   Non-Secure API callables directory
+   └── nspe                         Non-Secure side build directory
+
+1. Building the Secure side (comes from TF-M):
+
+.. code-block:: bash
+
+ $ cmake -S <TF-M Source Dir> \
+         -B <build-dir>/spe \
+         -DTFM_PLATFORM=<tf-m-target> \
+         -DTFM_TOOLCHAIN_FILE=<toolchain-file-from-tf-m> \
+         -DCMAKE_BUILD_TYPE=<Debug,Release>
+ $ cmake --build <build-dir>/spe -- -j$(nproc) install
+
+2. Build the Non-Secure side (from examples found here):
+
+.. code-block:: bash
+
+ $ cmake -S <example-path> \
+         -B <build-dir> \
+         -DCONFIG_SPE_PATH=<build-dir>/spe/api_ns
+ $ cmake --build <build-dir> -- -j$(nproc)
+
+Some examples use different flags in Secure and Non-Secure side.
+Check the examples description for further steps on proper building.
+
 *****************************
 Contribute to this repository
 *****************************
@@ -96,4 +134,4 @@ Additional requirements
 
 --------------
 
-*Copyright (c) 2021-2022, Arm Limited. All rights reserved.*
+*Copyright (c) 2021-2024, Arm Limited. All rights reserved.*

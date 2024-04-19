@@ -19,16 +19,18 @@ DMA-350, checkout :doc:`DMA-350 privilege separation <../../partitions/dma350_un
 ***********
 Build steps
 ***********
-1. Run the following command in the tf-m directory:
+1. Build Secure TF-M with the following commands:
 
 .. code-block::
 
- $ cmake -S . -B cmake_build -DTFM_PLATFORM=arm/mps3/corstone310/fvp -DTFM_TOOLCHAIN_FILE=toolchain_ARMCLANG.cmake -DDEFAULT_NS_SCATTER=OFF -DPLATFORM_SVC_HANDLERS=ON -DNS_EVALUATION_APP_PATH=<tf-m-extras root>/examples/corstone310_fvp_dma/clcd_example
+ $ cmake -S <TF-M Source Dir> -B build/spe -DTFM_PLATFORM=arm/mps3/corstone310/fvp -DTFM_PROFILE=profile_small
+ $ cmake --build build/spe -- -j$(nproc) install
 
-2. Then:
+2. Then to build the Non-Secure app:
 
 .. code-block::
 
- $ cmake --build cmake_build -- install
+ $ cmake -S <path_to_this_example> -B build/nspe -DCONFIG_SPE_PATH=<absolute_path_to>/build/spe/api_ns
+ $ cmake --build build/nspe -- -j$(nproc)
 
-*Copyright (c) 2022-2023, Arm Limited. All rights reserved.*
+*Copyright (c) 2022-2024, Arm Limited. All rights reserved.*

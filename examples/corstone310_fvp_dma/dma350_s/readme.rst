@@ -10,17 +10,28 @@ mps3/corstone310/fvp.
 **********************************************
 Build steps for mps3/corstone310/fvp platform
 **********************************************
-1. Run the following command in the tf-m directory:
+1. Build and install the Secure side with the following command:
 
 .. code-block:: bash
 
- $ cmake -S . -B cmake_build -DTFM_PLATFORM=arm/mps3/corstone310/fvp -DTFM_TOOLCHAIN_FILE=toolchain_ARMCLANG.cmake -DEXTRA_S_TEST_SUITE_PATH=<tf-m-extras root>/examples/corstone310_fvp_dma/dma350_s
+ $ cmake -S <tf-m-tests_source_directory>/tests_reg/spe \
+    -B build/spe \
+    -DTFM_PLATFORM=arm/mps3/corstone310/fvp \
+    -DTFM_TOOLCHAIN_FILE=<tf-m_source_dir>/toolchain_<ARMCLANG,GNUARM,IARARM>.cmake \
+    -DEXTRA_S_TEST_SUITE_PATH=<tf-m-extras_source_directory>/examples/corstone310_fvp_dma/dma350_s \
+    -DCONFIG_TFM_SOURCE_PATH=<tf-m_source_dir> \
+    -DTEST_S=ON
+ $ cmake --build build/spe -- -j$(nproc) install
 
-2. Then:
+2. Then build the Non-Secure side with the following:
 
 .. code-block:: bash
 
- $ cmake --build cmake_build -- install
+ $ cmake -S <tf-m-tests_source_directory>/tests_reg \
+    -B build/nspe \
+    -DCONFIG_SPE_PATH=<tf-m-extras_source_directory>/build/spe/api_ns \
+    -DTFM_TOOLCHAIN_FILE=<tf-m-extras_source_directory>/build/spe/api_ns/cmake/toolchain_ns_<ARMCLANG,GNUARM,IARARM>.cmake
+ $ cmake --build build/nspe -- -j$(nproc)
 
 
-*Copyright (c) 2022, Arm Limited. All rights reserved.*
+*Copyright (c) 2022-2024, Arm Limited. All rights reserved.*
