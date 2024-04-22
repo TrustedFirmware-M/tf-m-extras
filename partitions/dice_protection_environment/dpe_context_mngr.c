@@ -84,6 +84,7 @@ static void invalidate_layer(int i)
     layer_ctx_array[i].state = LAYER_STATE_CLOSED;
     layer_ctx_array[i].parent_layer_idx = INVALID_LAYER_IDX;
     layer_ctx_array[i].is_cdi_to_be_exported = false;
+    layer_ctx_array[i].is_rot_layer = false;
     layer_ctx_array[i].cert_id = DPE_CERT_ID_INVALID;
     (void)memset(&layer_ctx_array[i].attest_cdi_hash_input, 0,
                  sizeof(layer_ctx_array[i].attest_cdi_hash_input));
@@ -303,7 +304,7 @@ static dpe_error_t prepare_layer_certificate(struct layer_context_t *layer_ctx)
     parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
 
     /* For RoT Layer, CDI and issuer seed values are calculated by BL1_1 */
-    if ((layer_idx != DPE_ROT_LAYER_IDX) &&
+    if ((!layer_ctx->is_rot_layer) &&
         (!layer_ctx->is_external_pub_key_provided)) {
 
         /* Except for RoT Layer with no external public key supplied */
@@ -461,6 +462,7 @@ static dpe_error_t create_rot_context(int *rot_ctx_handle)
     struct component_context_t *rot_comp_ctx = &component_ctx_array[0];
     struct layer_context_t *rot_layer_ctx = &layer_ctx_array[DPE_ROT_LAYER_IDX];
 
+    rot_layer_ctx->is_rot_layer = true;
     /* Parent layer for RoT context's layer is same */
     rot_layer_ctx->parent_layer_idx = DPE_ROT_LAYER_IDX;
 

@@ -372,13 +372,13 @@ static void encode_layer_sw_components_array(uint16_t layer_idx,
 }
 
 static dpe_error_t add_issuer_claim(QCBOREncodeContext *cbor_enc_ctx,
-                                    uint16_t layer_idx,
+                                    const struct layer_context_t *layer_ctx,
                                     psa_key_id_t root_attest_key_id,
                                     const struct layer_context_t *parent_layer_ctx)
 {
     uint8_t rot_cdi_id[DICE_ID_SIZE];
 
-    if (layer_idx == DPE_ROT_LAYER_IDX) {
+    if (layer_ctx->is_rot_layer) {
         /* For the RoT layer, issuer id is derived from the root attestation key */
         if (derive_cdi_id(root_attest_key_id, rot_cdi_id,
                           sizeof(rot_cdi_id)) != PSA_SUCCESS) {
@@ -421,7 +421,7 @@ static dpe_error_t encode_layer_certificate_internal(const struct layer_context_
     /* The RoT layer certificate is signed by the provisioned attestation key,
      * all other layers are signed by the parent layer's attestation key.
      */
-    if (layer_idx == DPE_ROT_LAYER_IDX) {
+    if (layer_ctx->is_rot_layer) {
         attest_key_id = dpe_plat_get_root_attest_key_id();
     } else {
         attest_key_id = parent_layer_ctx->data.attest_key_id;
@@ -439,7 +439,7 @@ static dpe_error_t encode_layer_certificate_internal(const struct layer_context_
 
     /* Add all the required claims */
     /* Add issuer/authority claim */
-    err = add_issuer_claim(cbor_enc_ctx, layer_idx, attest_key_id, parent_layer_ctx);
+    err = add_issuer_claim(cbor_enc_ctx, layer_ctx, attest_key_id, parent_layer_ctx);
     if (err != DPE_NO_ERROR) {
         return err;
     }

@@ -99,6 +99,7 @@ struct layer_context_t {
     enum layer_state_t state;
     bool is_external_pub_key_provided;
     bool is_cdi_to_be_exported;
+    bool is_rot_layer;
     uint32_t cert_id;
 };
 
