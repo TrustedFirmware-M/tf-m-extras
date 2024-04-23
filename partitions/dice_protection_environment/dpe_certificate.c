@@ -344,31 +344,28 @@ static void encode_sw_component_measurements(QCBOREncodeContext *encode_ctx,
     QCBOREncode_CloseMap(encode_ctx);
 }
 
-static void encode_layer_sw_components_array(uint16_t layer_idx,
-                                             QCBOREncodeContext *cbor_enc_ctx)
+static dpe_error_t encode_layer_sw_components_array(const struct layer_context_t *layer_ctx,
+                                                    QCBOREncodeContext *cbor_enc_ctx)
 {
-    int i, cnt;
+    int i;
     struct component_context_t *component_ctx;
 
-    for (i = 0, cnt = 0; i < MAX_NUM_OF_COMPONENTS; i++) {
-        component_ctx = get_component_if_linked_to_layer(layer_idx, i);
-        if (component_ctx != NULL) {
-            /* This component belongs to current layer */
-            cnt++;
-
-            if (cnt == 1) {
-                /* Open array which stores SW components claims. */
-                QCBOREncode_OpenArrayInMapN(cbor_enc_ctx,
-                                            DPE_CERT_LABEL_SW_COMPONENTS);
+    if (layer_ctx->linked_components.count > 0) {
+        /* Open array which stores SW components claims. */
+        QCBOREncode_OpenArrayInMapN(cbor_enc_ctx,
+                                    DPE_CERT_LABEL_SW_COMPONENTS);
+        for (i = 0; i < layer_ctx->linked_components.count; i++) {
+            component_ctx = get_component_ctx_ptr(layer_ctx->linked_components.idx[i]);
+            if (component_ctx == NULL) {
+                return DPE_INTERNAL_ERROR;
             }
             encode_sw_component_measurements(cbor_enc_ctx, component_ctx);
         }
-    }
-
-    if (cnt != 0) {
         /* Close array which stores SW components claims. */
         QCBOREncode_CloseArray(cbor_enc_ctx);
     }
+
+    return DPE_NO_ERROR;
 }
 
 static dpe_error_t add_issuer_claim(QCBOREncodeContext *cbor_enc_ctx,
@@ -404,7 +401,7 @@ static dpe_error_t encode_layer_certificate_internal(const struct layer_context_
 {
     struct t_cose_sign1_sign_ctx signer_ctx;
     struct layer_context_t *parent_layer_ctx;
-    uint16_t parent_layer_idx, layer_idx;
+    uint16_t parent_layer_idx;
     dpe_error_t err;
     UsefulBufC completed_cert;
     psa_key_id_t attest_key_id;
@@ -412,8 +409,6 @@ static dpe_error_t encode_layer_certificate_internal(const struct layer_context_
     /* Valid options: true & !NULL OR false & NULL */
     assert(finish_cbor_encoding ^ (cert_actual_size == NULL));
 
-    layer_idx = layer_ctx->idx;
-    assert(layer_idx < MAX_NUM_OF_LAYERS);
     parent_layer_idx = layer_ctx->parent_layer_idx;
     assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
     parent_layer_ctx = get_layer_ctx_ptr(parent_layer_idx);
@@ -454,7 +449,10 @@ static dpe_error_t encode_layer_certificate_internal(const struct layer_context_
      * an array is created for all the components' measurements and within the
      * array, there are multiple maps, one for each SW component
      */
-    encode_layer_sw_components_array(layer_idx, cbor_enc_ctx);
+    err = encode_layer_sw_components_array(layer_ctx, cbor_enc_ctx);
+    if (err != DPE_NO_ERROR) {
+        return err;
+    }
 
     /* Add label claim */
     add_label_claim(cbor_enc_ctx,

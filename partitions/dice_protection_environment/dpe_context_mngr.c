@@ -8,6 +8,7 @@
 #include "dpe_context_mngr.h"
 #include <assert.h>
 #include <string.h>
+#include "array.h"
 #include "dice_protection_environment.h"
 #include "dpe_certificate.h"
 #include "dpe_client.h"
@@ -29,6 +30,44 @@
 
 static struct component_context_t component_ctx_array[MAX_NUM_OF_COMPONENTS];
 static struct layer_context_t layer_ctx_array[MAX_NUM_OF_LAYERS];
+
+static dpe_error_t store_linked_component(struct layer_context_t *layer_ctx,
+                                          int component_idx)
+{
+    if (layer_ctx->linked_components.count >=
+            ARRAY_SIZE(layer_ctx->linked_components.idx)) {
+        /* linked_components.idx[] is full */
+        return DPE_INSUFFICIENT_MEMORY;
+    }
+
+    layer_ctx->linked_components.idx[layer_ctx->linked_components.count] = component_idx;
+    layer_ctx->linked_components.count++;
+
+    return DPE_NO_ERROR;
+}
+
+static void remove_linked_component(struct layer_context_t *layer_ctx,
+                                    int component_idx)
+{
+    int i, pos;
+
+    /* Find the position of the input component */
+    for (i = 0; i < ARRAY_SIZE(layer_ctx->linked_components.idx); i++) {
+        if (layer_ctx->linked_components.idx[i] == component_idx) {
+            pos = i;
+            break;
+        }
+    }
+
+    assert(i < ARRAY_SIZE(layer_ctx->linked_components.idx));
+
+    /* Left shift remaining elements by 1 from current position */
+    for(i = pos; i < ARRAY_SIZE(layer_ctx->linked_components.idx) - 1; i++) {
+        layer_ctx->linked_components.idx[i] = layer_ctx->linked_components.idx[i + 1];
+    }
+    layer_ctx->linked_components.idx[i] = INVALID_LAYER_IDX;
+    layer_ctx->linked_components.count--;
+}
 
 static int get_free_component_context_index(void)
 {
@@ -80,6 +119,8 @@ static void set_context_to_default(int i)
 
 static void invalidate_layer(int i)
 {
+    int j;
+
     layer_ctx_array[i].idx = i;
     layer_ctx_array[i].state = LAYER_STATE_CLOSED;
     layer_ctx_array[i].parent_layer_idx = INVALID_LAYER_IDX;
@@ -91,6 +132,10 @@ static void invalidate_layer(int i)
     (void)psa_destroy_key(layer_ctx_array[i].data.cdi_key_id);
     (void)psa_destroy_key(layer_ctx_array[i].data.attest_key_id);
     (void)memset(&layer_ctx_array[i].data, 0, sizeof(struct layer_context_data_t));
+    layer_ctx_array[i].linked_components.count = 0;
+    for (j = 0; j < ARRAY_SIZE(layer_ctx_array[i].linked_components.idx); j++) {
+        layer_ctx_array[i].linked_components.idx[j] = INVALID_COMPONENT_IDX;
+    }
 }
 
 static dpe_error_t copy_dice_input(struct component_context_t *dest_ctx,
@@ -214,7 +259,14 @@ static psa_status_t compute_layer_cdi_attest_input(struct layer_context_t *layer
     psa_status_t status;
     uint8_t component_ctx_data[CONTEXT_DATA_MAX_SIZE];
     size_t ctx_data_size, hash_len;
-    int idx;
+    int i, idx;
+    uint16_t num_of_linked_components;
+
+    num_of_linked_components = layer_ctx->linked_components.count;
+    if (num_of_linked_components == 0) {
+        /* No components to hash */
+        return PSA_SUCCESS;
+    }
 
     psa_hash_operation_t hash_op = psa_hash_operation_init();
     status = psa_hash_setup(&hash_op, DPE_HASH_ALG);
@@ -228,24 +280,21 @@ static psa_status_t compute_layer_cdi_attest_input(struct layer_context_t *layer
      * concatenates the data of all SW components which belong to the same layer
      * and hash it.
      */
-    for (idx = 0; idx < MAX_NUM_OF_COMPONENTS; idx++) {
-        if (component_ctx_array[idx].linked_layer_idx == layer_ctx->idx) {
-            /* This component belongs to current layer */
-            /* Concatenate all context data for this component */
-            status = get_component_data_for_attest_cdi(component_ctx_data,
-                                                       sizeof(component_ctx_data),
-                                                       &ctx_data_size,
-                                                       &component_ctx_array[idx]);
-            if (status != PSA_SUCCESS) {
-                return status;
-            }
+    for (i = 0; i < num_of_linked_components; i++) {
+        idx = layer_ctx->linked_components.idx[i];
+        status = get_component_data_for_attest_cdi(component_ctx_data,
+                                                   sizeof(component_ctx_data),
+                                                   &ctx_data_size,
+                                                   &component_ctx_array[idx]);
+        if (status != PSA_SUCCESS) {
+            return status;
+        }
 
-            status = psa_hash_update(&hash_op,
-                                     component_ctx_data,
-                                     ctx_data_size);
-            if (status != PSA_SUCCESS) {
-                return status;
-            }
+        status = psa_hash_update(&hash_op,
+                                 component_ctx_data,
+                                 ctx_data_size);
+        if (status != PSA_SUCCESS) {
+            return status;
         }
     }
 
@@ -291,17 +340,10 @@ static dpe_error_t get_encoded_cdi_to_export(struct layer_context_t *layer_ctx,
     return DPE_NO_ERROR;
 }
 
-static dpe_error_t prepare_layer_certificate(struct layer_context_t *layer_ctx)
+static dpe_error_t prepare_layer_certificate(struct layer_context_t *layer_ctx,
+                                             const struct layer_context_t *parent_layer_ctx)
 {
-    uint16_t layer_idx, parent_layer_idx;
     psa_status_t status;
-    struct layer_context_t *parent_layer_ctx;
-
-    layer_idx = layer_ctx->idx;
-    assert(layer_idx < MAX_NUM_OF_LAYERS);
-    parent_layer_idx = layer_ctx->parent_layer_idx;
-    assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
-    parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
 
     /* For RoT Layer, CDI and issuer seed values are calculated by BL1_1 */
     if ((!layer_ctx->is_rot_layer) &&
@@ -531,9 +573,9 @@ dpe_error_t derive_context_request(int input_ctx_handle,
 {
     dpe_error_t err;
     struct component_context_t *parent_ctx, *derived_ctx;
-    uint16_t parent_ctx_idx, linked_layer_idx;
+    uint16_t parent_ctx_idx, linked_layer_idx, parent_layer_idx;
     int free_component_idx;
-    struct layer_context_t *layer_ctx;
+    struct layer_context_t *layer_ctx, *parent_layer_ctx;
 
     log_derive_context(input_ctx_handle, cert_id, retain_parent_context,
                        allow_new_context_to_derive, create_certificate, dice_inputs,
@@ -654,12 +696,20 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     linked_layer_idx = derived_ctx->linked_layer_idx;
     assert(linked_layer_idx < MAX_NUM_OF_LAYERS);
     layer_ctx = &layer_ctx_array[linked_layer_idx];
+    err = store_linked_component(layer_ctx, free_component_idx);
+    if (err != DPE_NO_ERROR) {
+        return err;
+    }
+    parent_layer_idx = layer_ctx->parent_layer_idx;
+    assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
+    parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
+
     if (create_certificate) {
         layer_ctx->is_cdi_to_be_exported = export_cdi;
 
         /* Finalise the layer */
         layer_ctx->state = LAYER_STATE_FINALISED;
-        err = prepare_layer_certificate(layer_ctx);
+        err = prepare_layer_certificate(layer_ctx, parent_layer_ctx);
         if (err != DPE_NO_ERROR) {
             return err;
         }
@@ -706,6 +756,7 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
     uint16_t input_ctx_idx, linked_layer_idx;
     int i;
     bool is_layer_empty;
+    struct layer_context_t *layer_ctx;
 
     log_destroy_context(input_ctx_handle, destroy_recursively);
 
@@ -725,14 +776,15 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
     }
 #endif /* !DPE_TEST_MODE */
 
+    assert(linked_layer_idx < MAX_NUM_OF_LAYERS);
 
     if (!destroy_recursively) {
         set_context_to_default(input_ctx_idx);
+        layer_ctx = &layer_ctx_array[linked_layer_idx];
+        remove_linked_component(layer_ctx, input_ctx_idx);
     } else {
         //TODO: To be implemented
     }
-
-    assert(linked_layer_idx < MAX_NUM_OF_LAYERS);
 
     /* Close the layer if all of its contexts are destroyed */
     is_layer_empty = true;
@@ -751,19 +803,14 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
     return DPE_NO_ERROR;
 }
 
-struct component_context_t* get_component_if_linked_to_layer(uint16_t layer_idx,
-                                                             uint16_t component_idx)
+struct component_context_t* get_component_ctx_ptr(uint16_t component_idx)
 {
     /* Safety case */
     if (component_idx >= MAX_NUM_OF_COMPONENTS) {
         return NULL;
     }
 
-    if (component_ctx_array[component_idx].linked_layer_idx == layer_idx) {
-        return &component_ctx_array[component_idx];
-    } else {
-        return NULL;
-    }
+    return &component_ctx_array[component_idx];
 }
 
 struct layer_context_t* get_layer_ctx_ptr(uint16_t layer_idx)
@@ -849,11 +896,16 @@ dpe_error_t certify_key_request(int input_ctx_handle,
         }
     }
 
+    /* Get parent layer derived public key to verify the certificate signature */
+    parent_layer_idx = leaf_layer.parent_layer_idx;
+    assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
+    parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
+
     /* Correct layer should already be assigned in last call of
      * derive context command
      */
     /* Create leaf certificate */
-    err = prepare_layer_certificate(&leaf_layer);
+    err = prepare_layer_certificate(&leaf_layer, parent_layer_ctx);
     if (err != DPE_NO_ERROR) {
         return err;
     }
@@ -865,11 +917,6 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     if (err != DPE_NO_ERROR) {
         return err;
     }
-
-    /* Get parent layer derived public key to verify the certificate signature */
-    parent_layer_idx = leaf_layer.parent_layer_idx;
-    assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
-    parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
 
     if (derived_public_key_buf_size < sizeof(parent_layer_ctx->data.attest_pub_key)) {
         return DPE_INVALID_ARGUMENT;

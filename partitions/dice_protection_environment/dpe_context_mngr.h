@@ -91,10 +91,16 @@ enum layer_state_t {
     LAYER_STATE_FINALISED
 };
 
+struct linked_components_t {
+    uint16_t idx[MAX_NUM_OF_COMPONENTS];
+    uint16_t count;
+};
+
 struct layer_context_t {
     struct layer_context_data_t data;
     uint16_t idx;
     uint16_t parent_layer_idx;
+    struct linked_components_t linked_components;
     uint8_t attest_cdi_hash_input[DPE_HASH_ALG_SIZE];
     enum layer_state_t state;
     bool is_external_pub_key_provided;
@@ -187,18 +193,6 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
                                     bool destroy_recursively);
 
 /**
- * \brief  Function to get the pointer to a component context if linked to a layer
- *
- * \param[in] layer_idx      Index of the linked layer
- * \param[in] component_idx  Index of the component context in the array
- *
- * \return Returns pointer to the component context if it is linked to the input
- *         layer else returns NULL
- */
-struct component_context_t* get_component_if_linked_to_layer(uint16_t layer_idx,
-                                                             uint16_t component_idx);
-
-/**
  * \brief  Function to get the pointer to a layer context
  *
  * \param[in] layer_idx      Index of the layer in the layer context array
@@ -208,6 +202,17 @@ struct component_context_t* get_component_if_linked_to_layer(uint16_t layer_idx,
  *         else returns NULL
  */
 struct layer_context_t* get_layer_ctx_ptr(uint16_t layer_idx);
+
+/**
+ * \brief  Function to get the pointer to a component context
+ *
+ * \param[in] component_idx  Index of the component in the component context array
+ *                           for which pointer is required
+ *
+ * \return Returns pointer to the component context if input index is valid
+ *         else returns NULL
+ */
+struct component_context_t* get_component_ctx_ptr(uint16_t component_idx);
 
 /**
  * \brief Certifies the attestation key and generates a leaf certificate.
