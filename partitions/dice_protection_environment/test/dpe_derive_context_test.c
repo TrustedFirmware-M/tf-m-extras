@@ -538,7 +538,7 @@ void derive_context_without_cert_id_test(struct test_result_t *ret)
                                                  true,                    /* allow_new_context_to_derive */
                                                  false,                   /* create_certificate */
                                                  &dice_inputs,            /* dice_inputs */
-                                                 0,                       /* target_locality */
+                                                 TFM_TEST_LOCALITY,       /* target_locality */
                                                  false,                   /* return_certificate */
                                                  true,                    /* allow_new_context_to_export */
                                                  false,                   /* export_cdi */

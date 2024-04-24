@@ -12,8 +12,11 @@
 extern "C" {
 #endif
 
+#include "platform_locality.h"
+
 #define MAX_NUM_OF_COMPONENTS 20
 #define INVALID_COMPONENT_IDX 0xFFFF
+#define TFM_TEST_LOCALITY LOCALITY_NONE
 
 #define DPE_PLATFORM_CERT_ID 0x200
 /* Certificate IDs used for tests where layers are finalized and undestroyable
@@ -50,7 +53,7 @@ extern "C" {
         true,                           /* allow_new_context_to_derive */      \
         false,                          /* create_certificate */               \
         DEFAULT_DICE_INPUT,             /* dice_inputs */                      \
-        0,                              /* target_locality */                  \
+        TFM_TEST_LOCALITY,              /* target_locality */                  \
         false,                          /* return_certificate */               \
         true,                           /* allow_new_context_to_export */      \
         false                           /* export_cdi */                       \

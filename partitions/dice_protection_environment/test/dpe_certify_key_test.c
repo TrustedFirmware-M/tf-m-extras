@@ -41,7 +41,7 @@ void call_derive_context_with_test_data(
                                      test_data[i].inputs.allow_new_context_to_derive, /* allow_new_context_to_derive */
                                      test_data[i].inputs.create_certificate,          /* create_certificate */
                                      &dice_inputs,              /* dice_inputs */
-                                     0,                         /* target_locality */
+                                     TFM_TEST_LOCALITY,         /* target_locality */
                                      false,                     /* return_certificate */
                                      true,                      /* allow_new_context_to_export */
                                      false,                     /* export_cdi */
