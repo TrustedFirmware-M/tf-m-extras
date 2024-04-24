@@ -16,7 +16,9 @@
 #include "boot_measurement.h"
 #include "dice_protection_environment.h"
 #include "dpe_context_mngr.h"
+#include "platform_locality.h"
 #include "psa/lifecycle.h"
+#include "psa_manifest/pid.h"
 #include "service_api.h"
 #include "tfm_boot_status.h"
 
@@ -300,8 +302,8 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
                                  true, /* allow_new_context_to_derive */
                                  true, /* create certificate */
                                  &dice_inputs,
-                                 0, /* client_id */
-                                 0, /* target_locality */
+                                 TFM_SP_DPE, /* client_id */
+                                 LOCALITY_RSE_S, /* target_locality */
                                  false, /* return_certificate */
                                  true, /* allow_new_context_to_export */
                                  false, /* export_cdi */
@@ -332,8 +334,8 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
                                  true, /* allow BL2 to derive further */
                                  false, /* create_certificate */
                                  &dice_inputs,
-                                 0, /* client_id */
-                                 0, /* target_locality */
+                                 TFM_SP_DPE, /* client_id */
+                                 LOCALITY_RSE_S, /* target_locality */
                                  false, /* return_certificate */
                                  true, /* allow_new_context_to_export */
                                  false, /* export_cdi */
@@ -360,8 +362,8 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
                                      false, /* do not allow derived context to derive */
                                      false, /* create_certificate */
                                      &dice_inputs,
-                                     0, /* client_id */
-                                     0, /* target_locality */
+                                     TFM_SP_DPE, /* client_id */
+                                     LOCALITY_RSE_S, /* target_locality */
                                      false, /* return_certificate */
                                      true, /* allow_new_context_to_export */
                                      false, /* export_cdi */
@@ -401,8 +403,8 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
                                   true, /* allow AP to derive */
                                   true, /* create_certificate */
                                   &dice_inputs,
-                                  0, /* client_id */
-                                  0, /* target_locality */
+                                  TFM_SP_DPE, /* client_id */
+                                  LOCALITY_AP_S, /* target_locality */
                                   false, /* return_certificate */
                                   true, /* allow_new_context_to_export */
                                   false, /* export_cdi */

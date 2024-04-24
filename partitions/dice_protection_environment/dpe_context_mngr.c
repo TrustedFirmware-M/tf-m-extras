@@ -408,11 +408,18 @@ static uint16_t open_new_layer(void)
     return MAX_NUM_OF_LAYERS - 1;
 }
 
-static inline bool is_input_client_id_valid(int32_t client_id, int32_t target_locality)
+static bool is_client_authorised(int32_t client_id, int32_t target_locality)
 {
-    // TODO: FIXME
-    //    return (client_id == target_locality);
-    return true;
+    int32_t client_locality;
+
+    if (target_locality == LOCALITY_NONE) {
+        /* Context is not bound to any locality */
+        return true;
+    }
+    /* Get the corresponding client locality */
+    client_locality = dpe_plat_get_client_locality(client_id);
+
+    return (client_locality == target_locality);
 }
 
 static bool is_cert_id_used(uint32_t cert_id, uint16_t *layer_idx)
@@ -593,8 +600,7 @@ dpe_error_t derive_context_request(int input_ctx_handle,
         return DPE_INVALID_ARGUMENT;
     }
 
-    //TODO:  Question: how to get mhu id of incoming request?
-    if (!is_input_client_id_valid(client_id, parent_ctx->target_locality)) {
+    if (!is_client_authorised(client_id, parent_ctx->target_locality)) {
         return DPE_INVALID_ARGUMENT;
     }
 
