@@ -17,6 +17,7 @@ extern "C" {
 #define MAX_NUM_OF_COMPONENTS 20
 #define INVALID_COMPONENT_IDX 0xFFFF
 #define TFM_TEST_LOCALITY LOCALITY_NONE
+#define RANDOM_DISTINCT_LOCALITY 0xFF
 
 #define DPE_PLATFORM_CERT_ID 0x200
 /* Certificate IDs used for tests where layers are finalized and undestroyable

@@ -158,6 +158,13 @@ void derive_context_without_cert_id_test(struct test_result_t *ret);
 void derive_context_with_unsupported_params_test(struct test_result_t *ret);
 
 /**
+ * \brief Test the DPE DeriveContext with invalid target locality.
+ *
+ * \param[out] ret  Test result
+ */
+void derive_context_with_invalid_target_locality_test(struct test_result_t *ret);
+
+/**
  * \brief Test the DPE DeriveContext for leaf component.
  *
  * \param[out] ret  Test result
