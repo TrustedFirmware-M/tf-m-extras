@@ -68,6 +68,9 @@ int verify_certificate_chain(UsefulBufC cert_chain_buf,
 
 psa_status_t unregister_pub_key(psa_key_id_t pub_key_id);
 
+int compare_certificate_chains(struct certificate_chain *decoded_chain_1,
+                               struct certificate_chain *decoded_chain_2);
+
 #ifdef __cplusplus
 }
 #endif

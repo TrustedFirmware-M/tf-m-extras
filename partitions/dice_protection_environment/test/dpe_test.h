@@ -257,6 +257,13 @@ void certify_key_with_unsupported_params_test(struct test_result_t *ret);
  */
 void get_certificate_chain_test(struct test_result_t *ret);
 
+/**
+ * \brief Test complex sequence for DPE GetCertificateChain and CertifyKey.
+ *
+ * \param[out] ret  Test result
+ */
+void complex_sequence_test_1(struct test_result_t *ret);
+
 #ifdef __cplusplus
 }
 #endif

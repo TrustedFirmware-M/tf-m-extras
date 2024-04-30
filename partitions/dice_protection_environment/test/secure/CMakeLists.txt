@@ -16,6 +16,7 @@ target_sources(tfm_test_suite_extra_s
         ../dpe_get_certificate_chain_test.c
         ../dpe_test_cmd_encode.c
         ../dpe_test_data.c
+        ../dpe_complex_sequence_test.c
         dpe_s_interface_testsuite.c
 )
 

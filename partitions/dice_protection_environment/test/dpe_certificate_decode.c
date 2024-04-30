@@ -15,7 +15,7 @@
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
 #include "t_cose_sign1_verify.h"
-#include "test_framework.h"
+#include "test_log.h"
 
 /* Uncomment this define to print the certificate chain */
 //#define PRINT_CERT_CHAIN
@@ -497,6 +497,117 @@ int verify_certificate_chain(UsefulBufC cert_chain_buf,
 #ifdef PRINT_CERT_CHAIN
     print_certificate_chain(cert_chain);
 #endif
+
+    return 0;
+}
+
+int compare_certificate_chains(struct certificate_chain *decoded_chain_1,
+                               struct certificate_chain *decoded_chain_2)
+{
+    int i, j;
+    struct certificate *chain_1_cert, *chain_2_cert;
+    struct component *chain_1_comp, *chain_2_comp;
+
+    if (decoded_chain_1->cert_cnt != decoded_chain_2->cert_cnt) {
+        TEST_LOG("Certificate chains diverge: Certificate count does not match");
+        return -1;
+    }
+
+    if (memcmp((uint8_t *)decoded_chain_1->root_pub_key.ptr,
+               (uint8_t *)decoded_chain_2->root_pub_key.ptr,
+               decoded_chain_1->root_pub_key.len)) {
+        TEST_LOG("Certificate chains diverge: Root public key does not match");
+        return -1;
+    }
+
+    for (i = 0; i < decoded_chain_1->cert_cnt; i++) {
+
+        chain_1_cert = &decoded_chain_1->cert_arr[i];
+        chain_2_cert = &decoded_chain_2->cert_arr[i];
+
+        if (memcmp((uint8_t *)chain_1_cert->protected_header.ptr,
+                   (uint8_t *)chain_2_cert->protected_header.ptr,
+                   chain_1_cert->protected_header.len)) {
+            TEST_LOG("Certificate chains diverge: Protected header does not match");
+            return -1;
+        }
+
+        if (memcmp((uint8_t *)chain_1_cert->pub_key.ptr,
+                   (uint8_t *)chain_2_cert->pub_key.ptr,
+                   chain_1_cert->pub_key.len)) {
+            TEST_LOG("Certificate chains diverge: Public key does not match");
+            return -1;
+        }
+
+        if (memcmp((uint8_t *)chain_1_cert->issuer.ptr,
+                   (uint8_t *)chain_2_cert->issuer.ptr,
+                   chain_1_cert->issuer.len)) {
+            TEST_LOG("Certificate chains diverge: Issuer does not match");
+            return -1;
+        }
+
+        if (memcmp((uint8_t *)chain_1_cert->subject.ptr,
+                   (uint8_t *)chain_2_cert->subject.ptr,
+                   chain_1_cert->subject.len)) {
+            TEST_LOG("Certificate chains diverge: Subject does not match");
+            return -1;
+        }
+
+        if (memcmp((uint8_t *)chain_1_cert->key_usage.ptr,
+                   (uint8_t *)chain_2_cert->key_usage.ptr,
+                   chain_1_cert->key_usage.len)) {
+            TEST_LOG("Certificate chains diverge: Key usage does not match");
+            return -1;
+        }
+
+        if (memcmp((uint8_t *)chain_1_cert->external_label.ptr,
+                   (uint8_t *)chain_2_cert->external_label.ptr,
+                   chain_1_cert->external_label.len)) {
+            TEST_LOG("Certificate chains diverge: External label does not match");
+            return -1;
+        }
+
+        if ((chain_1_cert->cdi_export.presence) &&
+            (chain_1_cert->cdi_export.value != chain_2_cert->cdi_export.value)) {
+            TEST_LOG("Certificate chains diverge: Export CDI value does not match");
+            return -1;
+        }
+
+        if (chain_1_cert->component_cnt != chain_2_cert->component_cnt) {
+            TEST_LOG("Certificate chains diverge: Component count does not match");
+            return -1;
+        }
+
+        for (j = 0; j < chain_1_cert->component_cnt; j++) {
+
+            chain_1_comp = &chain_1_cert->component_arr[j];
+            chain_2_comp = &chain_2_cert->component_arr[j];
+
+            if (memcmp((uint8_t *)chain_1_comp->code_hash.ptr,
+                       (uint8_t *)chain_2_comp->code_hash.ptr,
+                       chain_1_comp->code_hash.len)) {
+                TEST_LOG("Certificate chains diverge: Component code hash does not match");
+                return -1;
+            }
+
+            if (memcmp((uint8_t *)chain_1_comp->authority_hash.ptr,
+                       (uint8_t *)chain_2_comp->authority_hash.ptr,
+                       chain_1_comp->authority_hash.len)) {
+                TEST_LOG("Certificate chains diverge: Component authority hash does not match");
+                return -1;
+            }
+
+            if (memcmp((uint8_t *)chain_1_comp->code_descriptor.ptr,
+                       (uint8_t *)chain_2_comp->code_descriptor.ptr,
+                       chain_1_comp->code_descriptor.len)) {
+                TEST_LOG("Certificate chains diverge: Component descriptor does not match");
+                return -1;
+            }
+
+            //TODO: Add remaining checks except signature when remaining elements
+            //      are added to struct component type
+        }
+    }
 
     return 0;
 }

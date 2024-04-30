@@ -18,13 +18,13 @@ extern struct dpe_derive_context_test_data_t
               derive_context_test_dataset_2;
 extern int retained_rot_ctx_handle;
 
-static void call_derive_context_with_test_data(
-                        struct test_result_t *ret,
-                        struct dpe_derive_context_test_data_t *test_data,
-                        int test_count,
-                        int *saved_handles,
-                        int *saved_handles_cnt,
-                        int *out_ctx_handle)
+void call_derive_context_with_test_data(
+    struct test_result_t *ret,
+    struct dpe_derive_context_test_data_t *test_data,
+    int test_count,
+    int *saved_handles,
+    int *saved_handles_cnt,
+    int *out_ctx_handle)
 {
     dpe_error_t dpe_err;
     int in_handle, out_parent_handle;
@@ -33,13 +33,13 @@ static void call_derive_context_with_test_data(
 
     in_handle = retained_rot_ctx_handle;
 
-    for (i = 0; i < test_count; i++, test_data++) {
+    for (i = 0; i < test_count; i++) {
 
         dpe_err = dpe_derive_context(in_handle,                 /* input_ctx_handle */
-                                     test_data->inputs.cert_id, /* cert_id */
-                                     test_data->inputs.retain_parent_context,       /* retain_parent_context */
-                                     test_data->inputs.allow_new_context_to_derive, /* allow_new_context_to_derive */
-                                     test_data->inputs.create_certificate,          /* create_certificate */
+                                     test_data[i].inputs.cert_id, /* cert_id */
+                                     test_data[i].inputs.retain_parent_context,       /* retain_parent_context */
+                                     test_data[i].inputs.allow_new_context_to_derive, /* allow_new_context_to_derive */
+                                     test_data[i].inputs.create_certificate,          /* create_certificate */
                                      &dice_inputs,              /* dice_inputs */
                                      0,                         /* target_locality */
                                      false,                     /* return_certificate */
@@ -72,7 +72,7 @@ static void call_derive_context_with_test_data(
             TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
         }
 
-        if (test_data->inputs.retain_parent_context) {
+        if (test_data[i].inputs.retain_parent_context) {
             for (j = 0; j < *saved_handles_cnt; j++) {
                 if(GET_IDX(out_parent_handle) ==  GET_IDX(saved_handles[j])) {
                     saved_handles[j] = out_parent_handle;
@@ -80,12 +80,12 @@ static void call_derive_context_with_test_data(
             }
         }
 
-        if (test_data->inputs.allow_new_context_to_derive) {
+        if (test_data[i].inputs.allow_new_context_to_derive) {
             saved_handles[(*saved_handles_cnt)++] = *out_ctx_handle;
         }
 
         /* Update the input handle for next iteration */
-        if (test_data->inputs.use_parent_handle) {
+        if (test_data[i].inputs.use_parent_handle) {
             in_handle = out_parent_handle;
         } else {
             in_handle = *out_ctx_handle;
