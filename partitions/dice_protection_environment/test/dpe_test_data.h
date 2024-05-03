@@ -43,6 +43,19 @@ extern "C" {
         { 0x81, 0xDE },                                    \
     }
 
+#define DEFAULT_DC_CMD_INPUT {                                                 \
+        0,                              /* context_handle */                   \
+        DPE_PLATFORM_CERT_ID,           /* cert_id */                          \
+        true,                           /* retain_parent_context */            \
+        true,                           /* allow_new_context_to_derive */      \
+        false,                          /* create_certificate */               \
+        DEFAULT_DICE_INPUT,             /* dice_inputs */                      \
+        0,                              /* target_locality */                  \
+        false,                          /* return_certificate */               \
+        true,                           /* allow_new_context_to_export */      \
+        false                           /* export_cdi */                       \
+    }
+
 struct dpe_derive_context_test_input_data_t {
     uint32_t cert_id;
     /* If below flag is true, use previous parent handle or use derived context handle */
