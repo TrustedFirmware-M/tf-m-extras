@@ -350,20 +350,20 @@ static dpe_error_t encode_layer_sw_components_array(const struct layer_context_t
     int i;
     struct component_context_t *component_ctx;
 
-    if (layer_ctx->linked_components.count > 0) {
-        /* Open array which stores SW components claims. */
-        QCBOREncode_OpenArrayInMapN(cbor_enc_ctx,
-                                    DPE_CERT_LABEL_SW_COMPONENTS);
-        for (i = 0; i < layer_ctx->linked_components.count; i++) {
-            component_ctx = get_component_ctx_ptr(layer_ctx->linked_components.idx[i]);
-            if (component_ctx == NULL) {
-                return DPE_INTERNAL_ERROR;
-            }
-            encode_sw_component_measurements(cbor_enc_ctx, component_ctx);
+    /* Open array which stores SW components claims. */
+    QCBOREncode_OpenArrayInMapN(cbor_enc_ctx, DPE_CERT_LABEL_SW_COMPONENTS);
+
+    /* Add elements to the array if there is any */
+    for (i = 0; i < layer_ctx->linked_components.count; i++) {
+        component_ctx = get_component_ctx_ptr(layer_ctx->linked_components.idx[i]);
+        if (component_ctx == NULL) {
+            return DPE_INTERNAL_ERROR;
         }
-        /* Close array which stores SW components claims. */
-        QCBOREncode_CloseArray(cbor_enc_ctx);
+        encode_sw_component_measurements(cbor_enc_ctx, component_ctx);
     }
+
+    /* Close array which stores SW components claims. */
+    QCBOREncode_CloseArray(cbor_enc_ctx);
 
     return DPE_NO_ERROR;
 }
