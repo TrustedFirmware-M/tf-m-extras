@@ -71,6 +71,48 @@ extern "C" {
         dc_output.exported_cdi_buf_size,            \
         &dc_output.exported_cdi_actual_size)
 
+#define CALL_CERTIFY_KEY_WITH_TEST_PARAM(ck_input, ck_output, test_params)  \
+    dpe_certify_key_with_test_param(                                        \
+        ck_input.context_handle, /* input_ctx_handle */                     \
+        ck_input.retain_context,                                            \
+        ck_input.public_key,                                                \
+        ck_input.public_key_size,                                           \
+        ck_input.label,                                                     \
+        ck_input.label_size,                                                \
+        ck_output.certificate_chain_buf,                                    \
+        ck_output.certificate_chain_buf_size,                               \
+        &ck_output.certificate_chain_actual_size,                           \
+        ck_output.derived_public_key_buf,                                   \
+        ck_output.derived_public_key_buf_size,                              \
+        &ck_output.derived_public_key_actual_size,                          \
+        &ck_output.new_context_handle,                                      \
+        &test_params);                    /* test_params */
+
+#define ADD_CERT_CHAIN_BUF(ck_output, size)                     \
+    uint8_t certificate_chain_buf[size];                        \
+    ck_output.certificate_chain_buf = certificate_chain_buf;    \
+    ck_output.certificate_chain_buf_size = size
+
+#define ADD_DERIVED_PUB_KEY_BUF(ck_output, size)                \
+    uint8_t derived_public_key_buf[size];                       \
+    ck_output.derived_public_key_buf = derived_public_key_buf;  \
+    ck_output.derived_public_key_buf_size = size
+
+#define CALL_CERTIFY_KEY(ck_input, ck_output)                       \
+    dpe_certify_key(ck_input.context_handle,                        \
+        ck_input.retain_context,                                    \
+        ck_input.public_key,                                        \
+        ck_input.public_key_size,                                   \
+        ck_input.label,                                             \
+        ck_input.label_size,                                        \
+        ck_output.certificate_chain_buf,                            \
+        ck_output.certificate_chain_buf_size,                       \
+        &ck_output.certificate_chain_actual_size,                   \
+        ck_output.derived_public_key_buf,                           \
+        ck_output.derived_public_key_buf_size,                      \
+        &ck_output.derived_public_key_actual_size,                  \
+        &ck_output.new_context_handle)
+
 struct derive_context_cmd_input_t {
     int             context_handle;
     uint32_t        cert_id;
@@ -93,6 +135,25 @@ struct derive_context_cmd_output_t {
     uint8_t         *exported_cdi_buf;
     size_t          exported_cdi_buf_size;
     size_t          exported_cdi_actual_size;
+};
+
+struct certify_key_cmd_input_t {
+    int             context_handle;
+    bool            retain_context;
+    uint8_t         *public_key;
+    size_t          public_key_size;
+    uint8_t         *label;
+    size_t          label_size;
+};
+
+struct certify_key_cmd_output_t {
+    uint8_t         *certificate_chain_buf;
+    size_t          certificate_chain_buf_size;
+    size_t          certificate_chain_actual_size;
+    uint8_t         *derived_public_key_buf;
+    size_t          derived_public_key_buf_size;
+    size_t          derived_public_key_actual_size;
+    int             new_context_handle;
 };
 
 #ifdef __cplusplus

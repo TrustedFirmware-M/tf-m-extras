@@ -65,6 +65,15 @@ struct dpe_derive_context_test_input_data_t {
     bool create_certificate;
 };
 
+#define DEFAULT_CK_CMD_INPUT {                          \
+        0,                      /* context_handle */    \
+        true,                   /* retain_context */    \
+        NULL,                   /* public_key */        \
+        0,                      /* public_key_size */   \
+        NULL,                   /* label */             \
+        0,                      /* label_size */        \
+    }
+
 struct dpe_derive_context_test_data_t {
     struct dpe_derive_context_test_input_data_t inputs;
 };
