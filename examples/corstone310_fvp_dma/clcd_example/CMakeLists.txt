@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2021-2023, Arm Limited. All rights reserved.
+# Copyright (c) 2021-2024, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -9,46 +9,42 @@
 
 ############################# External Dependencies ############################################
 
+if (NOT DEFINED CONFIG_SPE_PATH OR NOT EXISTS ${CONFIG_SPE_PATH})
+    message(FATAL_ERROR "CONFIG_SPE_PATH = ${CONFIG_SPE_PATH} is not defined or incorrect. Please provide full path to TF-M build artifacts using -DCONFIG_SPE_PATH=")
+endif()
+
+list(APPEND CMAKE_MODULE_PATH ${CONFIG_SPE_PATH}/cmake)
+
+# A platform specific MCPU and architecture flags for NS side
+include(${CONFIG_SPE_PATH}/platform/cpuarch.cmake)
+# Include common configs exported from TF-M
+include(${CONFIG_SPE_PATH}/cmake/spe_config.cmake)
+
+# Select toolchain file if it is not specified via command line or the absolute path
+# is unavailable.
+if (NOT DEFINED TFM_TOOLCHAIN_FILE)
+    if (NOT DEFINED TFM_TOOLCHAIN)
+        set(TFM_TOOLCHAIN "GNUARM")
+        message(WARNING "TFM_TOOLCHAIN or TFM_TOOLCHAIN_FILE is not defined")
+        message(WARNING "TFM_TOOLCHAIN is set to ${TFM_TOOLCHAIN}")
+    endif()
+    set(TFM_TOOLCHAIN_FILE    ${CONFIG_SPE_PATH}/cmake/toolchain_ns_${TFM_TOOLCHAIN}.cmake)
+endif()
+
+include(${TFM_TOOLCHAIN_FILE})
+project("TF-M Example"  LANGUAGES C)
+tfm_toolchain_reload_compiler()
+
 set(FREERTOS_SRC_PATH     "DOWNLOAD"  CACHE PATH  "Path to FreeRTOS kernel (or DOWNLOAD to fetch automatically")
 
 add_subdirectory(ext/freertos-kernel freertos-kernel)
-
-############################# Common variables ############################################
-
-# In actual NS integration, NS side build should include the source files
-# exported by TF-M build.
-# Directly include interface folder to simplify the NS build in this demo, since
-# install always occurs at the end of build.
-set(INTERFACE_SRC_DIR    ${CMAKE_SOURCE_DIR}/interface/src)
-set(INTERFACE_INC_DIR    ${CMAKE_SOURCE_DIR}/interface/include)
-set(TFM_SRC_DIR          ${CMAKE_SOURCE_DIR})
-
-#################### TF-M NS interface (header only) ###########################
-
-add_library(tfm_ns_interface INTERFACE)
-
-# Include interface headers exported by TF-M
-target_include_directories(tfm_ns_interface
-    INTERFACE
-        ${INTERFACE_INC_DIR}
-        ${CMAKE_BINARY_DIR}/generated/interface/include
-)
-
-# Include selection of Secure Partitions from TF-M build.
-# It can be replaced by NS side configurations later.
-target_link_libraries(tfm_ns_interface
-    INTERFACE
-        tfm_config
-)
 
 ############################# TFM NS app #######################################
 
 add_executable(tfm_ns)
 
-target_add_scatter_file(tfm_ns
-    $<$<C_COMPILER_ID:ARMClang>:${CMAKE_CURRENT_SOURCE_DIR}/freertos-demo/corstone310_freertos.sct>
-    $<$<C_COMPILER_ID:GNU>:${CMAKE_CURRENT_SOURCE_DIR}/corstone310_freertos.ld>
-)
+# The exported TF-M interfaces
+add_subdirectory(${CONFIG_SPE_PATH} ${CMAKE_BINARY_DIR}/spe)
 
 target_sources(tfm_ns
     PRIVATE
@@ -66,18 +62,18 @@ target_sources(tfm_ns
         # CLCD files
         clcd_lib/clcd_mps3_lib.c
         clcd_lib/clcd_mps3_drv.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/drivers/timer/armv8m/systimer_armv8-m_drv.c
+        ${CONFIG_SPE_PATH}/platform/ext/target/arm/drivers/timer/armv8m/systimer_armv8-m_drv.c
 
         # DMA350 unprivileged-specific files
         dma350_lib/dma350_lib_unprivileged.c
 
         # DMA350 files
         device_definition.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers/dma350_ch_drv.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers/dma350_drv.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/libraries/dma350_lib.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/libraries/dma350_checker_layer.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/device/source/dma350_address_remap.c
+        ${CONFIG_SPE_PATH}/platform/ext/target/arm/drivers/dma/dma350/dma350_checker_layer.c
+        ${CONFIG_SPE_PATH}/platform/ext/target/arm/drivers/dma/dma350/dma350_ch_drv.c
+        ${CONFIG_SPE_PATH}/platform/ext/target/arm/drivers/dma/dma350/dma350_drv.c
+        ${CONFIG_SPE_PATH}/platform/ext/target/arm/drivers/dma/dma350/dma350_lib.c
+        ${CONFIG_SPE_PATH}/platform/device/source/dma350_address_remap.c
 
         # freeRTOS kernel files
         ${FREERTOS_SRC_PATH}/portable/Common/mpu_wrappers.c
@@ -91,6 +87,12 @@ target_sources(tfm_ns
         ${FREERTOS_SRC_PATH}/event_groups.c
         ${FREERTOS_SRC_PATH}/portable/MemMang/heap_4.c
         ${FREERTOS_SRC_PATH}/portable/ThirdParty/GCC/ARM_TFM/os_wrapper_freertos.c
+
+        # GNU Arm compiler version greater equal than *11.3.Rel1*
+        # has a linker issue that required system calls are missing,
+        # such as _read and _write. Add stub functions of required
+        # system calls to solve this issue.
+        $<$<BOOL:${CONFIG_GNU_SYSCALL_STUB_ENABLED}>:syscalls_stub.c>
 )
 
 target_include_directories(tfm_ns
@@ -100,35 +102,44 @@ target_include_directories(tfm_ns
         dma350_lib/
         freertos-config/
         amazon-freertos/
-        ${INTERFACE_INC_DIR}/
-        ${TFM_SRC_DIR}/platform/ext/target/arm/drivers/timer/armv8m/
+        ${CONFIG_SPE_PATH}/interface/include/
+        ${CONFIG_SPE_PATH}/platform/ext/target/arm/drivers/timer/armv8m/
         # freeRTOS kernel
         ${FREERTOS_SRC_PATH}/include/
         ${FREERTOS_SRC_PATH}/portable/GCC/ARM_CM85_NTZ/non_secure/
 
         # DMA350
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/libraries
+        ${CONFIG_SPE_PATH}/platform/ext/target/arm/drivers/dma/dma350
 )
 
 target_compile_definitions(tfm_ns
     PRIVATE
-        MBEDTLS_CONFIG_FILE="aws_mbedtls_config.h"
         # Needed for DMA-350 library
-        CMSIS_device_header=<corstone310.h>
+        CMSIS_device_header=<cmsis.h>
 )
 
 target_link_libraries(tfm_ns
     PRIVATE
         platform_ns
         tfm_api_ns
-        tfm_s_veneers
+        $<$<BOOL:${CONFIG_TFM_USE_TRUSTZONE}>:tfm_api_ns_tz>
 )
 
 set_target_properties(tfm_ns PROPERTIES
     SUFFIX ".axf"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
+
+if(${CMAKE_C_COMPILER_ID} STREQUAL "ARMClang")
+set_property(TARGET platform_ns PROPERTY INTERFACE_LINK_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/freertos-demo/corstone310_freertos.sct
+)
+elseif(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
+set_property(TARGET platform_ns PROPERTY INTERFACE_LINK_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/corstone310_freertos.ld
+)
+endif()
+target_add_scatter_file(tfm_ns)
 
 target_link_options(tfm_ns
     PRIVATE
@@ -141,30 +152,6 @@ add_convert_to_bin_target(tfm_ns)
 
 ###################### TF-M NS interface api (NS lib) ##########################
 
-add_library(tfm_api_ns STATIC)
-
 target_sources(tfm_api_ns PRIVATE
-    $<$<BOOL:${TFM_PARTITION_PLATFORM}>:${INTERFACE_SRC_DIR}/tfm_platform_api.c>
-
+    ${CONFIG_SPE_PATH}/interface/src/os_wrapper/tfm_ns_interface_rtos.c
 )
-
-target_sources(tfm_api_ns PRIVATE
-    ${INTERFACE_SRC_DIR}/tfm_tz_psa_ns_api.c
-    ${INTERFACE_SRC_DIR}/os_wrapper/tfm_ns_interface_rtos.c
-)
-
-target_include_directories(tfm_api_ns PUBLIC
-    ${TFM_TEST_REPO_PATH}/ns_interface
-)
-
-target_link_libraries(tfm_api_ns
-    PUBLIC
-        tfm_ns_interface
-    PRIVATE
-        platform_ns
-)
-
-############################# CMSIS ############################################
-
-# Platform cmake config adds sources to CMSIS_5_tfm_ns, so we need to define it, but it is unused.
-add_library(CMSIS_5_tfm_ns INTERFACE)

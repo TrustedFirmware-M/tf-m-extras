@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+# Copyright (c) 2022-2024, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -7,72 +7,85 @@
 
 ############################# Configuration ############################################
 
+############################# External Dependencies ############################################
 
-############################# Common variables ############################################
-set(TFM_SRC_DIR          ${CMAKE_SOURCE_DIR})
+if (NOT DEFINED CONFIG_SPE_PATH OR NOT EXISTS ${CONFIG_SPE_PATH})
+    message(FATAL_ERROR "CONFIG_SPE_PATH = ${CONFIG_SPE_PATH} is not defined or incorrect. Please provide full path to TF-M build artifacts using -DCONFIG_SPE_PATH=")
+endif()
 
-#################### TF-M NS interface (header only) ###########################
+list(APPEND CMAKE_MODULE_PATH ${CONFIG_SPE_PATH}/cmake)
 
-add_library(tfm_ns_interface INTERFACE)
+# A platform specific MCPU and architecture flags for NS side
+include(${CONFIG_SPE_PATH}/platform/cpuarch.cmake)
+# Include common configs exported from TF-M
+include(${CONFIG_SPE_PATH}/cmake/spe_config.cmake)
 
-# Include interface headers exported by TF-M
-target_include_directories(tfm_ns_interface
-    INTERFACE
-        ${INTERFACE_INC_DIR}
-        ${CMAKE_BINARY_DIR}/generated/interface/include
-)
+# Select toolchain file if it is not specified via command line or the absolute path
+# is unavailable.
+if (NOT DEFINED TFM_TOOLCHAIN_FILE)
+    if (NOT DEFINED TFM_TOOLCHAIN)
+        set(TFM_TOOLCHAIN "GNUARM")
+        message(WARNING "TFM_TOOLCHAIN or TFM_TOOLCHAIN_FILE is not defined")
+        message(WARNING "TFM_TOOLCHAIN is set to ${TFM_TOOLCHAIN}")
+    endif()
+    set(TFM_TOOLCHAIN_FILE    ${CONFIG_SPE_PATH}/cmake/toolchain_ns_${TFM_TOOLCHAIN}.cmake)
+endif()
 
-# Include selection of Secure Partitions from TF-M build.
-# It can be replaced by NS side configurations later.
-target_link_libraries(tfm_ns_interface
-    INTERFACE
-        tfm_config
-)
-
-###################### TF-M NS interface api (NS lib) ##########################
-# TF-M NS interface api is needed even if there's no communication
-# between the S and NS sides.
-add_library(tfm_api_ns INTERFACE)
+include(${TFM_TOOLCHAIN_FILE})
+project("TF-M Example"  LANGUAGES C)
+tfm_toolchain_reload_compiler()
 
 ############################# TFM NS app #######################################
 
 add_executable(tfm_ns)
 
+# The exported TF-M interfaces
+add_subdirectory(${CONFIG_SPE_PATH} ${CMAKE_BINARY_DIR}/spe)
+
 target_include_directories(tfm_ns
     PRIVATE
-        ${TFM_SRC_DIR}/platform/ext/target/arm/drivers/usart/cmsdk
+        ${CONFIG_SPE_PATH}/platform/ext/target/arm/drivers/usart/cmsdk
 
         # DMA350
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/libraries
+        ${CONFIG_SPE_PATH}/platform/ext/target/arm/drivers/dma/dma350
 )
 
 target_sources(tfm_ns
     PRIVATE
         main_ns.c
+        ${CONFIG_SPE_PATH}/interface/src/os_wrapper/tfm_ns_interface_bare_metal.c
         # DMA350 files
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers/dma350_ch_drv.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/native_drivers/dma350_drv.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/libraries/dma350_lib.c
-        ${TFM_SRC_DIR}/platform/ext/target/arm/mps3/corstone310/fvp/device/source/dma350_address_remap.c
+        ${CONFIG_SPE_PATH}/platform/ext/target/arm/drivers/dma/dma350/dma350_ch_drv.c
+        ${CONFIG_SPE_PATH}/platform/ext/target/arm/drivers/dma/dma350/dma350_drv.c
+        ${CONFIG_SPE_PATH}/platform/ext/target/arm/drivers/dma/dma350/dma350_lib.c
+        ${CONFIG_SPE_PATH}/platform/device/source/dma350_address_remap.c
+
+        # GNU Arm compiler version greater equal than *11.3.Rel1*
+        # has a linker issue that required system calls are missing,
+        # such as _read and _write. Add stub functions of required
+        # system calls to solve this issue.
+        $<$<BOOL:${CONFIG_GNU_SYSCALL_STUB_ENABLED}>:syscalls_stub.c>
 )
 
 target_compile_definitions(tfm_ns
     PRIVATE
         # Needed for DMA-350 library
-        CMSIS_device_header=<corstone310.h>
+        CMSIS_device_header=<cmsis.h>
 )
 
 target_link_libraries(tfm_ns
     PRIVATE
         platform_ns
-        tfm_s_veneers
+        tfm_api_ns
+        $<$<BOOL:${CONFIG_TFM_USE_TRUSTZONE}>:tfm_api_ns_tz>
 )
 
 set_target_properties(tfm_ns PROPERTIES
     SUFFIX ".axf"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
+
+target_add_scatter_file(tfm_ns ${CONFIG_SPE_PATH}/platform/linker_scripts)
 
 target_link_options(tfm_ns
     PRIVATE
@@ -82,8 +95,3 @@ target_link_options(tfm_ns
 )
 
 add_convert_to_bin_target(tfm_ns)
-
-############################# CMSIS ############################################
-
-# Platform cmake config adds sources to CMSIS_5_tfm_ns, so we need to define it, but it is unused.
-add_library(CMSIS_5_tfm_ns INTERFACE)

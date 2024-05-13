@@ -1,10 +1,10 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2023, Arm Limited. All rights reserved.
+# Copyright (c) 2023-2024, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
 #-------------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.22)
 
 if (NOT DEFINED CONFIG_SPE_PATH OR NOT EXISTS ${CONFIG_SPE_PATH})
     message(FATAL_ERROR "CONFIG_SPE_PATH = ${CONFIG_SPE_PATH} is not defined or incorrect. Please provide full path to TF-M build artifacts using -DCONFIG_SPE_PATH=")
@@ -17,33 +17,35 @@ include(${CONFIG_SPE_PATH}/platform/cpuarch.cmake)
 # Include common configs exported from TF-M
 include(${CONFIG_SPE_PATH}/cmake/spe_config.cmake)
 
-# Select toolchain file if it is not specified via command line or the absolutate path
+# Select toolchain file if it is not specified via command line or the absolute path
 # is unavailable.
 if (NOT DEFINED TFM_TOOLCHAIN_FILE)
-    set(TFM_TOOLCHAIN_FILE    ${CONFIG_SPE_PATH}/cmake/toolchain_ns_GNUARM.cmake)
-endif()
-
-if(NOT EXISTS ${TFM_TOOLCHAIN_FILE})
-    message(FATAL_ERROR "TFM_TOOLCHAIN_FILE ${TFM_TOOLCHAIN_FILE} doesn't exist."
-                        "If it's relative path then please change to absolute path.")
+    if (NOT DEFINED TFM_TOOLCHAIN)
+        set(TFM_TOOLCHAIN "GNUARM")
+        message(WARNING "TFM_TOOLCHAIN or TFM_TOOLCHAIN_FILE is not defined")
+        message(WARNING "TFM_TOOLCHAIN is set to ${TFM_TOOLCHAIN}")
+    endif()
+    set(TFM_TOOLCHAIN_FILE    ${CONFIG_SPE_PATH}/cmake/toolchain_ns_${TFM_TOOLCHAIN}.cmake)
 endif()
 
 include(${TFM_TOOLCHAIN_FILE})
-
 project("TF-M Example"  LANGUAGES C)
 tfm_toolchain_reload_compiler()
+
+add_executable(tfm_ns)
 
 # The exported TF-M interfaces
 add_subdirectory(${CONFIG_SPE_PATH} ${CMAKE_BINARY_DIR}/spe)
 
-add_executable(tfm_ns
-    main.c
-    ${CONFIG_SPE_PATH}/interface/src/os_wrapper/tfm_ns_interface_bare_metal.c
-    # GNU Arm compiler version greater equal than *11.3.Rel1*
-    # has a linker issue that required system calls are missing,
-    # such as _read and _write. Add stub functions of required
-    # system calls to solve this issue.
-    $<$<BOOL:${CONFIG_GNU_SYSCALL_STUB_ENABLED}>:syscalls_stub.c>
+target_sources(tfm_ns
+    PRIVATE
+        main.c
+        ${CONFIG_SPE_PATH}/interface/src/os_wrapper/tfm_ns_interface_bare_metal.c
+        # GNU Arm compiler version greater equal than *11.3.Rel1*
+        # has a linker issue that required system calls are missing,
+        # such as _read and _write. Add stub functions of required
+        # system calls to solve this issue.
+        $<$<BOOL:${CONFIG_GNU_SYSCALL_STUB_ENABLED}>:syscalls_stub.c>
 )
 
 target_link_libraries(tfm_ns
