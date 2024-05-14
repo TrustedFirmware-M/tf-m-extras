@@ -5,7 +5,7 @@ Partitions
   :maxdepth: 2
   :titlesonly:
 
-  ADAC <adac/adac_integration_guide>
+  Authenticated Debug Access Control (ADAC) <adac/index>
   Delegated Attestation <delegated_attestation/delegated_attest_integration_guide>
   DICE Protection Environmnet <dice_protection_environment>
   DMA-350 ARoT <dma350_unpriv_partition/dma350_unpriv_partition>

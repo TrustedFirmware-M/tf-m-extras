@@ -1,0 +1,11 @@
+#########################################
+Authenticated Debug Access Control (ADAC)
+#########################################
+
+.. toctree::
+    :maxdepth: 1
+
+    ADAC Integration guide <adac_integration_guide>
+    ADAC Implementation for RSE <adac_impl_for_rse>
+
+*Copyright (c) 2024, Arm Limited. All rights reserved.*
