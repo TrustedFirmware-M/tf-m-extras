@@ -11,3 +11,7 @@
 
 # Visual Studio Code
 .vscode/
+
+# Garbage files
+/build*/
+/cmake_build*/

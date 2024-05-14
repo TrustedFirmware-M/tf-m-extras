@@ -63,7 +63,7 @@ int main(void)
     printf("Hello TF-M world\r\n");
 
     uint32_t fw_version = psa_framework_version();
-    printf("FW  version = %d\r\n", fw_version);
+    printf("PSA Framework Version = %d.%d\r\n", fw_version >> 8, fw_version & 0xFF);
 
     uint8_t number;
     printf("Testing psa get random number...\r\n");

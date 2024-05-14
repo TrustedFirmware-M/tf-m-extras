@@ -1,18 +1,18 @@
 The list and simple introduction of 3rd-party Secure Partitions in this folder.
 
-**********************
-dma350_upriv_partition
-**********************
+*******
+DMA-350
+*******
 
 DMA-350 Example unprivileged partition
 
 **Maintainers**
 
-- Bence Balogh `<bence.balogh@arm.com> <bence.balogh@arm.com>`_
-- Mark Horvath `<mark.horvath@arm.com> <mark.horvath@arm.com>`_
+- Bence Balogh `bence.balogh@arm.com <bence.balogh@arm.com>`_
+- Mark Horvath `mark.horvath@arm.com <mark.horvath@arm.com>`_
 
 *************
-measured_boot
+Measured Boot
 *************
 
 Measured boot partition for extending and retrieving software component
@@ -20,27 +20,23 @@ measurements for RSE platform.
 
 **Maintainers**
 
-- Maulik Patel `<Maulik.Patel@arm.com>`_
-- David Vincze `<David.Vincze@arm.com>`_
+- Maulik Patel `Maulik.Patel@arm.com <Maulik.Patel@arm.com>`_
+- David Vincze `David.Vincze@arm.com <David.Vincze@arm.com>`_
 
 *******************************
-external_trusted_secure_storage
+External Trusted Secure Storage
 *******************************
 
 ETSS partition for providing external trusted secure storage services
 to protect assets stored in external secure Flash from a variety of
-security attacks.
+security attacks. Avaialble from **TF-M v1.4.0**
 
 **Maintainers**
 
-- Poppy Wu `<poppywu@mxic.com.cn>`_
-
-**TF-M version**
-
-TF-M V1.4.0
+- Poppy Wu `poppywu@mxic.com.cn <poppywu@mxic.com.cn>`_
 
 *********************
-delegated_attestation
+Delegated Attestation
 *********************
 
 The aim of the partition is to support platforms/systems using a delegated
@@ -49,11 +45,11 @@ platform attestation token creation.
 
 **Maintainers**
 
-- David Vincze `<David.Vincze@arm.com>`_
+- David Vincze `David.Vincze@arm.com <David.Vincze@arm.com>`_
 
-************
-vad_an552_sp
-************
+************************
+Voice Activity Detection
+************************
 
 Secure partition for the AN552 FPGA image. It implements voice activity
 detection on the microphone input of the MPS3 board, and if voice detected
@@ -63,22 +59,18 @@ recorded sample.
 
 **Maintainers**
 
-- Gabor Toth `<gabor.toth@arm.com> <gabor.toth@arm.com>`_
-- Mark Horvath `<mark.horvath@arm.com> <mark.horvath@arm.com>`_
+- Gabor Toth `gabor.toth@arm.com <gabor.toth@arm.com>`_
+- Mark Horvath `mark.horvath@arm.com <mark.horvath@arm.com>`_
 
 ####
-adac
+ADAC
 ####
 
-***********
-Description
-***********
 ADAC partition for authenticated debug and access control for RSE platform.
 
-***********
-Maintainers
-***********
-- Maulik Patel `<Maulik.Patel@arm.com>`_
+**Maintainers**
+
+- Maulik Patel `Maulik.Patel@arm.com <Maulik.Patel@arm.com>`_
 
 ---------------------------
 

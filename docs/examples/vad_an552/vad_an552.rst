@@ -2,6 +2,11 @@
 Voice Activity Detection demo application
 #########################################
 
+.. toctree::
+    :maxdepth: 1
+
+    Threat Model <threat_model>
+
 A demo application for the AN552 FPGA showcasing:
 
 * secure partition using MVE to speed up algorithms

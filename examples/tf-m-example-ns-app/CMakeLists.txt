@@ -51,6 +51,13 @@ target_link_libraries(tfm_ns
         tfm_api_ns
 )
 
+if (CONFIG_TFM_USE_TRUSTZONE)
+    target_link_libraries(tfm_ns
+        PRIVATE
+            tfm_api_ns_tz
+    )
+endif()
+
 set_target_properties(tfm_ns PROPERTIES
     SUFFIX ".axf"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
