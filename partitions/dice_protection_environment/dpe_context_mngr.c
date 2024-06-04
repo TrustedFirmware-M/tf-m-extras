@@ -442,7 +442,7 @@ static dpe_error_t assign_layer_to_context(struct component_context_t *new_ctx,
     assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
 
     if (cert_id != DPE_CERT_ID_INVALID) {
-        /* cert id was sent by the client */
+        /* Cert_id was sent by the client */
         if (cert_id == DPE_CERT_ID_SAME_AS_PARENT) {
             if (layer_ctx_array[parent_layer_idx].state == LAYER_STATE_FINALISED) {
                 /* Cannot add to the layer which is already finalised */
@@ -452,11 +452,11 @@ static dpe_error_t assign_layer_to_context(struct component_context_t *new_ctx,
             new_ctx->linked_layer_idx = parent_layer_idx;
 
         } else if (is_cert_id_used(cert_id, &layer_idx_to_link)) {
-            /* Cert ID is already in use */
-            if (layer_ctx_array[layer_idx_to_link].state == LAYER_STATE_FINALISED) {
-                /* Cannot add to the layer which is already finalised */
-                return DPE_INTERNAL_ERROR;
-            }
+            /* Cert_id is already in use but layer must be in open state, because
+             * cert_id is invalidated when layer gets finalized.
+             */
+            assert(layer_ctx_array[layer_idx_to_link].state != LAYER_STATE_FINALISED);
+
             /* Use the same layer that is associated with cert_id */
             new_ctx->linked_layer_idx = layer_idx_to_link;
             /* Linked layer's parent is already assigned when it was opened */
@@ -650,6 +650,7 @@ dpe_error_t derive_context_request(int input_ctx_handle,
 
         /* Finalise the layer */
         layer_ctx->state = LAYER_STATE_FINALISED;
+        layer_ctx->cert_id = DPE_CERT_ID_INVALID; /* make same cert_id reusable */
         err = prepare_layer_certificate(layer_ctx, parent_layer_ctx);
         if (err != DPE_NO_ERROR) {
             goto clean_up_and_exit;
