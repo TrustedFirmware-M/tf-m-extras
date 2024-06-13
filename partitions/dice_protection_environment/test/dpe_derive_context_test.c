@@ -7,9 +7,12 @@
 
 #include <string.h>
 #include "dice_protection_environment.h"
+#include "../dpe_certificate_common.h"
 #include "dpe_test.h"
 #include "dpe_test_data.h"
 #include "dpe_test_private.h"
+#include "qcbor/qcbor_decode.h"
+#include "qcbor/qcbor_spiffy_decode.h"
 
 extern int retained_rot_ctx_handle;
 
@@ -450,6 +453,44 @@ void derive_context_missing_req_input_param_combination_test(struct test_result_
     ret->val = TEST_PASSED;
 }
 
+/* Verifies the CBOR structure of exported CDI data.
+ * Exported_CDI = {
+ *  1 : bstr .size 32,     ; CDI_Attest
+ *  2 : bstr .size 32,     ; CDI_Seal
+ * }
+ */
+static int verify_cdi_encoding(UsefulBufC cdi_buf)
+{
+    QCBORError qcbor_err;
+    QCBORDecodeContext decode_ctx;
+    QCBORItem item;
+
+    QCBORDecode_Init(&decode_ctx, cdi_buf, QCBOR_DECODE_MODE_NORMAL);
+    QCBORDecode_EnterMap(&decode_ctx, &item);
+    if ((item.uDataType != QCBOR_TYPE_MAP) || (item.val.uCount != 2)) {
+        return -1;
+    }
+
+    qcbor_err = QCBORDecode_GetNext(&decode_ctx, &item);
+    if ((item.label.int64 != DPE_LABEL_CDI_ATTEST) || (item.val.string.len != 32)) {
+        return -1;
+    }
+
+    qcbor_err = QCBORDecode_GetNext(&decode_ctx, &item);
+    if ((item.label.int64 != DPE_LABEL_CDI_SEAL) || (item.val.string.len != 32)) {
+        return -1;
+    }
+
+    QCBORDecode_ExitMap(&decode_ctx);
+
+    qcbor_err = QCBORDecode_Finish(&decode_ctx);
+    if (qcbor_err != QCBOR_SUCCESS) {
+        return -1;
+    }
+
+    return 0;
+}
+
 void derive_context_check_export_cdi_test(struct test_result_t *ret)
 {
     dpe_error_t dpe_err;
@@ -457,7 +498,7 @@ void derive_context_check_export_cdi_test(struct test_result_t *ret)
     struct derive_context_cmd_output_t dc_output = {0};
 
     ADD_EXPORT_CDI_BUF(dc_output, DICE_MAX_ENCODED_CDI_SIZE);
-
+    UsefulBufC cdi_buf;
 
     dc_input.context_handle = retained_rot_ctx_handle;
     dc_input.cert_id = DPE_UNDESTROYABLE_CTX_CERT_ID_2;
@@ -471,12 +512,14 @@ void derive_context_check_export_cdi_test(struct test_result_t *ret)
     }
     /* NOTE: When CDI is exported, it creates an undestroyable context */
 
-    //TODO: Check the CBOR structure of exported CDI data:
-    /* Exported_CDI = {
-     * 1 : bstr .size 32,     ; CDI_Attest
-     * 2 : bstr .size 32,     ; CDI_Seal
-     * }
-     */
+    cdi_buf = (UsefulBufC){ dc_output.exported_cdi_buf,
+                            dc_output.exported_cdi_actual_size };
+
+    if (verify_cdi_encoding(cdi_buf)) {
+        TEST_FAIL("DPE DeriveContext exported CDI verification failed");
+        return;
+    }
+
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = dc_output.out_parent_handle;
     TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
