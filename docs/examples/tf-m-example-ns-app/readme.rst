@@ -26,7 +26,9 @@ The Build Process
 
    - Bootloader: ``/bin/bl2.*``
    - Secure (S) side binary image: ``/bin/tfm_s.*``
-   - PSA API for Non-Secure application ``/interface/*``
+   - PSA API for Non-Secure application: ``/interface/*``
+   - Files for building the Non-Secure application with different
+     toolchains (see :external:ref:`toolchains`): ``/cmake/toolchain_ns_*.cmake``
 
 4. Build this example TF-M application:
 
@@ -38,8 +40,8 @@ The Build Process
 5. In output you will get:
 
    - Non-secure (NS) application in ``build/nspe/bin/tfm_ns.*``
-   - Combined S + NS bianry ``build/nspe/bin/tfm_s_ns.bin``
-   - Combined S + NS and signed bianry ``build/nspe/bin/tfm_s_ns.bin``
+   - Combined S + NS binary ``build/nspe/bin/tfm_s_ns.bin``
+   - Combined S + NS and signed binary ``build/nspe/bin/tfm_s_ns.bin``
 
 *******************
 Run the Application
