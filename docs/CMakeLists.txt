@@ -8,10 +8,13 @@
 cmake_minimum_required(VERSION 3.21)
 
 add_custom_target(docs)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
+find_package(Sphinx)
+find_package(LATEX COMPONENTS PDFLATEX)
 
 project("Trusted Firmware M Extras. Documentation" LANGUAGES)
 
-set(SPHINX_EXECUTABLE sphinx-build)
 set(SPHINXCFG_SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set(SPHINXCFG_CONFIG_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set(SPHINXCFG_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
