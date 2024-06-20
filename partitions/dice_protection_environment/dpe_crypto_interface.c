@@ -12,7 +12,6 @@
 #include "dpe_context_mngr.h"
 #include "dpe_crypto_config.h"
 #include "psa/crypto.h"
-#include "tfm_crypto_defs.h"
 #include "dpe_plat.h"
 
 static const char attest_cdi_label[] = DPE_ATTEST_CDI_LABEL;

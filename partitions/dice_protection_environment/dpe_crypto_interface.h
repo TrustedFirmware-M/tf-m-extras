@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "dpe_context_mngr.h"
-#include "psa/error.h"
 
 #ifdef __cplusplus
 extern "C" {
