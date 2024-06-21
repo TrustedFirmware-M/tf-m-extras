@@ -12,6 +12,11 @@ outside of the isolated execution environment.
 For a full description of DPE, see the
 `DPE Specification <https://trustedcomputinggroup.org/wp-content/uploads/TCG-DICE-Protection-Environment-Specification_14february2023-1.pdf>`_.
 
+A high level example of DPE commands usage is shown in the below diagram:
+
+.. figure:: dpe_commands_example_usage.svg
+  :align: center
+
 DPE consists of both a runtime service and boot time integration. The DPE
 service is currently a work in progress.
 
@@ -112,19 +117,43 @@ and t_cose libraries. CWT is specified in
 with customization from
 `Open DICE <https://pigweed.googlesource.com/open-dice/+/refs/heads/main/docs/specification.md#CBOR-UDS-Certificates>`_.
 
-CertifyKey
-----------
+DeriveContext flow diagram
+--------------------------
 
-Generates a leaf certificate and returns the full certificate chain leading to
-it. If a public key is supplied, then it certifies the key.
+.. figure:: derive_context_flow.svg
+  :align: center
 
-- Adds label (if supplied) to list of measurements.
+GetCertificateChain
+-------------------
 
-- Finalizes the layer (as for DeriveContext above).
+Returns the full certificate chain leading to a given context.
 
 - Returns the certificate chain (collection of individual certificates) as a
   CBOR array with format [+COSE_Sign1, COSE_Key]. The (pre-provisioned) root
   attestation public key is the first element in the CBOR array.
+
+The following diagram shows a example certificate chain for RSE TC platform:
+
+.. figure:: rse_dice_example_cert_chain.svg
+  :align: center
+
+CertifyKey
+----------
+
+Generates and returns a leaf certificate. If a public key is supplied,
+then it certifies the key. If a public key is not supplied, then it derives key
+pair from the accumulated context information for that certificiate and certifies
+the public key.
+
+- If the input layer (layer linked to context) is already finalised, then it
+  creates a new leaf layer certficiate with no measurements.
+
+- If the input layer is not finalised, then it creates a leaf layer certificate
+  with all the measurements accumulated for that layer.
+
+- Adds label (if supplied) to list of measurements.
+
+- Returns the leaf certificate.
 
 Seal
 ----

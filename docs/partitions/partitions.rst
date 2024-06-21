@@ -72,6 +72,17 @@ ADAC partition for authenticated debug and access control for RSE platform.
 
 - Maulik Patel `Maulik.Patel@arm.com <Maulik.Patel@arm.com>`_
 
+***************************
+Dice Protection Environment
+***************************
+
+The partition aims to provide DICE command services to create, store
+and manage DICE secrets.
+
+**Maintainers**
+
+- Maulik Patel `Maulik.Patel@arm.com <Maulik.Patel@arm.com>`_
+
 ---------------------------
 
-*Copyright (c) 2021-2022, Arm Limited. All rights reserved.*
+*Copyright (c) 2021-2024, Arm Limited. All rights reserved.*
