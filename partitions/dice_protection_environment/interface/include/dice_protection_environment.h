@@ -59,7 +59,7 @@ typedef int32_t dpe_error_t;
  *                                         new context will load further components.
  * \param[in]  create_certificate          Flag to indicate whether to create an
  *                                         intermediate certificate. True only if
- *                                         it is the last component in the layer.
+ *                                         it is the last component in the certificate.
  * \param[in]  dice_inputs                 DICE input values.
  * \param[in]  target_locality             Identifies the locality to which the
  *                                         derived context will be bound. Could be

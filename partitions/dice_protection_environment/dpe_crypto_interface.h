@@ -18,50 +18,50 @@ extern "C" {
 #endif
 
 /**
- * \brief Derives attestation key pair for a layer.
+ * \brief Derives attestation key pair for a certificate.
  *
- * \param[in] layer_ctx  Pointer to current layer context.
+ * \param[in] cert_ctx  Pointer to current certificate context.
  *
  * \return Returns error code as specified in \ref psa_status_t
  */
-psa_status_t derive_attestation_key(struct layer_context_t *layer_ctx);
+psa_status_t derive_attestation_key(struct cert_context_t *cert_ctx);
 
 /**
- * \brief Derives attestation CDI for a layer
+ * \brief Derives attestation CDI for a certificate
  *
- * \param[in] layer_ctx  Pointer to current layer context.
- * \param[in] parent_layer_ctx  Pointer to parent layer context.
+ * \param[in] cert_ctx  Pointer to current certificate context.
+ * \param[in] parent_cert_ctx  Pointer to parent certificate context.
  *
  * \return Returns error code as specified in \ref psa_status_t
  */
-psa_status_t derive_attestation_cdi(struct layer_context_t *layer_ctx,
-                                    const struct layer_context_t *parent_layer_ctx);
+psa_status_t derive_attestation_cdi(struct cert_context_t *cert_ctx,
+                                    const struct cert_context_t *parent_cert_ctx);
 /**
- * \brief Derives sealing CDI for a layer
+ * \brief Derives sealing CDI for a certificate
  *
- * \param[in] layer_ctx  Pointer to current layer context.
+ * \param[in] cert_ctx  Pointer to current certificate context.
  *
  * \return Returns error code as specified in \ref psa_status_t
  */
-psa_status_t derive_sealing_cdi(struct layer_context_t *layer_ctx);
+psa_status_t derive_sealing_cdi(struct cert_context_t *cert_ctx);
 
 /**
- * \brief Derives certificate id from the layer's attestation public key
+ * \brief Derives certificate id from the certificate's attestation public key
  *
- * \param[in] layer_ctx  Pointer to current layer context.
+ * \param[in] cert_ctx  Pointer to current certificate context.
  *
  * \return Returns error code as specified in \ref psa_status_t
  */
-psa_status_t derive_id_from_public_key(struct layer_context_t *layer_ctx);
+psa_status_t derive_id_from_public_key(struct cert_context_t *cert_ctx);
 
 /**
- * \brief Derives wrapping key pair for a layer
+ * \brief Derives wrapping key pair for a certificate
  *
- * \param[in] layer_ctx  Pointer to current layer context.
+ * \param[in] cert_ctx  Pointer to current certificate context.
  *
  * \return Returns error code as specified in \ref psa_status_t
  */
-psa_status_t derive_wrapping_key(struct layer_context_t *layer_ctx);
+psa_status_t derive_wrapping_key(struct cert_context_t *cert_ctx);
 
 /**
  * \brief Derives CDI ID from attestation key.
@@ -76,25 +76,25 @@ psa_status_t derive_cdi_id(psa_key_id_t attest_key_id, uint8_t *cdi_id,
                            size_t cdi_id_size);
 
 /**
- * \brief Gets the layer's CDI value.
+ * \brief Gets the certificate's CDI value.
  *
- * \param[in]  layer_ctx       Pointer to current layer context.
+ * \param[in]  cert_ctx       Pointer to current certificate context.
  * \param[out] cdi_attest_buf  Buffer to hold the attestation CDI.
  * \param[in]  cdi_seal_buf    Buffer to hold the sealing CDI.
  *
  * \return Returns error code as specified in \ref psa_status_t
  */
-psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
-                                 uint8_t cdi_attest_buf[DICE_CDI_SIZE],
-                                 uint8_t cdi_seal_buf[DICE_CDI_SIZE]);
+psa_status_t get_certificate_cdi_value(const struct cert_context_t *cert_ctx,
+                                       uint8_t cdi_attest_buf[DICE_CDI_SIZE],
+                                       uint8_t cdi_seal_buf[DICE_CDI_SIZE]);
 
 /**
- * @brief Destroy the CDI and attestation keys for a layer.
+ * @brief Destroy the CDI and attestation keys for a certificate.
  *
- * \param[in] layer_ctx  Pointer to current layer context.
+ * \param[in] cert_ctx  Pointer to current certificate context.
  *
  */
-void destroy_layer_keys(const struct layer_context_t *layer_ctx);
+void destroy_certificate_context_keys(const struct cert_context_t *cert_ctx);
 
 #ifdef __cplusplus
 }

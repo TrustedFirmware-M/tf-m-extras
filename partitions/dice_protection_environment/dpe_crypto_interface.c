@@ -86,8 +86,8 @@ done:
     return status;
 }
 
-psa_status_t derive_attestation_cdi(struct layer_context_t *layer_ctx,
-                                    const struct layer_context_t *parent_layer_ctx)
+psa_status_t derive_attestation_cdi(struct cert_context_t *cert_ctx,
+                                    const struct cert_context_t *parent_cert_ctx)
 {
     psa_key_attributes_t derive_key_attr = PSA_KEY_ATTRIBUTES_INIT;
 
@@ -98,29 +98,29 @@ psa_status_t derive_attestation_cdi(struct layer_context_t *layer_ctx,
     psa_set_key_usage_flags(&derive_key_attr, DPE_CDI_KEY_USAGE);
 
     /* Perform CDI derivation */
-    /* Parent layer CDI is the base key (input secret to key derivation) */
+    /* Parent certificate's CDI is the base key (input secret to key derivation) */
 
-    if (layer_ctx->is_cdi_to_be_exported) {
-        return perform_derivation(parent_layer_ctx->data.cdi_key_id,
-                                &derive_key_attr,
-                                (uint8_t *) &exported_attest_cdi_label[0],
-                                sizeof(exported_attest_cdi_label),
-                                layer_ctx->attest_cdi_hash_input,
-                                sizeof(layer_ctx->attest_cdi_hash_input),
-                                &layer_ctx->data.cdi_key_id);
+    if (cert_ctx->is_cdi_to_be_exported) {
+        return perform_derivation(parent_cert_ctx->data.cdi_key_id,
+                                  &derive_key_attr,
+                                  (uint8_t *) &exported_attest_cdi_label[0],
+                                  sizeof(exported_attest_cdi_label),
+                                  cert_ctx->attest_cdi_hash_input,
+                                  sizeof(cert_ctx->attest_cdi_hash_input),
+                                  &cert_ctx->data.cdi_key_id);
 
     } else {
-        return perform_derivation(parent_layer_ctx->data.cdi_key_id,
-                                &derive_key_attr,
-                                (uint8_t *) &attest_cdi_label[0],
-                                sizeof(attest_cdi_label),
-                                layer_ctx->attest_cdi_hash_input,
-                                sizeof(layer_ctx->attest_cdi_hash_input),
-                                &layer_ctx->data.cdi_key_id);
+        return perform_derivation(parent_cert_ctx->data.cdi_key_id,
+                                  &derive_key_attr,
+                                  (uint8_t *) &attest_cdi_label[0],
+                                  sizeof(attest_cdi_label),
+                                  cert_ctx->attest_cdi_hash_input,
+                                  sizeof(cert_ctx->attest_cdi_hash_input),
+                                  &cert_ctx->data.cdi_key_id);
     }
 }
 
-psa_status_t derive_attestation_key(struct layer_context_t *layer_ctx)
+psa_status_t derive_attestation_key(struct cert_context_t *cert_ctx)
 {
     psa_status_t status;
     psa_key_attributes_t attest_key_attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -133,51 +133,51 @@ psa_status_t derive_attestation_key(struct layer_context_t *layer_ctx)
 
     /* Perform key pair derivation */
 
-    if (layer_ctx->data.external_key_deriv_label_len > 0) {
+    if (cert_ctx->data.external_key_deriv_label_len > 0) {
         /* Use the external label provided for key derivation */
-        status = perform_derivation(layer_ctx->data.cdi_key_id,
+        status = perform_derivation(cert_ctx->data.cdi_key_id,
                     &attest_key_attr,
-                    &layer_ctx->data.external_key_deriv_label[0],  /* External label */
-                    layer_ctx->data.external_key_deriv_label_len,
+                    &cert_ctx->data.external_key_deriv_label[0],  /* External label */
+                    cert_ctx->data.external_key_deriv_label_len,
                     attest_key_salt,
                     sizeof(attest_key_salt),
-                    &layer_ctx->data.attest_key_id);
+                    &cert_ctx->data.attest_key_id);
     } else {
         /* Use the default label for key derivation */
-        status = perform_derivation(layer_ctx->data.cdi_key_id,
+        status = perform_derivation(cert_ctx->data.cdi_key_id,
                     &attest_key_attr,
                     (uint8_t *)&default_attest_key_deriv_label[0], /* Default label */
                     sizeof(default_attest_key_deriv_label),
                     attest_key_salt,
                     sizeof(attest_key_salt),
-                    &layer_ctx->data.attest_key_id);
+                    &cert_ctx->data.attest_key_id);
     }
 
     if (status != PSA_SUCCESS) {
         return status;
     }
 
-    return psa_export_public_key(layer_ctx->data.attest_key_id,
-                                 &layer_ctx->data.attest_pub_key[0],
-                                 sizeof(layer_ctx->data.attest_pub_key),
-                                 &layer_ctx->data.attest_pub_key_len);
+    return psa_export_public_key(cert_ctx->data.attest_key_id,
+                                 &cert_ctx->data.attest_pub_key[0],
+                                 sizeof(cert_ctx->data.attest_pub_key),
+                                 &cert_ctx->data.attest_pub_key_len);
 }
 
-psa_status_t derive_sealing_cdi(struct layer_context_t *layer_ctx)
+psa_status_t derive_sealing_cdi(struct cert_context_t *cert_ctx)
 {
     //TODO:
-    (void)layer_ctx;
+    (void)cert_ctx;
     return PSA_SUCCESS;
 }
 
-psa_status_t derive_wrapping_key(struct layer_context_t *layer_ctx)
+psa_status_t derive_wrapping_key(struct cert_context_t *cert_ctx)
 {
     //TODO:
-    (void)layer_ctx;
+    (void)cert_ctx;
     return PSA_SUCCESS;
 }
 
-psa_status_t derive_id_from_public_key(struct layer_context_t *layer_ctx)
+psa_status_t derive_id_from_public_key(struct cert_context_t *cert_ctx)
 {
     psa_status_t status;
     psa_key_attributes_t derive_key_attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -189,12 +189,12 @@ psa_status_t derive_id_from_public_key(struct layer_context_t *layer_ctx)
 
     psa_set_key_type(&base_attr, PSA_KEY_TYPE_DERIVE);
     psa_set_key_algorithm(&base_attr, PSA_ALG_HKDF(PSA_ALG_SHA_256));
-    psa_set_key_bits(&base_attr, PSA_BYTES_TO_BITS(layer_ctx->data.attest_pub_key_len));
+    psa_set_key_bits(&base_attr, PSA_BYTES_TO_BITS(cert_ctx->data.attest_pub_key_len));
     psa_set_key_usage_flags(&base_attr, PSA_KEY_USAGE_DERIVE);
 
     status = psa_import_key(&base_attr,
-                            &layer_ctx->data.attest_pub_key[0],
-                            layer_ctx->data.attest_pub_key_len,
+                            &cert_ctx->data.attest_pub_key[0],
+                            cert_ctx->data.attest_pub_key_len,
                             &base_key);
     if (status != PSA_SUCCESS) {
         return status;
@@ -219,8 +219,8 @@ psa_status_t derive_id_from_public_key(struct layer_context_t *layer_ctx)
         goto err_destroy_base_key;
     }
     status = psa_export_key(derived_key_id,
-                            &layer_ctx->data.cdi_id[0],
-                            sizeof(layer_ctx->data.cdi_id),
+                            &cert_ctx->data.cdi_id[0],
+                            sizeof(cert_ctx->data.cdi_id),
                             &output_id_len);
 
     (void)psa_destroy_key(derived_key_id);
@@ -282,9 +282,9 @@ err_abort:
     return status;
 }
 
-psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
-                                 uint8_t cdi_attest_buf[DICE_CDI_SIZE],
-                                 uint8_t cdi_seal_buf[DICE_CDI_SIZE])
+psa_status_t get_certificate_cdi_value(const struct cert_context_t *cert_ctx,
+                                       uint8_t cdi_attest_buf[DICE_CDI_SIZE],
+                                       uint8_t cdi_seal_buf[DICE_CDI_SIZE])
 {
     psa_status_t status;
     size_t cdi_attest_actual_size;
@@ -293,7 +293,7 @@ psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
     memset(cdi_seal_buf, 0, DICE_CDI_SIZE); /* Return hard-coded data */
 
     /* Query the attest CDI */
-    status = psa_export_key(layer_ctx->data.cdi_key_id,
+    status = psa_export_key(cert_ctx->data.cdi_key_id,
                             cdi_attest_buf,
                             DICE_CDI_SIZE,
                             &cdi_attest_actual_size);
@@ -303,15 +303,15 @@ psa_status_t get_layer_cdi_value(const struct layer_context_t *layer_ctx,
     return status;
 }
 
-void destroy_layer_keys(const struct layer_context_t *layer_ctx)
+void destroy_certificate_context_keys(const struct cert_context_t *cert_ctx)
 {
-    if (layer_ctx->data.cdi_key_id != PSA_KEY_ID_NULL) {
+    if (cert_ctx->data.cdi_key_id != PSA_KEY_ID_NULL) {
         /* Remove any previously derived keys */
-        (void)psa_destroy_key(layer_ctx->data.cdi_key_id);
+        (void)psa_destroy_key(cert_ctx->data.cdi_key_id);
     }
 
-    if (layer_ctx->data.attest_key_id != PSA_KEY_ID_NULL) {
+    if (cert_ctx->data.attest_key_id != PSA_KEY_ID_NULL) {
         /* Remove any previously derived keys */
-        (void)psa_destroy_key(layer_ctx->data.attest_key_id);
+        (void)psa_destroy_key(cert_ctx->data.attest_key_id);
     }
 }

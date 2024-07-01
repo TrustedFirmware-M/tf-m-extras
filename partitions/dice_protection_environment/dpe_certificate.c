@@ -115,20 +115,20 @@ static void add_label_claim(QCBOREncodeContext *cbor_enc_ctx,
 }
 
 static void add_cdi_export_claim(QCBOREncodeContext *cbor_enc_ctx,
-                                 const struct layer_context_t *layer_ctx)
+                                 const struct cert_context_t *cert_ctx)
 {
     QCBOREncode_AddBoolToMapN(cbor_enc_ctx,
                               DPE_CERT_LABEL_CDI_EXPORT,
-                              layer_ctx->is_cdi_to_be_exported);
+                              cert_ctx->is_cdi_to_be_exported);
 }
 
 static void add_subject_claim(QCBOREncodeContext *cbor_enc_ctx,
-                              const struct layer_context_t *layer_ctx)
+                              const struct cert_context_t *cert_ctx)
 {
     char cdi_id_hex[ID_HEX_SIZE];
 
-    convert_to_ascii_hex(&layer_ctx->data.cdi_id[0],
-                         sizeof(layer_ctx->data.cdi_id),
+    convert_to_ascii_hex(&cert_ctx->data.cdi_id[0],
+                         sizeof(cert_ctx->data.cdi_id),
                          &cdi_id_hex[0],
                          sizeof(cdi_id_hex));
     /* Encode subject as text string */
@@ -344,8 +344,8 @@ static void encode_sw_component_measurements(QCBOREncodeContext *encode_ctx,
     QCBOREncode_CloseMap(encode_ctx);
 }
 
-static dpe_error_t encode_layer_sw_components_array(const struct layer_context_t *layer_ctx,
-                                                    QCBOREncodeContext *cbor_enc_ctx)
+static dpe_error_t encode_sw_components_array(const struct cert_context_t *cert_ctx,
+                                              QCBOREncodeContext *cbor_enc_ctx)
 {
     int i;
     struct component_context_t *component_ctx;
@@ -354,8 +354,8 @@ static dpe_error_t encode_layer_sw_components_array(const struct layer_context_t
     QCBOREncode_OpenArrayInMapN(cbor_enc_ctx, DPE_CERT_LABEL_SW_COMPONENTS);
 
     /* Add elements to the array if there is any */
-    for (i = 0; i < layer_ctx->linked_components.count; i++) {
-        component_ctx = get_component_ctx_ptr(layer_ctx->linked_components.idx[i]);
+    for (i = 0; i < cert_ctx->linked_components.count; i++) {
+        component_ctx = get_component_ctx_ptr(cert_ctx->linked_components.idx[i]);
         if (component_ctx == NULL) {
             return DPE_INTERNAL_ERROR;
         }
@@ -369,14 +369,14 @@ static dpe_error_t encode_layer_sw_components_array(const struct layer_context_t
 }
 
 static dpe_error_t add_issuer_claim(QCBOREncodeContext *cbor_enc_ctx,
-                                    const struct layer_context_t *layer_ctx,
+                                    const struct cert_context_t *cert_ctx,
                                     psa_key_id_t root_attest_key_id,
-                                    const struct layer_context_t *parent_layer_ctx)
+                                    const struct cert_context_t *parent_cert_ctx)
 {
     uint8_t rot_cdi_id[DICE_ID_SIZE];
 
-    if (layer_ctx->is_rot_layer) {
-        /* For the RoT layer, issuer id is derived from the root attestation key */
+    if (cert_ctx->is_rot_cert_ctx) {
+        /* For the RoT certificate, issuer id is derived from the root attestation key */
         if (derive_cdi_id(root_attest_key_id, rot_cdi_id,
                           sizeof(rot_cdi_id)) != PSA_SUCCESS) {
             return DPE_INTERNAL_ERROR;
@@ -387,21 +387,21 @@ static dpe_error_t add_issuer_claim(QCBOREncodeContext *cbor_enc_ctx,
                             sizeof(rot_cdi_id));
     } else {
         encode_issuer_claim(cbor_enc_ctx,
-                            parent_layer_ctx->data.cdi_id,
-                            sizeof(parent_layer_ctx->data.cdi_id));
+                            parent_cert_ctx->data.cdi_id,
+                            sizeof(parent_cert_ctx->data.cdi_id));
     }
 
     return DPE_NO_ERROR;
 }
 
-static dpe_error_t encode_layer_certificate_internal(const struct layer_context_t *layer_ctx,
-                                                     QCBOREncodeContext *cbor_enc_ctx,
-                                                     bool finish_cbor_encoding,
-                                                     size_t *cert_actual_size)
+static dpe_error_t encode_certificate_internal(const struct cert_context_t *cert_ctx,
+                                               QCBOREncodeContext *cbor_enc_ctx,
+                                               bool finish_cbor_encoding,
+                                               size_t *cert_actual_size)
 {
     struct t_cose_sign1_sign_ctx signer_ctx;
-    struct layer_context_t *parent_layer_ctx;
-    uint16_t parent_layer_idx;
+    struct cert_context_t *parent_cert_ctx;
+    uint16_t parent_cert_ctx_idx;
     dpe_error_t err;
     UsefulBufC completed_cert;
     psa_key_id_t attest_key_id;
@@ -409,17 +409,17 @@ static dpe_error_t encode_layer_certificate_internal(const struct layer_context_
     /* Valid options: true & !NULL OR false & NULL */
     assert(finish_cbor_encoding ^ (cert_actual_size == NULL));
 
-    parent_layer_idx = layer_ctx->parent_layer_idx;
-    assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
-    parent_layer_ctx = get_layer_ctx_ptr(parent_layer_idx);
+    parent_cert_ctx_idx = cert_ctx->parent_cert_ctx_idx;
+    assert(parent_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
+    parent_cert_ctx = get_cert_ctx_ptr(parent_cert_ctx_idx);
 
-    /* The RoT layer certificate is signed by the provisioned attestation key,
-     * all other layers are signed by the parent layer's attestation key.
+    /* The RoT certificate is signed by the provisioned attestation key,
+     * all other certificates are signed by the parent certificate's attestation key.
      */
-    if (layer_ctx->is_rot_layer) {
+    if (cert_ctx->is_rot_cert_ctx) {
         attest_key_id = dpe_plat_get_root_attest_key_id();
     } else {
-        attest_key_id = parent_layer_ctx->data.attest_key_id;
+        attest_key_id = parent_cert_ctx->data.attest_key_id;
     }
 
     /* Get started creating the certificate. This sets up the CBOR and
@@ -434,42 +434,44 @@ static dpe_error_t encode_layer_certificate_internal(const struct layer_context_
 
     /* Add all the required claims */
     /* Add issuer/authority claim */
-    err = add_issuer_claim(cbor_enc_ctx, layer_ctx, attest_key_id, parent_layer_ctx);
+    err = add_issuer_claim(cbor_enc_ctx, cert_ctx, attest_key_id, parent_cert_ctx);
     if (err != DPE_NO_ERROR) {
         return err;
     }
 
     /* Add subject claim */
-    add_subject_claim(cbor_enc_ctx, layer_ctx);
+    add_subject_claim(cbor_enc_ctx, cert_ctx);
 
-    /* Encode all firmware measurements for the components linked to this layer */
+    /* Encode all firmware measurements for the components linked to this
+     * certificate context
+     */
     //TODO:
     /* It is not yet defined in the open-dice profile how to represent
      * multiple SW components in a single certificate; In current implementation,
      * an array is created for all the components' measurements and within the
      * array, there are multiple maps, one for each SW component
      */
-    err = encode_layer_sw_components_array(layer_ctx, cbor_enc_ctx);
+    err = encode_sw_components_array(cert_ctx, cbor_enc_ctx);
     if (err != DPE_NO_ERROR) {
         return err;
     }
 
     /* Add label claim */
     add_label_claim(cbor_enc_ctx,
-                    &layer_ctx->data.external_key_deriv_label[0],
-                    layer_ctx->data.external_key_deriv_label_len);
+                    &cert_ctx->data.external_key_deriv_label[0],
+                    cert_ctx->data.external_key_deriv_label_len);
 
     /* Add public key claim */
     add_public_key_claim(cbor_enc_ctx,
-                         &layer_ctx->data.attest_pub_key[0],
-                         layer_ctx->data.attest_pub_key_len);
+                         &cert_ctx->data.attest_pub_key[0],
+                         cert_ctx->data.attest_pub_key_len);
 
     /* Add key usage claim */
     add_key_usage_claim(cbor_enc_ctx);
 
     /* Add CDI exported claim */
-    if (layer_ctx->is_cdi_to_be_exported) {
-        add_cdi_export_claim(cbor_enc_ctx, layer_ctx);
+    if (cert_ctx->is_cdi_to_be_exported) {
+        add_cdi_export_claim(cbor_enc_ctx, cert_ctx);
     }
 
     /* Finish up creating the certificate. This is where the actual signature
@@ -489,10 +491,10 @@ static dpe_error_t encode_layer_certificate_internal(const struct layer_context_
     return err;
 }
 
-dpe_error_t encode_layer_certificate(const struct layer_context_t *layer_ctx,
-                                     uint8_t *cert_buf,
-                                     size_t cert_buf_size,
-                                     size_t *cert_actual_size)
+dpe_error_t encode_certificate(const struct cert_context_t *cert_ctx,
+                               uint8_t *cert_buf,
+                               size_t cert_buf_size,
+                               size_t *cert_actual_size)
 {
     QCBOREncodeContext cbor_enc_ctx;
 
@@ -501,14 +503,14 @@ dpe_error_t encode_layer_certificate(const struct layer_context_t *layer_ctx,
                                   cert_buf_size });
 
     /* Only a single certificate is encoded */
-    return encode_layer_certificate_internal(layer_ctx, &cbor_enc_ctx,
-                                             true, cert_actual_size);
+    return encode_certificate_internal(cert_ctx, &cbor_enc_ctx,
+                                       true, cert_actual_size);
 }
 
-dpe_error_t store_layer_certificate(const struct layer_context_t *layer_ctx)
+dpe_error_t store_certificate(const struct cert_context_t *cert_ctx)
 {
     //TODO:
-    (void)layer_ctx;
+    (void)cert_ctx;
     return DPE_NO_ERROR;
 }
 
@@ -566,7 +568,7 @@ static dpe_error_t add_root_attestation_public_key(QCBOREncodeContext *cbor_enc_
     return DPE_NO_ERROR;
 }
 
-dpe_error_t get_certificate_chain(const struct layer_context_t *layer_ctx,
+dpe_error_t get_certificate_chain(const struct cert_context_t *cert_ctx,
                                   uint8_t *cert_chain_buf,
                                   size_t cert_chain_buf_size,
                                   size_t *cert_chain_actual_size)
@@ -574,9 +576,9 @@ dpe_error_t get_certificate_chain(const struct layer_context_t *layer_ctx,
     QCBOREncodeContext cbor_enc_ctx;
     dpe_error_t err;
     int i;
-    uint16_t layer_chain[MAX_NUM_OF_LAYERS];
-    uint16_t layer_cnt = 0;
-    uint16_t layer_idx = layer_ctx->idx;
+    uint16_t cert_chain[MAX_NUM_OF_CERTIFICATES];
+    uint16_t cert_cnt = 0;
+    uint16_t cert_ctx_idx = cert_ctx->idx;
 
     open_certificate_chain(&cbor_enc_ctx,
                            cert_chain_buf,
@@ -588,31 +590,31 @@ dpe_error_t get_certificate_chain(const struct layer_context_t *layer_ctx,
         return err;
     }
 
-    /* Loop from leaf to the RoT layer & save all the linked layers in this chain */
-    while ((layer_idx >= DPE_ROT_LAYER_IDX) && (layer_cnt < MAX_NUM_OF_LAYERS)) {
+    /* Loop from leaf to the RoT certificate & save all the linked certificates in this chain */
+    while ((cert_ctx_idx >= DPE_ROT_CERT_CTX_IDX) && (cert_cnt < MAX_NUM_OF_CERTIFICATES)) {
 
-        /* Save layer idx */
-        layer_chain[layer_cnt++] = layer_idx;
+        /* Save certificate context idx */
+        cert_chain[cert_cnt++] = cert_ctx_idx;
 
-        if (layer_idx == DPE_ROT_LAYER_IDX) {
+        if (cert_ctx_idx == DPE_ROT_CERT_CTX_IDX) {
             /* This is the end of chain */
             break;
         }
 
-        layer_ctx = get_layer_ctx_ptr(layer_idx);
-        assert(layer_ctx->parent_layer_idx < layer_idx);
-        /* Move to the parent layer */
-        layer_idx = layer_ctx->parent_layer_idx;
+        cert_ctx = get_cert_ctx_ptr(cert_ctx_idx);
+        assert(cert_ctx->parent_cert_ctx_idx < cert_ctx_idx);
+        /* Move to the parent certificate context */
+        cert_ctx_idx = cert_ctx->parent_cert_ctx_idx;
     }
 
-    i = (layer_cnt > 0) ? layer_cnt - 1 : 0;
+    i = (cert_cnt > 0) ? cert_cnt - 1 : 0;
 
-    /* Add certificate from RoT to leaf layer order */
-    while (i >= DPE_ROT_LAYER_IDX) {
-        layer_ctx = get_layer_ctx_ptr(layer_chain[i]);
+    /* Add certificate from RoT to leaf certificate order */
+    while (i >= DPE_ROT_CERT_CTX_IDX) {
+        cert_ctx = get_cert_ctx_ptr(cert_chain[i]);
         /* Might multiple certificate is encoded */
-        err = encode_layer_certificate_internal(layer_ctx, &cbor_enc_ctx,
-                                                false, NULL);
+        err = encode_certificate_internal(cert_ctx, &cbor_enc_ctx,
+                                          false, NULL);
         if (err != DPE_NO_ERROR) {
             return err;
         }

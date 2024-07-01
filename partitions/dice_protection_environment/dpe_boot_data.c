@@ -287,15 +287,15 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
     int plat_ctx_handle;
     int invalid_ctx_handle;
 
-    /* Only the BL1_2 measurement is included in the RoT layer */
+    /* Only the BL1_2 measurement is included in the RoT certificate */
     itr = NULL;
     ret = get_measurement_for_slot_cond(&bl1_2_cond, &itr, &dice_inputs);
     if (ret != 1) {
-        /* RoT layer measurement is either malformed or missing, fatal error */
+        /* RoT certificate measurement is either malformed or missing, fatal error */
         return DPE_INTERNAL_ERROR;
     }
 
-    /* Derive RoT layer */
+    /* Derive RoT certificate */
     err = derive_context_request(rot_ctx_handle,
                                  DPE_ROT_CERT_ID, /* cert_id */
                                  false, /* retain_parent_context */
@@ -351,7 +351,7 @@ dpe_error_t derive_boot_data_contexts(int rot_ctx_handle,
         return err;
     }
 
-    /* Get measurements for the rest of platform layer, except AP */
+    /* Get measurements for the rest of platform certificate, except AP */
     itr = NULL;
     while ((ret = get_measurement_for_slot_cond(&plat_cond, &itr,
                                                 &dice_inputs)) == 1) {

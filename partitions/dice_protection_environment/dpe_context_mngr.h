@@ -25,21 +25,22 @@ extern "C" {
 #define INVALID_HANDLE 0xFFFFFFFF
 #define INVALID_COMPONENT_IDX 0xFFFF
 #define INVALID_NONCE_VALUE  0xFFFF
-#define INVALID_LAYER_IDX 65535
-#define DPE_ROT_LAYER_IDX 0
+#define INVALID_CERT_CTX_IDX 65535
+#define DPE_ROT_CERT_CTX_IDX 0
 
 /* Below configuration defines are platform dependent */
 #define MAX_NUM_OF_COMPONENTS 20
-#define DPE_PLATFORM_LAYER_IDX 1
-#define DPE_SECURE_WORLD_AND_HYPERVISOR_LAYER_IDX 2
+#define DPE_PLATFORM_CERT_CTX_IDX 1
+#define DPE_SECURE_WORLD_AND_HYPERVISOR_CERT_CTX_IDX 2
 #ifdef DPE_TEST_MODE
-#define MAX_NUM_OF_LAYERS 6
+#define MAX_NUM_OF_CERTIFICATES 6
 #else
-#define MAX_NUM_OF_LAYERS 4
+#define MAX_NUM_OF_CERTIFICATES 4
 #endif /* DPE_TEST_MODE */
 
 /* Below threshold defines the threshold below which a context cannot be destroyed */
-#define DPE_DESTROY_CONTEXT_THRESHOLD_LAYER_IDX DPE_SECURE_WORLD_AND_HYPERVISOR_LAYER_IDX
+#define DPE_DESTROY_CONTEXT_THRESHOLD_CERT_CTX_IDX  \
+            DPE_SECURE_WORLD_AND_HYPERVISOR_CERT_CTX_IDX
 
 /* Most significant 16 bits represent nonce & remaining 16 bits represent component index */
 #define GET_IDX(handle) ((handle) & 0xffff)
@@ -52,17 +53,17 @@ extern "C" {
 #define DEFAULT_TARGET_LOCALITY  LOCALITY_NONE
 
 struct component_context_data_t {
-    uint8_t        measurement_value[DICE_HASH_SIZE];
-    uint8_t        measurement_descriptor[DICE_CODE_DESCRIPTOR_MAX_SIZE];
-    size_t         measurement_descriptor_size;
-    uint8_t        signer_id[DICE_HASH_SIZE];
-    uint8_t        signer_id_descriptor[DICE_AUTHORITY_DESCRIPTOR_MAX_SIZE];
-    size_t         signer_id_descriptor_size;
-    uint8_t        config_value[DICE_INLINE_CONFIG_SIZE];
-    uint8_t        config_descriptor[DICE_CONFIG_DESCRIPTOR_MAX_SIZE];
-    size_t         config_descriptor_size;
-    DiceMode       mode;
-    uint8_t        hidden[DICE_HIDDEN_SIZE];
+    uint8_t  measurement_value[DICE_HASH_SIZE];
+    uint8_t  measurement_descriptor[DICE_CODE_DESCRIPTOR_MAX_SIZE];
+    size_t   measurement_descriptor_size;
+    uint8_t  signer_id[DICE_HASH_SIZE];
+    uint8_t  signer_id_descriptor[DICE_AUTHORITY_DESCRIPTOR_MAX_SIZE];
+    size_t   signer_id_descriptor_size;
+    uint8_t  config_value[DICE_INLINE_CONFIG_SIZE];
+    uint8_t  config_descriptor[DICE_CONFIG_DESCRIPTOR_MAX_SIZE];
+    size_t   config_descriptor_size;
+    DiceMode mode;
+    uint8_t  hidden[DICE_HIDDEN_SIZE];
 };
 
 struct component_context_t {
@@ -72,13 +73,13 @@ struct component_context_t {
     bool is_export_cdi_allowed;             /* Is CDI allowed to export */
     uint16_t nonce;                         /* Context handle nonce for the component */
     uint16_t parent_idx;                    /* Parent component's index */
-    uint16_t linked_layer_idx;              /* Layer component is linked to */
+    uint16_t linked_cert_ctx_idx;           /* Certificate context component is linked to */
     int32_t  target_locality;               /* Identifies the locality to which the
                                              * derived context will be bound */
     uint32_t expected_mhu_id;               /* Expected mhu to authorise derivation */
 };
 
-struct layer_context_data_t {
+struct cert_context_data_t {
     psa_key_id_t cdi_key_id;
     uint8_t cdi_seal[DICE_CDI_SIZE];
     uint8_t cdi_id[DICE_ID_SIZE];
@@ -89,10 +90,10 @@ struct layer_context_data_t {
     size_t external_key_deriv_label_len;
 };
 
-enum layer_state_t {
-    LAYER_STATE_CLOSED = 0,
-    LAYER_STATE_OPEN,
-    LAYER_STATE_FINALISED
+enum cert_ctx_state_t {
+    CERT_CTX_UNASSIGNED = 0,
+    CERT_CTX_ASSIGNED,
+    CERT_CTX_FINALISED
 };
 
 struct linked_components_t {
@@ -100,16 +101,16 @@ struct linked_components_t {
     uint16_t count;
 };
 
-struct layer_context_t {
-    struct layer_context_data_t data;
+struct cert_context_t {
+    struct cert_context_data_t data;
     uint16_t idx;
-    uint16_t parent_layer_idx;
+    uint16_t parent_cert_ctx_idx;
     struct linked_components_t linked_components;
     uint8_t attest_cdi_hash_input[DPE_HASH_ALG_SIZE];
-    enum layer_state_t state;
+    enum cert_ctx_state_t state;
     bool is_external_pub_key_provided;
     bool is_cdi_to_be_exported;
-    bool is_rot_layer;
+    bool is_rot_cert_ctx;
     uint32_t cert_id;
 };
 
@@ -136,7 +137,7 @@ dpe_error_t initialise_context_mngr(int *rot_ctx_handle);
  *                                         derive further.
  * \param[in]  create_certificate          Flag to indicate if certificate needs
  *                                         to be created. TRUE only if it is the
- *                                         last component in the layer.
+ *                                         last component in the certificate context.
  * \param[in]  dice_inputs                 Pointer to dice_input buffer.
  * \param[in]  client_id                   Identifier of the client calling the
  *                                         service.
@@ -197,15 +198,15 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
                                     bool destroy_recursively);
 
 /**
- * \brief  Function to get the pointer to a layer context
+ * \brief  Function to get the pointer to a certificate context
  *
- * \param[in] layer_idx      Index of the layer in the layer context array
- *                           for which pointer is required
+ * \param[in] cert_ctx_idx   Index of the certificate in the certificate context
+ *                           array for which pointer is required
  *
- * \return Returns pointer to the layer context if input index is valid
+ * \return Returns pointer to the certificate context if input index is valid
  *         else returns NULL
  */
-struct layer_context_t* get_layer_ctx_ptr(uint16_t layer_idx);
+struct cert_context_t* get_cert_ctx_ptr(uint16_t cert_ctx_idx);
 
 /**
  * \brief  Function to get the pointer to a component context
@@ -221,7 +222,7 @@ struct component_context_t* get_component_ctx_ptr(uint16_t component_idx);
 /**
  * \brief Certifies the attestation key and generates a leaf certificate.
  *        This command functionality depends on whether:
- *        - last layer is finalised
+ *        - last certificate context is finalised
  *        - public key is supplied to the command
  *        - label is supplied to the command
  *
@@ -237,19 +238,20 @@ struct component_context_t* get_component_ctx_ptr(uint16_t component_idx);
  *  |               |            | see Note F | no label       |
  *  +---------------+------------+------------+----------------+
  *
- *  A - Opens a new layer (if not opened), and creates a leaf certificate which
- *      includes supplied key.
- *  B - Creates certificate for current (existing) layer, which includes supplied
+ *  A - Assigns a new certificate context (if not assigned), and creates a leaf
+ *      certificate which includes supplied key.
+ *  B - Creates certificate for current (existing) context, which includes supplied
  *      key.
- *  C - Opens a new layer (if not opened), performs derivation which includes
- *      supplied label, and creates leaf certificate (including supplied label
- *      as a claim).
- *  D - Opens a new layer (if not opened), performs standard derivation,
- *      and creates a leaf certificate.
- *  E - Performs derivation (which includes supplied label) for current/existing layer
- *      and creates certificate which includes supplied label as a claim.
- *  F - Performs standard derivation for current/existing layer, and creates
- *      certificate.
+ *  C - Assigns a new certificate context (if not assigned), performs derivation
+ *      which includes supplied label, and creates leaf certificate (including
+ *      supplied label as a claim).
+ *  D - Assigns a new certificate context (if not assigned), performs standard
+ *      derivation, and creates a leaf certificate.
+ *  E - Performs derivation (which includes supplied label) for current/existing
+ *      certificate context and creates certificate which includes supplied label
+ *      as a claim.
+ *  F - Performs standard derivation for current/existing certificate context,
+ *      and creates certificate.
  *
  * \param[in]  input_ctx_handle                Input handle to component context.
  * \param[in]  retain_context                  Flag to indicate if context needs

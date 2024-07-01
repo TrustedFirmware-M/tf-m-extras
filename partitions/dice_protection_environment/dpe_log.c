@@ -121,12 +121,12 @@ void log_get_certificate_chain(int context_handle,
     LOG_DBGFMT(" - cert_chain_buf_size = %d\r\n", cert_chain_buf_size);
 }
 
-void log_intermediate_certificate(uint16_t layer_idx,
+void log_intermediate_certificate(uint16_t cert_ctx_idx,
                                   const uint8_t *cert_buf,
                                   size_t cert_size)
 {
     LOG_DBGFMT("DPE Intermediate Certificate:\r\n");
-    LOG_DBGFMT(" - layer index = %d\r\n", layer_idx);
+    LOG_DBGFMT(" - certificate context index = %d\r\n", cert_ctx_idx);
     LOG_DBGFMT(" - size = %d\r\n", cert_size);
     LOG_DBGFMT(" - certificate =");
     print_byte_array(cert_buf, cert_size);
@@ -175,17 +175,17 @@ void log_dpe_component_ctx_metadata(const struct component_context_t *ctx_ptr,
                 LOG_BOOL_VAL(ctx_ptr->is_export_cdi_allowed));
     LOG_DBGFMT("  - nonce = 0x%x\r\n", ctx_ptr->nonce);
     LOG_DBGFMT("  - parent_idx = %d\r\n", ctx_ptr->parent_idx);
-    LOG_DBGFMT("  - linked_layer_idx = %d\r\n", ctx_ptr->linked_layer_idx);
+    LOG_DBGFMT("  - linked_cert_ctx_idx = %d\r\n", ctx_ptr->linked_cert_ctx_idx);
     LOG_DBGFMT("  - target_locality = %d\r\n", ctx_ptr->target_locality);
     LOG_DBGFMT("  - expected_mhu_id = %u\r\n", ctx_ptr->expected_mhu_id);
 }
 
-void log_dpe_layer_metadata(const struct layer_context_t *ctx_ptr,
-                            uint16_t layer_idx)
+void log_dpe_cert_ctx_metadata(const struct cert_context_t *ctx_ptr,
+                               uint16_t cert_ctx_idx)
 {
-    LOG_DBGFMT(" DPE layer_ctx_array[%d]: \r\n", layer_idx);
+    LOG_DBGFMT(" DPE cert_ctx_array[%d]: \r\n", cert_ctx_idx);
     LOG_DBGFMT("  - cert_id = 0x%x\r\n", ctx_ptr->cert_id);
-    LOG_DBGFMT("  - parent_layer_idx = %d\r\n", ctx_ptr->parent_layer_idx);
+    LOG_DBGFMT("  - parent_cert_ctx_idx = %d\r\n", ctx_ptr->parent_cert_ctx_idx);
     LOG_DBGFMT("  - state = %d\r\n", ctx_ptr->state);
     LOG_DBGFMT("  - is_external_pub_key_provided = %s\r\n",
                 LOG_BOOL_VAL(ctx_ptr->is_external_pub_key_provided));

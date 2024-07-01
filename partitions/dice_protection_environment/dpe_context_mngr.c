@@ -20,44 +20,44 @@
 #define CONTEXT_DATA_MAX_SIZE sizeof(struct component_context_data_t)
 
 static struct component_context_t component_ctx_array[MAX_NUM_OF_COMPONENTS];
-static struct layer_context_t layer_ctx_array[MAX_NUM_OF_LAYERS];
+static struct cert_context_t cert_ctx_array[MAX_NUM_OF_CERTIFICATES];
 
-static dpe_error_t store_linked_component(struct layer_context_t *layer_ctx,
+static dpe_error_t store_linked_component(struct cert_context_t *cert_ctx,
                                           int component_idx)
 {
-    if (layer_ctx->linked_components.count >=
-            ARRAY_SIZE(layer_ctx->linked_components.idx)) {
+    if (cert_ctx->linked_components.count >=
+            ARRAY_SIZE(cert_ctx->linked_components.idx)) {
         /* linked_components.idx[] is full */
         return DPE_INSUFFICIENT_MEMORY;
     }
 
-    layer_ctx->linked_components.idx[layer_ctx->linked_components.count] = component_idx;
-    layer_ctx->linked_components.count++;
+    cert_ctx->linked_components.idx[cert_ctx->linked_components.count] = component_idx;
+    cert_ctx->linked_components.count++;
 
     return DPE_NO_ERROR;
 }
 
-static void remove_linked_component(struct layer_context_t *layer_ctx,
+static void remove_linked_component(struct cert_context_t *cert_ctx,
                                     int component_idx)
 {
     int i, pos;
 
     /* Find the position of the input component */
-    for (i = 0; i < ARRAY_SIZE(layer_ctx->linked_components.idx); i++) {
-        if (layer_ctx->linked_components.idx[i] == component_idx) {
+    for (i = 0; i < ARRAY_SIZE(cert_ctx->linked_components.idx); i++) {
+        if (cert_ctx->linked_components.idx[i] == component_idx) {
             pos = i;
             break;
         }
     }
 
-    assert(i < ARRAY_SIZE(layer_ctx->linked_components.idx));
+    assert(i < ARRAY_SIZE(cert_ctx->linked_components.idx));
 
     /* Left shift remaining elements by 1 from current position */
-    for(i = pos; i < ARRAY_SIZE(layer_ctx->linked_components.idx) - 1; i++) {
-        layer_ctx->linked_components.idx[i] = layer_ctx->linked_components.idx[i + 1];
+    for(i = pos; i < ARRAY_SIZE(cert_ctx->linked_components.idx) - 1; i++) {
+        cert_ctx->linked_components.idx[i] = cert_ctx->linked_components.idx[i + 1];
     }
-    layer_ctx->linked_components.idx[i] = INVALID_LAYER_IDX;
-    layer_ctx->linked_components.count--;
+    cert_ctx->linked_components.idx[i] = INVALID_CERT_CTX_IDX;
+    cert_ctx->linked_components.count--;
 }
 
 static int get_free_component_context_index(void)
@@ -101,37 +101,37 @@ static void set_context_to_default(int i)
     component_ctx_array[i].is_export_cdi_allowed = true;
     component_ctx_array[i].nonce = INVALID_NONCE_VALUE;
     component_ctx_array[i].parent_idx = INVALID_COMPONENT_IDX;
-    component_ctx_array[i].linked_layer_idx = INVALID_LAYER_IDX;
+    component_ctx_array[i].linked_cert_ctx_idx = INVALID_CERT_CTX_IDX;
     (void)memset(&component_ctx_array[i].data, 0, sizeof(struct component_context_data_t));
     component_ctx_array[i].target_locality = DEFAULT_TARGET_LOCALITY;
     /* Allow component to be derived by default */
 }
 
-static void initialise_layer(int i)
+static void initialise_certificate_context(int i)
 {
     int j;
 
-    layer_ctx_array[i].idx = i;
-    layer_ctx_array[i].state = LAYER_STATE_CLOSED;
-    layer_ctx_array[i].parent_layer_idx = INVALID_LAYER_IDX;
-    layer_ctx_array[i].is_cdi_to_be_exported = false;
-    layer_ctx_array[i].is_rot_layer = false;
-    layer_ctx_array[i].cert_id = DPE_CERT_ID_INVALID;
-    (void)memset(&layer_ctx_array[i].attest_cdi_hash_input, 0,
-                 sizeof(layer_ctx_array[i].attest_cdi_hash_input));
-    (void)memset(&layer_ctx_array[i].data, 0, sizeof(struct layer_context_data_t));
-    layer_ctx_array[i].data.cdi_key_id = PSA_KEY_ID_NULL;
-    layer_ctx_array[i].data.attest_key_id = PSA_KEY_ID_NULL;
-    layer_ctx_array[i].linked_components.count = 0;
-    for (j = 0; j < ARRAY_SIZE(layer_ctx_array[i].linked_components.idx); j++) {
-        layer_ctx_array[i].linked_components.idx[j] = INVALID_COMPONENT_IDX;
+    cert_ctx_array[i].idx = i;
+    cert_ctx_array[i].state = CERT_CTX_UNASSIGNED;
+    cert_ctx_array[i].parent_cert_ctx_idx = INVALID_CERT_CTX_IDX;
+    cert_ctx_array[i].is_cdi_to_be_exported = false;
+    cert_ctx_array[i].is_rot_cert_ctx = false;
+    cert_ctx_array[i].cert_id = DPE_CERT_ID_INVALID;
+    (void)memset(&cert_ctx_array[i].attest_cdi_hash_input, 0,
+                 sizeof(cert_ctx_array[i].attest_cdi_hash_input));
+    (void)memset(&cert_ctx_array[i].data, 0, sizeof(struct cert_context_data_t));
+    cert_ctx_array[i].data.cdi_key_id = PSA_KEY_ID_NULL;
+    cert_ctx_array[i].data.attest_key_id = PSA_KEY_ID_NULL;
+    cert_ctx_array[i].linked_components.count = 0;
+    for (j = 0; j < ARRAY_SIZE(cert_ctx_array[i].linked_components.idx); j++) {
+        cert_ctx_array[i].linked_components.idx[j] = INVALID_COMPONENT_IDX;
     }
 }
 
-static void close_layer(int i)
+static void free_certificate_context(int i)
 {
-    destroy_layer_keys(&layer_ctx_array[i]);
-    initialise_layer(i);
+    destroy_certificate_context_keys(&cert_ctx_array[i]);
+    initialise_certificate_context(i);
 }
 
 static dpe_error_t copy_dice_input(struct component_context_t *dest_ctx,
@@ -250,7 +250,7 @@ static psa_status_t get_component_data_for_attest_cdi(uint8_t *dest_buf,
     return PSA_SUCCESS;
 }
 
-static psa_status_t compute_layer_cdi_attest_input(struct layer_context_t *layer_ctx)
+static psa_status_t compute_attestation_cdi_input(struct cert_context_t *cert_ctx)
 {
     psa_status_t status;
     uint8_t component_ctx_data[CONTEXT_DATA_MAX_SIZE];
@@ -258,7 +258,7 @@ static psa_status_t compute_layer_cdi_attest_input(struct layer_context_t *layer
     int i, idx;
     uint16_t num_of_linked_components;
 
-    num_of_linked_components = layer_ctx->linked_components.count;
+    num_of_linked_components = cert_ctx->linked_components.count;
     if (num_of_linked_components == 0) {
         /* No components to hash */
         return PSA_SUCCESS;
@@ -273,11 +273,11 @@ static psa_status_t compute_layer_cdi_attest_input(struct layer_context_t *layer
     //TODO:
     /* How to combine measurements of multiple SW components into a single hash
      * is not yet defined by the Open DICE profile. This implementation
-     * concatenates the data of all SW components which belong to the same layer
-     * and hash it.
+     * concatenates the data of all SW components which belong to the same
+     * certificate and hash it.
      */
     for (i = 0; i < num_of_linked_components; i++) {
-        idx = layer_ctx->linked_components.idx[i];
+        idx = cert_ctx->linked_components.idx[i];
         status = get_component_data_for_attest_cdi(component_ctx_data,
                                                    sizeof(component_ctx_data),
                                                    &ctx_data_size,
@@ -295,8 +295,8 @@ static psa_status_t compute_layer_cdi_attest_input(struct layer_context_t *layer
     }
 
     status = psa_hash_finish(&hash_op,
-                             &layer_ctx->attest_cdi_hash_input[0],
-                             sizeof(layer_ctx->attest_cdi_hash_input),
+                             &cert_ctx->attest_cdi_hash_input[0],
+                             sizeof(cert_ctx->attest_cdi_hash_input),
                              &hash_len);
 
     assert(hash_len == DPE_HASH_ALG_SIZE);
@@ -304,7 +304,7 @@ static psa_status_t compute_layer_cdi_attest_input(struct layer_context_t *layer
     return status;
 }
 
-static dpe_error_t get_encoded_cdi_to_export(struct layer_context_t *layer_ctx,
+static dpe_error_t get_encoded_cdi_to_export(struct cert_context_t *cert_ctx,
                                              uint8_t *exported_cdi_buf,
                                              size_t exported_cdi_buf_size,
                                              size_t *exported_cdi_actual_size)
@@ -315,9 +315,9 @@ static dpe_error_t get_encoded_cdi_to_export(struct layer_context_t *layer_ctx,
     dpe_error_t err;
 
     /* Get CDIs value */
-    status = get_layer_cdi_value(layer_ctx,
-                                 cdi_attest_buf,
-                                 cdi_seal_buf);
+    status = get_certificate_cdi_value(cert_ctx,
+                                       cdi_attest_buf,
+                                       cdi_seal_buf);
     if (status != PSA_SUCCESS) {
         return DPE_INTERNAL_ERROR;
     }
@@ -331,51 +331,51 @@ static dpe_error_t get_encoded_cdi_to_export(struct layer_context_t *layer_ctx,
     if (err != DPE_NO_ERROR) {
         return err;
     }
-    layer_ctx->is_cdi_to_be_exported = true;
+    cert_ctx->is_cdi_to_be_exported = true;
 
     return DPE_NO_ERROR;
 }
 
-static dpe_error_t prepare_layer_certificate(struct layer_context_t *layer_ctx,
-                                             const struct layer_context_t *parent_layer_ctx)
+static dpe_error_t prepare_certificate(struct cert_context_t *cert_ctx,
+                                       const struct cert_context_t *parent_cert_ctx)
 {
     psa_status_t status;
 
-    /* For RoT Layer, CDI and issuer seed values are calculated by BL1_1 */
-    if ((!layer_ctx->is_rot_layer) &&
-        (!layer_ctx->is_external_pub_key_provided)) {
+    /* For RoT certificate, CDI and issuer seed values are calculated by BL1_1 */
+    if ((!cert_ctx->is_rot_cert_ctx) &&
+        (!cert_ctx->is_external_pub_key_provided)) {
 
-        /* Except for RoT Layer with no external public key supplied */
+        /* Except for RoT certificate with no external public key supplied */
 
-        status = compute_layer_cdi_attest_input(layer_ctx);
+        status = compute_attestation_cdi_input(cert_ctx);
         if (status != PSA_SUCCESS) {
             return DPE_INTERNAL_ERROR;
         }
 
-        status = derive_attestation_cdi(layer_ctx, parent_layer_ctx);
+        status = derive_attestation_cdi(cert_ctx, parent_cert_ctx);
         if (status != PSA_SUCCESS) {
             return DPE_INTERNAL_ERROR;
         }
 
-        status = derive_sealing_cdi(layer_ctx);
+        status = derive_sealing_cdi(cert_ctx);
         if (status != PSA_SUCCESS) {
             return DPE_INTERNAL_ERROR;
         }
     }
 
-    status = derive_wrapping_key(layer_ctx);
+    status = derive_wrapping_key(cert_ctx);
     if (status != PSA_SUCCESS) {
         return DPE_INTERNAL_ERROR;
     }
 
-    if (!layer_ctx->is_external_pub_key_provided) {
-        status = derive_attestation_key(layer_ctx);
+    if (!cert_ctx->is_external_pub_key_provided) {
+        status = derive_attestation_key(cert_ctx);
         if (status != PSA_SUCCESS) {
             return DPE_INTERNAL_ERROR;
         }
     }
 
-    status = derive_id_from_public_key(layer_ctx);
+    status = derive_id_from_public_key(cert_ctx);
     if (status != PSA_SUCCESS) {
         return DPE_INTERNAL_ERROR;
     }
@@ -383,29 +383,18 @@ static dpe_error_t prepare_layer_certificate(struct layer_context_t *layer_ctx,
     return DPE_NO_ERROR;
 }
 
-static uint16_t open_new_layer(void)
+static uint16_t assign_new_certificate_context(void)
 {
     int i;
 
-    for (i = 0; i < MAX_NUM_OF_LAYERS; i++) {
-        if (layer_ctx_array[i].state == LAYER_STATE_CLOSED) {
-            layer_ctx_array[i].state = LAYER_STATE_OPEN;
+    for (i = 0; i < MAX_NUM_OF_CERTIFICATES; i++) {
+        if (cert_ctx_array[i].state == CERT_CTX_UNASSIGNED) {
+            cert_ctx_array[i].state = CERT_CTX_ASSIGNED;
             return i;
         }
     }
 
-    //TODO: There is an open issue of layer creation as described below.
-    /* This is causing extra unintended layers to open. Since each layer
-     * has some context data and certificate buffer of 3k, it is
-     * causing RAM overflow. Hence until resoluton is reached, once all
-     * layers are opened, link new compenents to the last layer.
-     * ISSUE DESCRIPTION: AP BL2 derives AP_BL31 with create_certificate
-     * as true. Hence we finalize Platform layer. Then AP BL2 derives AP_SPM,
-     * but since AP BL2 is finalised, we open new layer (Hypervisor layer).
-     * AP BL2 further derives AP SPx. Again, since AP BL2 is finalised,
-     * we open new layer! Here AP SPx should belong to same layer as AP SPM.
-     */
-    return MAX_NUM_OF_LAYERS - 1;
+    return MAX_NUM_OF_CERTIFICATES - 1;
 }
 
 static bool is_client_authorised(int32_t client_id, int32_t target_locality)
@@ -422,13 +411,13 @@ static bool is_client_authorised(int32_t client_id, int32_t target_locality)
     return (client_locality == target_locality);
 }
 
-static bool is_cert_id_used(uint32_t cert_id, uint16_t *layer_idx)
+static bool is_cert_id_used(uint32_t cert_id, uint16_t *cert_ctx_idx)
 {
     int i;
 
-    for (i = 0; i < MAX_NUM_OF_LAYERS; i++) {
-        if (layer_ctx_array[i].cert_id == cert_id) {
-            *layer_idx = i;
+    for (i = 0; i < MAX_NUM_OF_CERTIFICATES; i++) {
+        if (cert_ctx_array[i].cert_id == cert_id) {
+            *cert_ctx_idx = i;
             return true;
         }
     }
@@ -437,47 +426,47 @@ static bool is_cert_id_used(uint32_t cert_id, uint16_t *layer_idx)
     return false;
 }
 
-static dpe_error_t assign_layer_to_context(struct component_context_t *new_ctx,
-                                           uint32_t cert_id)
+static dpe_error_t assign_certificate_to_component(struct component_context_t *new_ctx,
+                                                   uint32_t cert_id)
 {
-    uint16_t parent_layer_idx, layer_idx_to_link;
+    uint16_t parent_cert_ctx_idx, cert_ctx_idx_to_link;
 
     assert(new_ctx->parent_idx < MAX_NUM_OF_COMPONENTS);
 
-    parent_layer_idx = component_ctx_array[new_ctx->parent_idx].linked_layer_idx;
-    assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
+    parent_cert_ctx_idx = component_ctx_array[new_ctx->parent_idx].linked_cert_ctx_idx;
+    assert(parent_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
 
     if (cert_id != DPE_CERT_ID_INVALID) {
         /* Cert_id was sent by the client */
         if (cert_id == DPE_CERT_ID_SAME_AS_PARENT) {
-            if (layer_ctx_array[parent_layer_idx].state == LAYER_STATE_FINALISED) {
-                /* Cannot add to the layer which is already finalised */
+            if (cert_ctx_array[parent_cert_ctx_idx].state == CERT_CTX_FINALISED) {
+                /* Cannot add to the certificate context which is already finalised */
                 return DPE_INTERNAL_ERROR;
             }
             /* Derived context belongs to the same certificate as its parent component */
-            new_ctx->linked_layer_idx = parent_layer_idx;
+            new_ctx->linked_cert_ctx_idx = parent_cert_ctx_idx;
 
-        } else if (is_cert_id_used(cert_id, &layer_idx_to_link)) {
-            /* Cert_id is already in use but layer must be in open state, because
-             * cert_id is invalidated when layer gets finalized.
+        } else if (is_cert_id_used(cert_id, &cert_ctx_idx_to_link)) {
+            /* Cert_id is already in use but certificate context must be assigned, because
+             * cert_id is invalidated when certificate context gets finalized.
              */
-            assert(layer_ctx_array[layer_idx_to_link].state != LAYER_STATE_FINALISED);
+            assert(cert_ctx_array[cert_ctx_idx_to_link].state != CERT_CTX_FINALISED);
 
-            /* Use the same layer that is associated with cert_id */
-            new_ctx->linked_layer_idx = layer_idx_to_link;
-            /* Linked layer's parent is already assigned when it was opened */
+            /* Use the same certificate context that is associated with cert_id */
+            new_ctx->linked_cert_ctx_idx = cert_ctx_idx_to_link;
+            /* Linked certificate context's parent is already assigned */
 
         } else {
-            /* Open new layer and link derived context to new layer */
-            layer_idx_to_link = open_new_layer();
-            if (layer_idx_to_link == INVALID_LAYER_IDX) {
+            /* Assign new certificate context and link derived context to it */
+            cert_ctx_idx_to_link = assign_new_certificate_context();
+            if (cert_ctx_idx_to_link == INVALID_CERT_CTX_IDX) {
                 return DPE_INTERNAL_ERROR;
             }
-            /* Link this context to the new layer */
-            new_ctx->linked_layer_idx = layer_idx_to_link;
-            /* New layer's parent is parent component's layer */
-            layer_ctx_array[layer_idx_to_link].parent_layer_idx = parent_layer_idx;
-            layer_ctx_array[layer_idx_to_link].cert_id = cert_id;
+            /* Link this context to the new certificate context */
+            new_ctx->linked_cert_ctx_idx = cert_ctx_idx_to_link;
+            /* New certificate context's parent is parent component's certificate context */
+            cert_ctx_array[cert_ctx_idx_to_link].parent_cert_ctx_idx = parent_cert_ctx_idx;
+            cert_ctx_array[cert_ctx_idx_to_link].cert_id = cert_id;
         }
 
     } else {
@@ -499,21 +488,21 @@ static dpe_error_t assign_layer_to_context(struct component_context_t *new_ctx,
 static dpe_error_t create_rot_context(int *rot_ctx_handle)
 {
     struct component_context_t *rot_comp_ctx = &component_ctx_array[0];
-    struct layer_context_t *rot_layer_ctx = &layer_ctx_array[DPE_ROT_LAYER_IDX];
+    struct cert_context_t *rot_cert_ctx = &cert_ctx_array[DPE_ROT_CERT_CTX_IDX];
 
-    rot_layer_ctx->is_rot_layer = true;
-    /* Parent layer for RoT context's layer is same */
-    rot_layer_ctx->parent_layer_idx = DPE_ROT_LAYER_IDX;
-    /* Get the RoT CDI key for the RoT layer */
-    rot_layer_ctx->data.cdi_key_id = dpe_plat_get_rot_cdi_key_id();
+    rot_cert_ctx->is_rot_cert_ctx = true;
+    /* For RoT certificate, parent and derived context share same index */
+    rot_cert_ctx->parent_cert_ctx_idx = DPE_ROT_CERT_CTX_IDX;
+    /* Get the RoT CDI key for the RoT certificate */
+    rot_cert_ctx->data.cdi_key_id = dpe_plat_get_rot_cdi_key_id();
     /* Init RoT context, ready to be derived in next call to DeriveContext */
     rot_comp_ctx->nonce = 0;
     /* Set the target locality for RoT context */
     rot_comp_ctx->target_locality = LOCALITY_RSE_S;
     /* Parent component index for derived RoT context is same */
     rot_comp_ctx->parent_idx = 0;
-    /* Link context to RoT Layer */
-    rot_comp_ctx->linked_layer_idx = DPE_ROT_LAYER_IDX;
+    /* Link context to RoT certificate */
+    rot_comp_ctx->linked_cert_ctx_idx = DPE_ROT_CERT_CTX_IDX;
     rot_comp_ctx->expected_mhu_id = 0;
     *rot_ctx_handle = 0; /* index = 0, nonce = 0 */
 
@@ -528,17 +517,17 @@ dpe_error_t initialise_context_mngr(int *rot_ctx_handle)
         set_context_to_default(i);
     }
 
-    for (i = 0; i < MAX_NUM_OF_LAYERS; i++) {
-        initialise_layer(i);
+    for (i = 0; i < MAX_NUM_OF_CERTIFICATES; i++) {
+        initialise_certificate_context(i);
     }
 
     return create_rot_context(rot_ctx_handle);
 }
 
-static void close_layer_if_empty(uint16_t layer_idx)
+static void free_certificate_context_if_empty(uint16_t cert_ctx_idx)
 {
-    if (layer_ctx_array[layer_idx].linked_components.count == 0) {
-        close_layer(layer_idx);
+    if (cert_ctx_array[cert_ctx_idx].linked_components.count == 0) {
+        free_certificate_context(cert_ctx_idx);
     }
 }
 
@@ -564,9 +553,9 @@ dpe_error_t derive_context_request(int input_ctx_handle,
 {
     dpe_error_t err;
     struct component_context_t *parent_ctx, *derived_ctx;
-    uint16_t parent_ctx_idx, linked_layer_idx, parent_layer_idx;
+    uint16_t parent_ctx_idx, linked_cert_ctx_idx, parent_cert_ctx_idx;
     int free_component_idx;
-    struct layer_context_t *layer_ctx, *parent_layer_ctx;
+    struct cert_context_t *cert_ctx, *parent_cert_ctx;
 
     log_derive_context(input_ctx_handle, cert_id, retain_parent_context,
                        allow_new_context_to_derive, create_certificate, dice_inputs,
@@ -636,39 +625,40 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     /* Mark new derived component index as in use */
     derived_ctx->in_use = true;
     derived_ctx->is_allowed_to_derive = allow_new_context_to_derive;
-    err = assign_layer_to_context(derived_ctx, cert_id);
+    /* Assign certificate to the component */
+    err = assign_certificate_to_component(derived_ctx, cert_id);
     if (err != DPE_NO_ERROR) {
         return err;
     }
 
-    linked_layer_idx = derived_ctx->linked_layer_idx;
-    assert(linked_layer_idx < MAX_NUM_OF_LAYERS);
-    layer_ctx = &layer_ctx_array[linked_layer_idx];
-    err = store_linked_component(layer_ctx, free_component_idx);
+    linked_cert_ctx_idx = derived_ctx->linked_cert_ctx_idx;
+    assert(linked_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
+    cert_ctx = &cert_ctx_array[linked_cert_ctx_idx];
+    err = store_linked_component(cert_ctx, free_component_idx);
     if (err != DPE_NO_ERROR) {
         goto clean_up_and_exit;
     }
-    parent_layer_idx = layer_ctx->parent_layer_idx;
-    assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
-    parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
+    parent_cert_ctx_idx = cert_ctx->parent_cert_ctx_idx;
+    assert(parent_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
+    parent_cert_ctx = &cert_ctx_array[parent_cert_ctx_idx];
 
     if (create_certificate) {
-        layer_ctx->is_cdi_to_be_exported = export_cdi;
+        cert_ctx->is_cdi_to_be_exported = export_cdi;
 
-        /* Finalise the layer */
-        layer_ctx->state = LAYER_STATE_FINALISED;
-        layer_ctx->cert_id = DPE_CERT_ID_INVALID; /* make same cert_id reusable */
-        err = prepare_layer_certificate(layer_ctx, parent_layer_ctx);
+        /* Finalise the certificate context */
+        cert_ctx->state = CERT_CTX_FINALISED;
+        cert_ctx->cert_id = DPE_CERT_ID_INVALID; /* make same cert_id reusable */
+        err = prepare_certificate(cert_ctx, parent_cert_ctx);
         if (err != DPE_NO_ERROR) {
             goto clean_up_and_exit;
         }
 
         if (return_certificate) {
-            /* Encode and return generated layer certificate */
-            err = encode_layer_certificate(layer_ctx,
-                                           new_certificate_buf,
-                                           new_certificate_buf_size,
-                                           new_certificate_actual_size);
+            /* Encode and return generated certificate */
+            err = encode_certificate(cert_ctx,
+                                     new_certificate_buf,
+                                     new_certificate_buf_size,
+                                     new_certificate_actual_size);
             if (err != DPE_NO_ERROR) {
                 goto clean_up_and_exit;
             }
@@ -676,7 +666,7 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     }
 
     if (export_cdi) {
-        err = get_encoded_cdi_to_export(layer_ctx,
+        err = get_encoded_cdi_to_export(cert_ctx,
                                         exported_cdi_buf,
                                         exported_cdi_buf_size,
                                         exported_cdi_actual_size);
@@ -719,11 +709,11 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     log_derive_context_output_handles(*new_parent_context_handle,
                                       *new_context_handle);
 
-    /* Log context and layer info and certificate if no error */
+    /* Log component context, certificate context & certificate if no error */
     log_dpe_component_ctx_metadata(derived_ctx, free_component_idx);
-    log_dpe_layer_metadata(layer_ctx, linked_layer_idx);
+    log_dpe_cert_ctx_metadata(cert_ctx, linked_cert_ctx_idx);
     if (return_certificate) {
-        log_intermediate_certificate(linked_layer_idx,
+        log_intermediate_certificate(linked_cert_ctx_idx,
                                      new_certificate_buf,
                                      *new_certificate_actual_size);
     }
@@ -732,7 +722,7 @@ dpe_error_t derive_context_request(int input_ctx_handle,
 
 clean_up_and_exit:
     set_context_to_default(free_component_idx);
-    close_layer_if_empty(linked_layer_idx);
+    free_certificate_context_if_empty(linked_cert_ctx_idx);
 
     return err;
 }
@@ -740,39 +730,39 @@ clean_up_and_exit:
 dpe_error_t destroy_context_request(int input_ctx_handle,
                                     bool destroy_recursively)
 {
-    uint16_t input_ctx_idx, linked_layer_idx;
-    struct layer_context_t *layer_ctx;
+    uint16_t input_ctx_idx, linked_cert_ctx_idx;
+    struct cert_context_t *cert_ctx;
 
     log_destroy_context(input_ctx_handle, destroy_recursively);
 
-    /* Get component index and linked layer from the input handle */
+    /* Get component index and linked certificate context from the input handle */
     input_ctx_idx = GET_IDX(input_ctx_handle);
 
     /* Validate input handle */
     if (!is_input_handle_valid(input_ctx_handle)) {
         return DPE_INVALID_ARGUMENT;
     }
-    linked_layer_idx = component_ctx_array[input_ctx_idx].linked_layer_idx;
+    linked_cert_ctx_idx = component_ctx_array[input_ctx_idx].linked_cert_ctx_idx;
 
 #ifndef DPE_TEST_MODE
-    if (linked_layer_idx <= DPE_DESTROY_CONTEXT_THRESHOLD_LAYER_IDX) {
-        /* All layers till hypervisor cannot be destroyed dynamically */
+    if (linked_cert_ctx_idx <= DPE_DESTROY_CONTEXT_THRESHOLD_CERT_CTX_IDX) {
+        /* All certificate contexts till hypervisor cannot be destroyed dynamically */
         return DPE_INVALID_ARGUMENT;
     }
 #endif /* !DPE_TEST_MODE */
 
-    assert(linked_layer_idx < MAX_NUM_OF_LAYERS);
+    assert(linked_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
 
     if (!destroy_recursively) {
         set_context_to_default(input_ctx_idx);
-        layer_ctx = &layer_ctx_array[linked_layer_idx];
-        remove_linked_component(layer_ctx, input_ctx_idx);
+        cert_ctx = &cert_ctx_array[linked_cert_ctx_idx];
+        remove_linked_component(cert_ctx, input_ctx_idx);
     } else {
         //TODO: To be implemented
     }
 
-    /* Close the layer if all of its contexts are destroyed */
-    close_layer_if_empty(linked_layer_idx);
+    /* Free the certificate context if all of its components are destroyed */
+    free_certificate_context_if_empty(linked_cert_ctx_idx);
 
     return DPE_NO_ERROR;
 }
@@ -787,14 +777,14 @@ struct component_context_t* get_component_ctx_ptr(uint16_t component_idx)
     return &component_ctx_array[component_idx];
 }
 
-struct layer_context_t* get_layer_ctx_ptr(uint16_t layer_idx)
+struct cert_context_t* get_cert_ctx_ptr(uint16_t cert_ctx_idx)
 {
     /* Safety case */
-    if (layer_idx >= MAX_NUM_OF_LAYERS) {
+    if (cert_ctx_idx >= MAX_NUM_OF_CERTIFICATES) {
         return NULL;
     }
 
-    return &layer_ctx_array[layer_idx];
+    return &cert_ctx_array[cert_ctx_idx];
 }
 
 dpe_error_t certify_key_request(int input_ctx_handle,
@@ -811,11 +801,11 @@ dpe_error_t certify_key_request(int input_ctx_handle,
                                 size_t *derived_public_key_actual_size,
                                 int *new_context_handle)
 {
-    uint16_t input_ctx_idx, input_layer_idx, parent_layer_idx;
+    uint16_t input_ctx_idx, input_cert_ctx_idx, parent_cert_ctx_idx;
     dpe_error_t err;
     psa_status_t status;
-    struct layer_context_t *parent_layer_ctx, *input_layer_ctx;
-    struct layer_context_t leaf_layer = {0};
+    struct cert_context_t *parent_cert_ctx, *input_cert_ctx;
+    struct cert_context_t leaf_cert_ctx = {0};
 
     log_certify_key(input_ctx_handle, retain_context, public_key, public_key_size,
                     label, label_size);
@@ -831,70 +821,73 @@ dpe_error_t certify_key_request(int input_ctx_handle,
 
     /* Get component index from the input handle */
     input_ctx_idx = GET_IDX(input_ctx_handle);
-    /* Get current linked layer idx */
-    input_layer_idx = component_ctx_array[input_ctx_idx].linked_layer_idx;
-    assert(input_layer_idx < MAX_NUM_OF_LAYERS);
-    input_layer_ctx = &layer_ctx_array[input_layer_idx];
+    /* Get current linked certificate context idx */
+    input_cert_ctx_idx = component_ctx_array[input_ctx_idx].linked_cert_ctx_idx;
+    assert(input_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
+    input_cert_ctx = &cert_ctx_array[input_cert_ctx_idx];
 
-    if (input_layer_ctx->state == LAYER_STATE_FINALISED) {
-        /* Input layer is finalised, new leaf layer is its child now */
-        leaf_layer.parent_layer_idx = input_layer_idx;
+    if (input_cert_ctx->state == CERT_CTX_FINALISED) {
+        /* Input certificate context is finalised,
+         * new leaf certificate context is its child now
+         */
+        leaf_cert_ctx.parent_cert_ctx_idx = input_cert_ctx_idx;
         /* Linked components count already initialised to 0 */
 
     } else {
-        /* Input layer is not finalised, new leaf layer share the same
-         * components as in the input layer
+        /* Input certificate context is not finalised,
+         * new leaf certificate context share the same components as in the
+         * input certificate context
          */
-        memcpy(&leaf_layer.linked_components, &input_layer_ctx->linked_components,
-                sizeof(input_layer_ctx->linked_components));
+        memcpy(&leaf_cert_ctx.linked_components, &input_cert_ctx->linked_components,
+                sizeof(input_cert_ctx->linked_components));
     }
 
-    if (public_key_size > sizeof(leaf_layer.data.attest_pub_key)) {
+    if (public_key_size > sizeof(leaf_cert_ctx.data.attest_pub_key)) {
         return DPE_INVALID_ARGUMENT;
     }
 
     if ((public_key_size > 0) && (public_key != NULL)) {
-        leaf_layer.is_external_pub_key_provided = true;
+        leaf_cert_ctx.is_external_pub_key_provided = true;
         /* Copy the public key provided */
-        memcpy(&leaf_layer.data.attest_pub_key[0],
+        memcpy(&leaf_cert_ctx.data.attest_pub_key[0],
                public_key,
                public_key_size);
-        leaf_layer.data.attest_pub_key_len = public_key_size;
+        leaf_cert_ctx.data.attest_pub_key_len = public_key_size;
 
         /* If public key is provided, then provided label (if any) is ignored */
-        leaf_layer.data.external_key_deriv_label_len = 0;
+        leaf_cert_ctx.data.external_key_deriv_label_len = 0;
 
     } else {
         /* No external public key is provided */
-        leaf_layer.is_external_pub_key_provided = false;
+        leaf_cert_ctx.is_external_pub_key_provided = false;
 
         if ((label_size > 0) && (label != NULL)) {
             /* Copy the label provided */
-            memcpy(&leaf_layer.data.external_key_deriv_label[0],
+            memcpy(&leaf_cert_ctx.data.external_key_deriv_label[0],
                    label,
                    label_size);
-            leaf_layer.data.external_key_deriv_label_len = label_size;
+            leaf_cert_ctx.data.external_key_deriv_label_len = label_size;
 
         } else {
-            leaf_layer.data.external_key_deriv_label_len = 0;
+            leaf_cert_ctx.data.external_key_deriv_label_len = 0;
         }
     }
 
-    /* Get parent layer derived public key to verify the certificate signature */
-    parent_layer_idx = leaf_layer.parent_layer_idx;
-    assert(parent_layer_idx < MAX_NUM_OF_LAYERS);
-    parent_layer_ctx = &layer_ctx_array[parent_layer_idx];
+    /* Get parent certificate's derived public key to verify the certificate signature */
+    parent_cert_ctx_idx = leaf_cert_ctx.parent_cert_ctx_idx;
+    assert(parent_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
+    parent_cert_ctx = &cert_ctx_array[parent_cert_ctx_idx];
 
-    /* Correct layer should already be assigned in last call of
+    /* Correct certificate context should already be assigned in last call of
      * derive context command
      */
     /* Create leaf certificate */
-    err = prepare_layer_certificate(&leaf_layer, parent_layer_ctx);
+    err = prepare_certificate(&leaf_cert_ctx, parent_cert_ctx);
     if (err != DPE_NO_ERROR) {
         return err;
     }
 
-    err = encode_layer_certificate(&leaf_layer,
+    err = encode_certificate(&leaf_cert_ctx,
                                    certificate_buf,
                                    certificate_buf_size,
                                    certificate_actual_size);
@@ -902,14 +895,14 @@ dpe_error_t certify_key_request(int input_ctx_handle,
         return err;
     }
 
-    if (derived_public_key_buf_size < sizeof(parent_layer_ctx->data.attest_pub_key)) {
+    if (derived_public_key_buf_size < sizeof(parent_cert_ctx->data.attest_pub_key)) {
         return DPE_INVALID_ARGUMENT;
     }
 
     memcpy(derived_public_key_buf,
-           &parent_layer_ctx->data.attest_pub_key[0],
-           parent_layer_ctx->data.attest_pub_key_len);
-    *derived_public_key_actual_size = parent_layer_ctx->data.attest_pub_key_len;
+           &parent_cert_ctx->data.attest_pub_key[0],
+           parent_cert_ctx->data.attest_pub_key_len);
+    *derived_public_key_actual_size = parent_cert_ctx->data.attest_pub_key_len;
 
     /* Renew handle for the same context, if requested */
     if (retain_context) {
@@ -926,11 +919,11 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     }
 
     log_certify_key_output_handle(*new_context_handle);
-    log_intermediate_certificate(input_layer_idx,
+    log_intermediate_certificate(input_cert_ctx_idx,
                                  certificate_buf,
                                  *certificate_actual_size);
 
-    destroy_layer_keys(&leaf_layer);
+    destroy_certificate_context_keys(&leaf_cert_ctx);
 
     return DPE_NO_ERROR;
 }
@@ -944,9 +937,9 @@ dpe_error_t get_certificate_chain_request(int input_ctx_handle,
                                           int *new_context_handle)
 {
     dpe_error_t err;
-    uint16_t input_ctx_idx, input_layer_idx;
+    uint16_t input_ctx_idx, input_cert_ctx_idx;
     psa_status_t status;
-    struct layer_context_t *layer_ctx;
+    struct cert_context_t *cert_ctx;
 
     log_get_certificate_chain(input_ctx_handle, retain_context,
                               clear_from_context, certificate_chain_buf_size);
@@ -958,19 +951,19 @@ dpe_error_t get_certificate_chain_request(int input_ctx_handle,
 
     /* Get component index from the input handle */
     input_ctx_idx = GET_IDX(input_ctx_handle);
-    /* Get current linked layer idx */
-    input_layer_idx = component_ctx_array[input_ctx_idx].linked_layer_idx;
-    assert(input_layer_idx < MAX_NUM_OF_LAYERS);
+    /* Get current linked certificate context idx */
+    input_cert_ctx_idx = component_ctx_array[input_ctx_idx].linked_cert_ctx_idx;
+    assert(input_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
 
-    layer_ctx = &layer_ctx_array[input_layer_idx];
-    if (layer_ctx->state != LAYER_STATE_FINALISED) {
+    cert_ctx = &cert_ctx_array[input_cert_ctx_idx];
+    if (cert_ctx->state != CERT_CTX_FINALISED) {
         /* If the context has accumulated info and not yet part of a certificate,
          * return an invalid-argument error
          */
         return DPE_INVALID_ARGUMENT;
     }
 
-    err = get_certificate_chain(layer_ctx,
+    err = get_certificate_chain(cert_ctx,
                                 certificate_chain_buf,
                                 certificate_chain_buf_size,
                                 certificate_chain_actual_size);
@@ -992,7 +985,7 @@ dpe_error_t get_certificate_chain_request(int input_ctx_handle,
         if (clear_from_context) {
         //TODO: Reimplement the clear_from_context functionality after memory
         //      optimization; Certificates are not ready made and they are not
-        //      stored in the layer context anymore. They are created on-the-fly
+        //      stored in the certificate context anymore. They are created on-the-fly
         //      when requested. Add a test as well.
         }
 
