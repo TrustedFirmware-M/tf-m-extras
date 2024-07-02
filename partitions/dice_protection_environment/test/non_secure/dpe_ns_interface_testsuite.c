@@ -8,7 +8,7 @@
 #include "dpe_test.h"
 
 static struct test_t dpe_ns_tests[] = {
-    {&derive_rot_layer_context, "DPE_NS_TEST_INIT",
+    {&derive_rot_certificate_context, "DPE_NS_TEST_INIT",
      "DPE derive RoT context"},
     {&derive_context_api_test, "DPE_NS_TEST_1001",
      "DPE DeriveContext API"},

@@ -39,7 +39,7 @@ void derive_context_api_test(struct test_result_t *ret)
     ret->val = TEST_PASSED;
 }
 
-void derive_rot_layer_context(struct test_result_t *ret)
+void derive_rot_certificate_context(struct test_result_t *ret)
 {
     dpe_error_t dpe_err;
     struct derive_context_cmd_input_t dc_input = DEFAULT_DC_CMD_INPUT;

@@ -191,7 +191,7 @@ static void get_and_verify_leaf_certificate(
 }
 
 /*
- * Test with finalized layer:
+ * Test with finalized certificate context:
  *   - Build up the certificate chain based on derive_context_test_dataset_1.
  *   - Query the certificate chain and verify it. Get a reference to the
  *     public key in the last certificate.
@@ -248,7 +248,7 @@ void certify_key_core_functionality_test_01(struct test_result_t *ret)
 }
 
 /*
- * Test with unfinished layer:
+ * Test with unfinished certificate context:
  *   - Query the certificate chain, contains only the RoT certificate, and
  *     verify it. Get a reference to the public key in the last certificate.
  *   - Build up the certificate chain based on derive_context_test_dataset_2.

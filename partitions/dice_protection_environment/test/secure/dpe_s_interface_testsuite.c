@@ -8,7 +8,7 @@
 #include "dpe_test.h"
 
 static struct test_t dpe_s_tests[] = {
-    {&derive_rot_layer_context, "DPE_S_TEST_INIT",
+    {&derive_rot_certificate_context, "DPE_S_TEST_INIT",
      "DPE derive RoT context"},
     {&derive_context_api_test, "DPE_S_TEST_1001",
      "DPE DeriveContext API"},
@@ -47,9 +47,9 @@ static struct test_t dpe_s_tests[] = {
     {&derive_context_with_invalid_target_locality_test, "DPE_S_TEST_1018",
      "DPE DeriveContext - invalid target locality"},
     {&certify_key_core_functionality_test_01, "DPE_S_TEST_1019",
-     "DPE CertifyKey functionality - finalized layer"},
+     "DPE CertifyKey functionality - finalised certificate context"},
     {&certify_key_core_functionality_test_02, "DPE_S_TEST_1020",
-     "DPE CertifyKey functionality - unfinished layer"},
+     "DPE CertifyKey functionality - unfinished certificate context"},
     {&certify_key_retain_context_test, "DPE_S_TEST_1021",
      "DPE CertifyKey - retain context"},
     {&certify_key_incorrect_handle_test, "DPE_S_TEST_1022",

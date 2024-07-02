@@ -33,7 +33,7 @@ extern "C" {
  *
  * \param[out] ret  Test result
  */
-void derive_rot_layer_context(struct test_result_t *ret);
+void derive_rot_certificate_context(struct test_result_t *ret);
 
 /**
  * \brief Test the DPE DeriveContext API.
@@ -179,7 +179,7 @@ void derive_context_with_parent_leaf_component_test(struct test_result_t *ret);
 void derive_context_without_optional_args_test(struct test_result_t *ret);
 
 /**
- * \brief Test the DPE CertifyKey with finalized layers.
+ * \brief Test the DPE CertifyKey with finalized certificate context.
  *        Note: this test will create context(s) which cannot be destroyed.
  *
  * \param[out] ret  Test result
@@ -187,7 +187,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret);
 void certify_key_core_functionality_test_01(struct test_result_t *ret);
 
 /**
- * \brief Test the DPE CertifyKey with unfinished layer.
+ * \brief Test the DPE CertifyKey with unfinished certificate context.
  *        Note: this test will create context(s) which cannot be destroyed.
  *
  * \param[out] ret  Test result

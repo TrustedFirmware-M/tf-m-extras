@@ -20,8 +20,8 @@ extern "C" {
 #define RANDOM_DISTINCT_LOCALITY 0xFF
 
 #define DPE_PLATFORM_CERT_ID 0x200
-/* Certificate IDs used for tests where layers are finalized and undestroyable
- * contexts are created (i.e. no valid handle is returned for the context)
+/* Certificate IDs used for tests where certificate contexts are finalized and
+ * undestroyable contexts are created (i.e. no valid handle is returned for the context)
  */
 #define DPE_UNDESTROYABLE_CTX_CERT_ID_1 0x901
 #define DPE_UNDESTROYABLE_CTX_CERT_ID_2 0x902

@@ -24,8 +24,8 @@ extern struct dpe_derive_context_test_data_t
  *      GetCertificateChain
  *      CertifyKey
  *      GetCertificateChain
- *  It will test if CertifyKey request on finalised layer has no impact on the
- *  previously derived chain
+ *  It will test if CertifyKey request on finalised certificate context has no
+ *  impact on the previously derived chain
  */
 void complex_sequence_test_1(struct test_result_t *ret)
 {

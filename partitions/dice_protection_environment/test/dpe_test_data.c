@@ -41,7 +41,7 @@ const struct dpe_derive_context_test_data_t
             .use_parent_handle = true,
             .retain_parent_context = true,
             .allow_new_context_to_derive = true,
-            .create_certificate = true, /* Finalise Platform layer */
+            .create_certificate = true, /* Finalise Platform certificate context */
         },
     },
 };
