@@ -50,8 +50,8 @@ At initialization, DPE completes the following tasks:
 - Retrieves the RoT CDI generated at boot time by calling the
   ``dpe_plat_get_rot_cdi()`` platform function.
 
-- Derives DICE contexts for the RoT layer and platform layer, using the values
-  processed from boot data and the RoT CDI.
+- Derives DICE contexts for the RoT certificate and platform certificate, using
+  the values processed from boot data and the RoT CDI.
 
 - Shares the initial context handle, corresponding to the newly-created child
   context, with the first client (AP BL1), via a platform-specific mechanism.
@@ -86,11 +86,11 @@ decodes into calls to one of the following supported DICE functions.
 DeriveContext
 -------------
 
-Adds a component context to the layer, consisting of:
+Adds a component context to the certificate context, consisting of:
 
 - Context handle
 - Parent context handle
-- Linked layer
+- Linked certificate context
 - Is leaf
 - Client ID
 - DICE input values
@@ -100,13 +100,13 @@ Adds a component context to the layer, consisting of:
   - Authority hash
   - Operating mode
 
-When a layer is finalized (create_certificate=true), it:
+When a certificate context is finalized (create_certificate=true), it:
 
 - Computes the Attestation CDI and Sealing CDI.
 
 - Derives an attestation keypair from the Attestation CDI.
 
-- Creates the corresponding certificate and signs it with the previous layer's
+- Creates the corresponding certificate and signs it with the previous certificate's
   attestation private key.
 
 - Stores the finalized certificate in DPE partition SRAM.
@@ -145,11 +145,11 @@ then it certifies the key. If a public key is not supplied, then it derives key
 pair from the accumulated context information for that certificiate and certifies
 the public key.
 
-- If the input layer (layer linked to context) is already finalised, then it
-  creates a new leaf layer certficiate with no measurements.
+- If the input certificate context (certificate linked to component context) is
+  already finalised, then it creates a new leaf certficiate with no measurements.
 
-- If the input layer is not finalised, then it creates a leaf layer certificate
-  with all the measurements accumulated for that layer.
+- If the input certificate context is not finalised, then it creates a leaf certificate
+  with all the measurements accumulated for that certificate context.
 
 - Adds label (if supplied) to list of measurements.
 
