@@ -355,7 +355,7 @@ static dpe_error_t encode_sw_components_array(const struct cert_context_t *cert_
 
     /* Add elements to the array if there is any */
     for (i = 0; i < cert_ctx->linked_components.count; i++) {
-        component_ctx = get_component_ctx_ptr(cert_ctx->linked_components.idx[i]);
+        component_ctx = cert_ctx->linked_components.ptr[i];
         if (component_ctx == NULL) {
             return DPE_INTERNAL_ERROR;
         }
@@ -401,7 +401,6 @@ static dpe_error_t encode_certificate_internal(const struct cert_context_t *cert
 {
     struct t_cose_sign1_sign_ctx signer_ctx;
     struct cert_context_t *parent_cert_ctx;
-    uint16_t parent_cert_ctx_idx;
     dpe_error_t err;
     UsefulBufC completed_cert;
     psa_key_id_t attest_key_id;
@@ -409,9 +408,8 @@ static dpe_error_t encode_certificate_internal(const struct cert_context_t *cert
     /* Valid options: true & !NULL OR false & NULL */
     assert(finish_cbor_encoding ^ (cert_actual_size == NULL));
 
-    parent_cert_ctx_idx = cert_ctx->parent_cert_ctx_idx;
-    assert(parent_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
-    parent_cert_ctx = get_cert_ctx_ptr(parent_cert_ctx_idx);
+    parent_cert_ctx = cert_ctx->parent_cert_ptr;
+    assert(parent_cert_ctx != NULL);
 
     /* The RoT certificate is signed by the provisioned attestation key,
      * all other certificates are signed by the parent certificate's attestation key.
@@ -576,9 +574,8 @@ dpe_error_t get_certificate_chain(const struct cert_context_t *cert_ctx,
     QCBOREncodeContext cbor_enc_ctx;
     dpe_error_t err;
     int i;
-    uint16_t cert_chain[MAX_NUM_OF_CERTIFICATES];
+    const struct cert_context_t *cert_chain[MAX_NUM_OF_CERTIFICATES];
     uint16_t cert_cnt = 0;
-    uint16_t cert_ctx_idx = cert_ctx->idx;
 
     open_certificate_chain(&cbor_enc_ctx,
                            cert_chain_buf,
@@ -591,34 +588,28 @@ dpe_error_t get_certificate_chain(const struct cert_context_t *cert_ctx,
     }
 
     /* Loop from leaf to the RoT certificate & save all the linked certificates in this chain */
-    while ((cert_ctx_idx >= DPE_ROT_CERT_CTX_IDX) && (cert_cnt < MAX_NUM_OF_CERTIFICATES)) {
+    while ((cert_ctx != NULL) && (cert_cnt < MAX_NUM_OF_CERTIFICATES)) {
 
-        /* Save certificate context idx */
-        cert_chain[cert_cnt++] = cert_ctx_idx;
+        /* Save certificate context pointer */
+        cert_chain[cert_cnt++] = cert_ctx;
 
-        if (cert_ctx_idx == DPE_ROT_CERT_CTX_IDX) {
+        if (cert_ctx->is_rot_cert_ctx) {
             /* This is the end of chain */
             break;
         }
 
-        cert_ctx = get_cert_ctx_ptr(cert_ctx_idx);
-        assert(cert_ctx->parent_cert_ctx_idx < cert_ctx_idx);
         /* Move to the parent certificate context */
-        cert_ctx_idx = cert_ctx->parent_cert_ctx_idx;
+        cert_ctx = cert_ctx->parent_cert_ptr;
     }
 
-    i = (cert_cnt > 0) ? cert_cnt - 1 : 0;
-
     /* Add certificate from RoT to leaf certificate order */
-    while (i >= DPE_ROT_CERT_CTX_IDX) {
-        cert_ctx = get_cert_ctx_ptr(cert_chain[i]);
+    for (i = cert_cnt - 1; i >= 0; i--) {
         /* Might multiple certificate is encoded */
-        err = encode_certificate_internal(cert_ctx, &cbor_enc_ctx,
+        err = encode_certificate_internal(cert_chain[i], &cbor_enc_ctx,
                                           false, NULL);
         if (err != DPE_NO_ERROR) {
             return err;
         }
-        i--;
     }
 
     return close_certificate_chain(&cbor_enc_ctx,

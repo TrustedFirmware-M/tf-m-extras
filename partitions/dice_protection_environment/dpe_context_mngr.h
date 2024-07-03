@@ -23,24 +23,15 @@ extern "C" {
 #define DICE_MAX_ENCODED_CDI_SIZE ((2 * DICE_CDI_SIZE) + 16)
 
 #define INVALID_HANDLE 0xFFFFFFFF
-#define INVALID_COMPONENT_IDX 0xFFFF
 #define INVALID_NONCE_VALUE  0xFFFF
-#define INVALID_CERT_CTX_IDX 65535
-#define DPE_ROT_CERT_CTX_IDX 0
 
 /* Below configuration defines are platform dependent */
 #define MAX_NUM_OF_COMPONENTS 20
-#define DPE_PLATFORM_CERT_CTX_IDX 1
-#define DPE_SECURE_WORLD_AND_HYPERVISOR_CERT_CTX_IDX 2
 #ifdef DPE_TEST_MODE
 #define MAX_NUM_OF_CERTIFICATES 6
 #else
 #define MAX_NUM_OF_CERTIFICATES 4
 #endif /* DPE_TEST_MODE */
-
-/* Below threshold defines the threshold below which a context cannot be destroyed */
-#define DPE_DESTROY_CONTEXT_THRESHOLD_CERT_CTX_IDX  \
-            DPE_SECURE_WORLD_AND_HYPERVISOR_CERT_CTX_IDX
 
 /* Most significant 16 bits represent nonce & remaining 16 bits represent component index */
 #define GET_IDX(handle) ((handle) & 0xffff)
@@ -67,16 +58,16 @@ struct component_context_data_t {
 };
 
 struct component_context_t {
-    struct component_context_data_t data;   /* Component context data */
-    bool in_use;                            /* Flag to indicate if element is used */
-    bool is_allowed_to_derive;              /* Is the component allowed to derive */
-    bool is_export_cdi_allowed;             /* Is CDI allowed to export */
-    uint16_t nonce;                         /* Context handle nonce for the component */
-    uint16_t parent_idx;                    /* Parent component's index */
-    uint16_t linked_cert_ctx_idx;           /* Certificate context component is linked to */
-    int32_t  target_locality;               /* Identifies the locality to which the
-                                             * derived context will be bound */
-    uint32_t expected_mhu_id;               /* Expected mhu to authorise derivation */
+    struct component_context_data_t data; /* Component context data */
+    bool in_use;                          /* Flag to indicate if element is used */
+    bool is_allowed_to_derive;            /* Is the component allowed to derive */
+    bool is_export_cdi_allowed;           /* Is CDI allowed to export */
+    uint16_t nonce;                       /* Context handle nonce for the component */
+    struct component_context_t *parent_comp_ctx;   /* Pointer to parent component */
+    struct cert_context_t *linked_cert_ctx; /* Pointer to linked certificate */
+    int32_t  target_locality;             /* Identifies the locality to which the
+                                           * derived context will be bound */
+    uint32_t expected_mhu_id;             /* Expected mhu to authorise derivation */
 };
 
 struct cert_context_data_t {
@@ -97,14 +88,12 @@ enum cert_ctx_state_t {
 };
 
 struct linked_components_t {
-    uint16_t idx[MAX_NUM_OF_COMPONENTS];
-    uint16_t count;
+    struct component_context_t *ptr[MAX_NUM_OF_COMPONENTS]; /* Pointer to the linked components */
+    uint16_t count;                         /* Count of the linked components   */
 };
 
 struct cert_context_t {
     struct cert_context_data_t data;
-    uint16_t idx;
-    uint16_t parent_cert_ctx_idx;
     struct linked_components_t linked_components;
     uint8_t attest_cdi_hash_input[DPE_HASH_ALG_SIZE];
     enum cert_ctx_state_t state;
@@ -112,6 +101,7 @@ struct cert_context_t {
     bool is_cdi_to_be_exported;
     bool is_rot_cert_ctx;
     uint32_t cert_id;
+    struct cert_context_t *parent_cert_ptr;   /* Pointer to parent certificate */
 };
 
 /**
@@ -196,28 +186,6 @@ dpe_error_t derive_context_request(int input_ctx_handle,
  */
 dpe_error_t destroy_context_request(int input_ctx_handle,
                                     bool destroy_recursively);
-
-/**
- * \brief  Function to get the pointer to a certificate context
- *
- * \param[in] cert_ctx_idx   Index of the certificate in the certificate context
- *                           array for which pointer is required
- *
- * \return Returns pointer to the certificate context if input index is valid
- *         else returns NULL
- */
-struct cert_context_t* get_cert_ctx_ptr(uint16_t cert_ctx_idx);
-
-/**
- * \brief  Function to get the pointer to a component context
- *
- * \param[in] component_idx  Index of the component in the component context array
- *                           for which pointer is required
- *
- * \return Returns pointer to the component context if input index is valid
- *         else returns NULL
- */
-struct component_context_t* get_component_ctx_ptr(uint16_t component_idx);
 
 /**
  * \brief Certifies the attestation key and generates a leaf certificate.

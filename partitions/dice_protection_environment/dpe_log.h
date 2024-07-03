@@ -61,8 +61,7 @@ void log_get_certificate_chain(int context_handle,
 /**
  * \brief Log intermediate certificate contents.
  */
-void log_intermediate_certificate(uint16_t cert_ctx_idx,
-                                  const uint8_t *cert_buf,
+void log_intermediate_certificate(const uint8_t *cert_buf,
                                   size_t cert_buf_size);
 
 /**
@@ -96,8 +95,7 @@ void log_dpe_component_ctx_metadata(const struct component_context_t *ctx_ptr,
 /**
  * \brief Log certificate context metadata.
  */
-void log_dpe_cert_ctx_metadata(const struct cert_context_t *ctx_ptr,
-                               uint16_t cert_ctx_idx);
+void log_dpe_cert_ctx_metadata(const struct cert_context_t *ctx_ptr);
 
 #else /* TFM_PARTITION_LOG_LEVEL */
 

@@ -23,40 +23,40 @@ static struct component_context_t component_ctx_array[MAX_NUM_OF_COMPONENTS];
 static struct cert_context_t cert_ctx_array[MAX_NUM_OF_CERTIFICATES];
 
 static dpe_error_t store_linked_component(struct cert_context_t *cert_ctx,
-                                          int component_idx)
+                                          struct component_context_t *comp_ctx)
 {
     if (cert_ctx->linked_components.count >=
-            ARRAY_SIZE(cert_ctx->linked_components.idx)) {
-        /* linked_components.idx[] is full */
+            ARRAY_SIZE(cert_ctx->linked_components.ptr)) {
+        /* linked_components.ctx[] is full */
         return DPE_INSUFFICIENT_MEMORY;
     }
 
-    cert_ctx->linked_components.idx[cert_ctx->linked_components.count] = component_idx;
+    cert_ctx->linked_components.ptr[cert_ctx->linked_components.count] = comp_ctx;
     cert_ctx->linked_components.count++;
 
     return DPE_NO_ERROR;
 }
 
 static void remove_linked_component(struct cert_context_t *cert_ctx,
-                                    int component_idx)
+                                    const struct component_context_t *comp_ctx)
 {
     int i, pos;
 
     /* Find the position of the input component */
-    for (i = 0; i < ARRAY_SIZE(cert_ctx->linked_components.idx); i++) {
-        if (cert_ctx->linked_components.idx[i] == component_idx) {
+    for (i = 0; i < ARRAY_SIZE(cert_ctx->linked_components.ptr); i++) {
+        if (cert_ctx->linked_components.ptr[i] == comp_ctx) {
             pos = i;
             break;
         }
     }
 
-    assert(i < ARRAY_SIZE(cert_ctx->linked_components.idx));
+    assert(i < ARRAY_SIZE(cert_ctx->linked_components.ptr));
 
     /* Left shift remaining elements by 1 from current position */
-    for(i = pos; i < ARRAY_SIZE(cert_ctx->linked_components.idx) - 1; i++) {
-        cert_ctx->linked_components.idx[i] = cert_ctx->linked_components.idx[i + 1];
+    for(i = pos; i < ARRAY_SIZE(cert_ctx->linked_components.ptr) - 1; i++) {
+        cert_ctx->linked_components.ptr[i] = cert_ctx->linked_components.ptr[i + 1];
     }
-    cert_ctx->linked_components.idx[i] = INVALID_CERT_CTX_IDX;
+    cert_ctx->linked_components.ptr[i] = NULL;
     cert_ctx->linked_components.count--;
 }
 
@@ -91,47 +91,47 @@ static dpe_error_t renew_nonce(int *handle)
     return DPE_NO_ERROR;
 }
 
-static void set_context_to_default(int i)
+static void set_context_to_default(struct component_context_t *comp_ctx)
 {
-    component_ctx_array[i].in_use = false;
-    component_ctx_array[i].is_allowed_to_derive = true;
+    comp_ctx->in_use = false;
+    comp_ctx->is_allowed_to_derive = true;
     /* export CDI attribute is inherited and once disabled, a derived context
      * and subsequent derivations cannot export CDI, hence enable by default
      */
-    component_ctx_array[i].is_export_cdi_allowed = true;
-    component_ctx_array[i].nonce = INVALID_NONCE_VALUE;
-    component_ctx_array[i].parent_idx = INVALID_COMPONENT_IDX;
-    component_ctx_array[i].linked_cert_ctx_idx = INVALID_CERT_CTX_IDX;
-    (void)memset(&component_ctx_array[i].data, 0, sizeof(struct component_context_data_t));
-    component_ctx_array[i].target_locality = DEFAULT_TARGET_LOCALITY;
+    comp_ctx->is_export_cdi_allowed = true;
+    comp_ctx->nonce = INVALID_NONCE_VALUE;
+    comp_ctx->parent_comp_ctx = NULL;
+    comp_ctx->linked_cert_ctx = NULL;
+    (void)memset(&comp_ctx->data, 0, sizeof(struct component_context_data_t));
+    comp_ctx->target_locality = DEFAULT_TARGET_LOCALITY;
     /* Allow component to be derived by default */
 }
 
-static void initialise_certificate_context(int i)
+static void initialise_certificate_context(struct cert_context_t *cert_ctx)
 {
     int j;
 
-    cert_ctx_array[i].idx = i;
-    cert_ctx_array[i].state = CERT_CTX_UNASSIGNED;
-    cert_ctx_array[i].parent_cert_ctx_idx = INVALID_CERT_CTX_IDX;
-    cert_ctx_array[i].is_cdi_to_be_exported = false;
-    cert_ctx_array[i].is_rot_cert_ctx = false;
-    cert_ctx_array[i].cert_id = DPE_CERT_ID_INVALID;
-    (void)memset(&cert_ctx_array[i].attest_cdi_hash_input, 0,
-                 sizeof(cert_ctx_array[i].attest_cdi_hash_input));
-    (void)memset(&cert_ctx_array[i].data, 0, sizeof(struct cert_context_data_t));
-    cert_ctx_array[i].data.cdi_key_id = PSA_KEY_ID_NULL;
-    cert_ctx_array[i].data.attest_key_id = PSA_KEY_ID_NULL;
-    cert_ctx_array[i].linked_components.count = 0;
-    for (j = 0; j < ARRAY_SIZE(cert_ctx_array[i].linked_components.idx); j++) {
-        cert_ctx_array[i].linked_components.idx[j] = INVALID_COMPONENT_IDX;
+    cert_ctx->parent_cert_ptr = NULL;
+    cert_ctx->state = CERT_CTX_UNASSIGNED;
+    cert_ctx->parent_cert_ptr = NULL;
+    cert_ctx->is_cdi_to_be_exported = false;
+    cert_ctx->is_rot_cert_ctx = false;
+    cert_ctx->cert_id = DPE_CERT_ID_INVALID;
+    (void)memset(&cert_ctx->attest_cdi_hash_input, 0,
+                 sizeof(cert_ctx->attest_cdi_hash_input));
+    (void)memset(&cert_ctx->data, 0, sizeof(struct cert_context_data_t));
+    cert_ctx->data.cdi_key_id = PSA_KEY_ID_NULL;
+    cert_ctx->data.attest_key_id = PSA_KEY_ID_NULL;
+    cert_ctx->linked_components.count = 0;
+    for (j = 0; j < ARRAY_SIZE(cert_ctx->linked_components.ptr); j++) {
+        cert_ctx->linked_components.ptr[j] = NULL;
     }
 }
 
-static void free_certificate_context(int i)
+static void free_certificate_context(struct cert_context_t *cert_ctx)
 {
-    destroy_certificate_context_keys(&cert_ctx_array[i]);
-    initialise_certificate_context(i);
+    destroy_certificate_context_keys(cert_ctx);
+    initialise_certificate_context(cert_ctx);
 }
 
 static dpe_error_t copy_dice_input(struct component_context_t *dest_ctx,
@@ -255,8 +255,9 @@ static psa_status_t compute_attestation_cdi_input(struct cert_context_t *cert_ct
     psa_status_t status;
     uint8_t component_ctx_data[CONTEXT_DATA_MAX_SIZE];
     size_t ctx_data_size, hash_len;
-    int i, idx;
+    int i;
     uint16_t num_of_linked_components;
+    struct component_context_t *comp_ctx;
 
     num_of_linked_components = cert_ctx->linked_components.count;
     if (num_of_linked_components == 0) {
@@ -277,11 +278,11 @@ static psa_status_t compute_attestation_cdi_input(struct cert_context_t *cert_ct
      * certificate and hash it.
      */
     for (i = 0; i < num_of_linked_components; i++) {
-        idx = cert_ctx->linked_components.idx[i];
+        comp_ctx = cert_ctx->linked_components.ptr[i];
         status = get_component_data_for_attest_cdi(component_ctx_data,
                                                    sizeof(component_ctx_data),
                                                    &ctx_data_size,
-                                                   &component_ctx_array[idx]);
+                                                   comp_ctx);
         if (status != PSA_SUCCESS) {
             return status;
         }
@@ -336,10 +337,13 @@ static dpe_error_t get_encoded_cdi_to_export(struct cert_context_t *cert_ctx,
     return DPE_NO_ERROR;
 }
 
-static dpe_error_t prepare_certificate(struct cert_context_t *cert_ctx,
-                                       const struct cert_context_t *parent_cert_ctx)
+static dpe_error_t prepare_certificate(struct cert_context_t *cert_ctx)
 {
     psa_status_t status;
+    struct cert_context_t *parent_cert_ctx;
+
+    parent_cert_ctx = cert_ctx->parent_cert_ptr;
+    assert(parent_cert_ctx != NULL);
 
     /* For RoT certificate, CDI and issuer seed values are calculated by BL1_1 */
     if ((!cert_ctx->is_rot_cert_ctx) &&
@@ -383,18 +387,18 @@ static dpe_error_t prepare_certificate(struct cert_context_t *cert_ctx,
     return DPE_NO_ERROR;
 }
 
-static uint16_t assign_new_certificate_context(void)
+static struct cert_context_t* assign_new_certificate_context(void)
 {
     int i;
 
     for (i = 0; i < MAX_NUM_OF_CERTIFICATES; i++) {
         if (cert_ctx_array[i].state == CERT_CTX_UNASSIGNED) {
             cert_ctx_array[i].state = CERT_CTX_ASSIGNED;
-            return i;
+            return &cert_ctx_array[i];
         }
     }
 
-    return MAX_NUM_OF_CERTIFICATES - 1;
+    return NULL;
 }
 
 static bool is_client_authorised(int32_t client_id, int32_t target_locality)
@@ -411,13 +415,13 @@ static bool is_client_authorised(int32_t client_id, int32_t target_locality)
     return (client_locality == target_locality);
 }
 
-static bool is_cert_id_used(uint32_t cert_id, uint16_t *cert_ctx_idx)
+static bool is_cert_id_used(uint32_t cert_id, struct cert_context_t **cert_ctx)
 {
     int i;
 
     for (i = 0; i < MAX_NUM_OF_CERTIFICATES; i++) {
         if (cert_ctx_array[i].cert_id == cert_id) {
-            *cert_ctx_idx = i;
+            *cert_ctx = &cert_ctx_array[i];
             return true;
         }
     }
@@ -429,44 +433,44 @@ static bool is_cert_id_used(uint32_t cert_id, uint16_t *cert_ctx_idx)
 static dpe_error_t assign_certificate_to_component(struct component_context_t *new_ctx,
                                                    uint32_t cert_id)
 {
-    uint16_t parent_cert_ctx_idx, cert_ctx_idx_to_link;
+    struct cert_context_t *parent_cert_ctx, *cert_ctx_to_link = NULL;
 
-    assert(new_ctx->parent_idx < MAX_NUM_OF_COMPONENTS);
+    assert(new_ctx->parent_comp_ctx != NULL);
 
-    parent_cert_ctx_idx = component_ctx_array[new_ctx->parent_idx].linked_cert_ctx_idx;
-    assert(parent_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
+    parent_cert_ctx = new_ctx->parent_comp_ctx->linked_cert_ctx;
+    assert(parent_cert_ctx != NULL);
 
     if (cert_id != DPE_CERT_ID_INVALID) {
         /* Cert_id was sent by the client */
         if (cert_id == DPE_CERT_ID_SAME_AS_PARENT) {
-            if (cert_ctx_array[parent_cert_ctx_idx].state == CERT_CTX_FINALISED) {
+            if (parent_cert_ctx->state == CERT_CTX_FINALISED) {
                 /* Cannot add to the certificate context which is already finalised */
                 return DPE_INTERNAL_ERROR;
             }
             /* Derived context belongs to the same certificate as its parent component */
-            new_ctx->linked_cert_ctx_idx = parent_cert_ctx_idx;
+            new_ctx->linked_cert_ctx = parent_cert_ctx;
 
-        } else if (is_cert_id_used(cert_id, &cert_ctx_idx_to_link)) {
+        } else if (is_cert_id_used(cert_id, &cert_ctx_to_link)) {
             /* Cert_id is already in use but certificate context must be assigned, because
-             * cert_id is invalidated when certificate context gets finalized.
+             * cert_id is invalidated when certificate context gets finalised.
              */
-            assert(cert_ctx_array[cert_ctx_idx_to_link].state != CERT_CTX_FINALISED);
+            assert(cert_ctx_to_link->state != CERT_CTX_FINALISED);
 
             /* Use the same certificate context that is associated with cert_id */
-            new_ctx->linked_cert_ctx_idx = cert_ctx_idx_to_link;
+            new_ctx->linked_cert_ctx = cert_ctx_to_link;
             /* Linked certificate context's parent is already assigned */
 
         } else {
             /* Assign new certificate context and link derived context to it */
-            cert_ctx_idx_to_link = assign_new_certificate_context();
-            if (cert_ctx_idx_to_link == INVALID_CERT_CTX_IDX) {
+            cert_ctx_to_link = assign_new_certificate_context();
+            if (cert_ctx_to_link == NULL) {
                 return DPE_INTERNAL_ERROR;
             }
             /* Link this context to the new certificate context */
-            new_ctx->linked_cert_ctx_idx = cert_ctx_idx_to_link;
+            new_ctx->linked_cert_ctx = cert_ctx_to_link;
             /* New certificate context's parent is parent component's certificate context */
-            cert_ctx_array[cert_ctx_idx_to_link].parent_cert_ctx_idx = parent_cert_ctx_idx;
-            cert_ctx_array[cert_ctx_idx_to_link].cert_id = cert_id;
+            cert_ctx_to_link->parent_cert_ptr = parent_cert_ctx;
+            cert_ctx_to_link->cert_id = cert_id;
         }
 
     } else {
@@ -488,21 +492,22 @@ static dpe_error_t assign_certificate_to_component(struct component_context_t *n
 static dpe_error_t create_rot_context(int *rot_ctx_handle)
 {
     struct component_context_t *rot_comp_ctx = &component_ctx_array[0];
-    struct cert_context_t *rot_cert_ctx = &cert_ctx_array[DPE_ROT_CERT_CTX_IDX];
+    struct cert_context_t *rot_cert_ctx = &cert_ctx_array[0];
 
     rot_cert_ctx->is_rot_cert_ctx = true;
-    /* For RoT certificate, parent and derived context share same index */
-    rot_cert_ctx->parent_cert_ctx_idx = DPE_ROT_CERT_CTX_IDX;
+    rot_cert_ctx->parent_cert_ptr = NULL;
     /* Get the RoT CDI key for the RoT certificate */
     rot_cert_ctx->data.cdi_key_id = dpe_plat_get_rot_cdi_key_id();
     /* Init RoT context, ready to be derived in next call to DeriveContext */
     rot_comp_ctx->nonce = 0;
     /* Set the target locality for RoT context */
     rot_comp_ctx->target_locality = LOCALITY_RSE_S;
-    /* Parent component index for derived RoT context is same */
-    rot_comp_ctx->parent_idx = 0;
+    /* Parent component for derived RoT context is same.
+     * It is not set to NULL as later on when creating certificate and
+     * parent_comp_ctx pointer is checked against NULL value */
+    rot_comp_ctx->parent_comp_ctx = rot_comp_ctx;
     /* Link context to RoT certificate */
-    rot_comp_ctx->linked_cert_ctx_idx = DPE_ROT_CERT_CTX_IDX;
+    rot_comp_ctx->linked_cert_ctx = rot_cert_ctx;
     rot_comp_ctx->expected_mhu_id = 0;
     *rot_ctx_handle = 0; /* index = 0, nonce = 0 */
 
@@ -514,20 +519,20 @@ dpe_error_t initialise_context_mngr(int *rot_ctx_handle)
     int i;
 
     for (i = 0; i < MAX_NUM_OF_COMPONENTS; i++) {
-        set_context_to_default(i);
+        set_context_to_default(&component_ctx_array[i]);
     }
 
     for (i = 0; i < MAX_NUM_OF_CERTIFICATES; i++) {
-        initialise_certificate_context(i);
+        initialise_certificate_context(&cert_ctx_array[i]);
     }
 
     return create_rot_context(rot_ctx_handle);
 }
 
-static void free_certificate_context_if_empty(uint16_t cert_ctx_idx)
+static void free_certificate_context_if_empty(struct cert_context_t *cert_ctx)
 {
-    if (cert_ctx_array[cert_ctx_idx].linked_components.count == 0) {
-        free_certificate_context(cert_ctx_idx);
+    if (cert_ctx->linked_components.count == 0) {
+        free_certificate_context(cert_ctx);
     }
 }
 
@@ -553,9 +558,9 @@ dpe_error_t derive_context_request(int input_ctx_handle,
 {
     dpe_error_t err;
     struct component_context_t *parent_ctx, *derived_ctx;
-    uint16_t parent_ctx_idx, linked_cert_ctx_idx, parent_cert_ctx_idx;
+    uint16_t parent_ctx_idx;
     int free_component_idx;
-    struct cert_context_t *cert_ctx, *parent_cert_ctx;
+    struct cert_context_t *cert_ctx = NULL;
 
     log_derive_context(input_ctx_handle, cert_id, retain_parent_context,
                        allow_new_context_to_derive, create_certificate, dice_inputs,
@@ -620,8 +625,8 @@ dpe_error_t derive_context_request(int input_ctx_handle,
     }
     derived_ctx->target_locality = target_locality;
 
-    /* Update parent idx in new derived component context */
-    derived_ctx->parent_idx = parent_ctx_idx;
+    /* Update parent component in new derived component context */
+    derived_ctx->parent_comp_ctx = parent_ctx;
     /* Mark new derived component index as in use */
     derived_ctx->in_use = true;
     derived_ctx->is_allowed_to_derive = allow_new_context_to_derive;
@@ -631,16 +636,12 @@ dpe_error_t derive_context_request(int input_ctx_handle,
         return err;
     }
 
-    linked_cert_ctx_idx = derived_ctx->linked_cert_ctx_idx;
-    assert(linked_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
-    cert_ctx = &cert_ctx_array[linked_cert_ctx_idx];
-    err = store_linked_component(cert_ctx, free_component_idx);
+    cert_ctx = derived_ctx->linked_cert_ctx;
+    assert(cert_ctx != NULL);
+    err = store_linked_component(cert_ctx, derived_ctx);
     if (err != DPE_NO_ERROR) {
         goto clean_up_and_exit;
     }
-    parent_cert_ctx_idx = cert_ctx->parent_cert_ctx_idx;
-    assert(parent_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
-    parent_cert_ctx = &cert_ctx_array[parent_cert_ctx_idx];
 
     if (create_certificate) {
         cert_ctx->is_cdi_to_be_exported = export_cdi;
@@ -648,7 +649,7 @@ dpe_error_t derive_context_request(int input_ctx_handle,
         /* Finalise the certificate context */
         cert_ctx->state = CERT_CTX_FINALISED;
         cert_ctx->cert_id = DPE_CERT_ID_INVALID; /* make same cert_id reusable */
-        err = prepare_certificate(cert_ctx, parent_cert_ctx);
+        err = prepare_certificate(cert_ctx);
         if (err != DPE_NO_ERROR) {
             goto clean_up_and_exit;
         }
@@ -711,18 +712,19 @@ dpe_error_t derive_context_request(int input_ctx_handle,
 
     /* Log component context, certificate context & certificate if no error */
     log_dpe_component_ctx_metadata(derived_ctx, free_component_idx);
-    log_dpe_cert_ctx_metadata(cert_ctx, linked_cert_ctx_idx);
+    if (cert_ctx != NULL) {
+        log_dpe_cert_ctx_metadata(cert_ctx);
+    }
     if (return_certificate) {
-        log_intermediate_certificate(linked_cert_ctx_idx,
-                                     new_certificate_buf,
+        log_intermediate_certificate(new_certificate_buf,
                                      *new_certificate_actual_size);
     }
 
     return DPE_NO_ERROR;
 
 clean_up_and_exit:
-    set_context_to_default(free_component_idx);
-    free_certificate_context_if_empty(linked_cert_ctx_idx);
+    set_context_to_default(derived_ctx);
+    free_certificate_context_if_empty(cert_ctx);
 
     return err;
 }
@@ -730,7 +732,7 @@ clean_up_and_exit:
 dpe_error_t destroy_context_request(int input_ctx_handle,
                                     bool destroy_recursively)
 {
-    uint16_t input_ctx_idx, linked_cert_ctx_idx;
+    uint16_t input_ctx_idx;
     struct cert_context_t *cert_ctx;
 
     log_destroy_context(input_ctx_handle, destroy_recursively);
@@ -742,49 +744,26 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
     if (!is_input_handle_valid(input_ctx_handle)) {
         return DPE_INVALID_ARGUMENT;
     }
-    linked_cert_ctx_idx = component_ctx_array[input_ctx_idx].linked_cert_ctx_idx;
+    cert_ctx = component_ctx_array[input_ctx_idx].linked_cert_ctx;
 
 #ifndef DPE_TEST_MODE
-    if (linked_cert_ctx_idx <= DPE_DESTROY_CONTEXT_THRESHOLD_CERT_CTX_IDX) {
-        /* All certificate contexts till hypervisor cannot be destroyed dynamically */
-        return DPE_INVALID_ARGUMENT;
-    }
+    //TODO: Prevent destruction of context if it belongs to RoT, Platform, AP FW
+    //      or any platform configuration dependent certificate.
 #endif /* !DPE_TEST_MODE */
 
-    assert(linked_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
+    assert(cert_ctx != NULL);
 
     if (!destroy_recursively) {
-        set_context_to_default(input_ctx_idx);
-        cert_ctx = &cert_ctx_array[linked_cert_ctx_idx];
-        remove_linked_component(cert_ctx, input_ctx_idx);
+        set_context_to_default(&component_ctx_array[input_ctx_idx]);
+        remove_linked_component(cert_ctx, &component_ctx_array[input_ctx_idx]);
     } else {
         //TODO: To be implemented
     }
 
     /* Free the certificate context if all of its components are destroyed */
-    free_certificate_context_if_empty(linked_cert_ctx_idx);
+    free_certificate_context_if_empty(cert_ctx);
 
     return DPE_NO_ERROR;
-}
-
-struct component_context_t* get_component_ctx_ptr(uint16_t component_idx)
-{
-    /* Safety case */
-    if (component_idx >= MAX_NUM_OF_COMPONENTS) {
-        return NULL;
-    }
-
-    return &component_ctx_array[component_idx];
-}
-
-struct cert_context_t* get_cert_ctx_ptr(uint16_t cert_ctx_idx)
-{
-    /* Safety case */
-    if (cert_ctx_idx >= MAX_NUM_OF_CERTIFICATES) {
-        return NULL;
-    }
-
-    return &cert_ctx_array[cert_ctx_idx];
 }
 
 dpe_error_t certify_key_request(int input_ctx_handle,
@@ -801,7 +780,7 @@ dpe_error_t certify_key_request(int input_ctx_handle,
                                 size_t *derived_public_key_actual_size,
                                 int *new_context_handle)
 {
-    uint16_t input_ctx_idx, input_cert_ctx_idx, parent_cert_ctx_idx;
+    uint16_t input_ctx_idx;
     dpe_error_t err;
     psa_status_t status;
     struct cert_context_t *parent_cert_ctx, *input_cert_ctx;
@@ -822,15 +801,14 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     /* Get component index from the input handle */
     input_ctx_idx = GET_IDX(input_ctx_handle);
     /* Get current linked certificate context idx */
-    input_cert_ctx_idx = component_ctx_array[input_ctx_idx].linked_cert_ctx_idx;
-    assert(input_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
-    input_cert_ctx = &cert_ctx_array[input_cert_ctx_idx];
+    input_cert_ctx = component_ctx_array[input_ctx_idx].linked_cert_ctx;
+    assert(input_cert_ctx != NULL);
 
     if (input_cert_ctx->state == CERT_CTX_FINALISED) {
         /* Input certificate context is finalised,
          * new leaf certificate context is its child now
          */
-        leaf_cert_ctx.parent_cert_ctx_idx = input_cert_ctx_idx;
+        leaf_cert_ctx.parent_cert_ptr = input_cert_ctx;
         /* Linked components count already initialised to 0 */
 
     } else {
@@ -840,6 +818,7 @@ dpe_error_t certify_key_request(int input_ctx_handle,
          */
         memcpy(&leaf_cert_ctx.linked_components, &input_cert_ctx->linked_components,
                 sizeof(input_cert_ctx->linked_components));
+        leaf_cert_ctx.parent_cert_ptr = input_cert_ctx->parent_cert_ptr;
     }
 
     if (public_key_size > sizeof(leaf_cert_ctx.data.attest_pub_key)) {
@@ -874,15 +853,14 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     }
 
     /* Get parent certificate's derived public key to verify the certificate signature */
-    parent_cert_ctx_idx = leaf_cert_ctx.parent_cert_ctx_idx;
-    assert(parent_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
-    parent_cert_ctx = &cert_ctx_array[parent_cert_ctx_idx];
+    parent_cert_ctx = leaf_cert_ctx.parent_cert_ptr;
+    assert(parent_cert_ctx != NULL);
 
     /* Correct certificate context should already be assigned in last call of
      * derive context command
      */
     /* Create leaf certificate */
-    err = prepare_certificate(&leaf_cert_ctx, parent_cert_ctx);
+    err = prepare_certificate(&leaf_cert_ctx);
     if (err != DPE_NO_ERROR) {
         return err;
     }
@@ -919,8 +897,7 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     }
 
     log_certify_key_output_handle(*new_context_handle);
-    log_intermediate_certificate(input_cert_ctx_idx,
-                                 certificate_buf,
+    log_intermediate_certificate(certificate_buf,
                                  *certificate_actual_size);
 
     destroy_certificate_context_keys(&leaf_cert_ctx);
@@ -937,7 +914,7 @@ dpe_error_t get_certificate_chain_request(int input_ctx_handle,
                                           int *new_context_handle)
 {
     dpe_error_t err;
-    uint16_t input_ctx_idx, input_cert_ctx_idx;
+    uint16_t input_ctx_idx;
     psa_status_t status;
     struct cert_context_t *cert_ctx;
 
@@ -952,10 +929,8 @@ dpe_error_t get_certificate_chain_request(int input_ctx_handle,
     /* Get component index from the input handle */
     input_ctx_idx = GET_IDX(input_ctx_handle);
     /* Get current linked certificate context idx */
-    input_cert_ctx_idx = component_ctx_array[input_ctx_idx].linked_cert_ctx_idx;
-    assert(input_cert_ctx_idx < MAX_NUM_OF_CERTIFICATES);
-
-    cert_ctx = &cert_ctx_array[input_cert_ctx_idx];
+    cert_ctx = component_ctx_array[input_ctx_idx].linked_cert_ctx;
+    assert(cert_ctx != NULL);
     if (cert_ctx->state != CERT_CTX_FINALISED) {
         /* If the context has accumulated info and not yet part of a certificate,
          * return an invalid-argument error
