@@ -28,7 +28,7 @@ extern "C" {
 /* Below configuration defines are platform dependent */
 #define MAX_NUM_OF_COMPONENTS 20
 #ifdef DPE_TEST_MODE
-#define MAX_NUM_OF_CERTIFICATES 6
+#define MAX_NUM_OF_CERTIFICATES 7
 #else
 #define MAX_NUM_OF_CERTIFICATES 4
 #endif /* DPE_TEST_MODE */
@@ -72,6 +72,8 @@ struct component_context_t {
     bool in_use;                          /* Flag to indicate if element is used */
     bool is_allowed_to_derive;            /* Is the component allowed to derive */
     bool is_export_cdi_allowed;           /* Is CDI allowed to export */
+    bool is_cert_id_supplied;             /* If custom parameter cert_id is supplied */
+    bool is_cdi_created;                  /* Is CDI created for this context */
     uint16_t nonce;                       /* Context handle nonce for the component */
     struct component_context_t *parent_comp_ctx;   /* Pointer to parent component */
     struct cert_context_t *linked_cert_ctx; /* Pointer to linked certificate */
