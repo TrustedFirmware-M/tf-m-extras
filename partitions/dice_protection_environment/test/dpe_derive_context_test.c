@@ -15,6 +15,8 @@
 #include "qcbor/qcbor_spiffy_decode.h"
 
 extern int retained_rot_ctx_handle;
+extern struct dpe_derive_context_test_data_t
+              derive_context_test_dataset_3[DERIVE_CONTEXT_TEST_DATA3_SIZE];
 
 void derive_context_api_test(struct test_result_t *ret)
 {
@@ -569,37 +571,49 @@ void derive_context_with_parent_leaf_component_test(struct test_result_t *ret)
 void derive_context_without_cert_id_test(struct test_result_t *ret)
 {
     dpe_error_t dpe_err;
-    int out_ctx_handle;
-    int out_parent_handle;
-    DiceInputValues dice_inputs = DEFAULT_DICE_INPUT;
     struct dpe_derive_context_test_params_t test_params = {0};
+    struct derive_context_cmd_input_t dc_input = DEFAULT_DC_CMD_INPUT;
+    struct derive_context_cmd_output_t dc_output = {0};
 
     test_params.is_cert_id_missing = true;
-    dpe_err = dpe_derive_context_with_test_param(retained_rot_ctx_handle, /* input_ctx_handle */
-                                                 DPE_CERT_ID_INVALID,     /* cert_id */
-                                                 true,                    /* retain_parent_context */
-                                                 true,                    /* allow_new_context_to_derive */
-                                                 false,                   /* create_certificate */
-                                                 &dice_inputs,            /* dice_inputs */
-                                                 TFM_TEST_LOCALITY,       /* target_locality */
-                                                 false,                   /* return_certificate */
-                                                 true,                    /* allow_new_context_to_export */
-                                                 false,                   /* export_cdi */
-                                                 &out_ctx_handle,         /* new_context_handle */
-                                                 &out_parent_handle,      /* new_parent_context_handle */
-                                                 NULL,                    /* new_certificate_buf */
-                                                 0,                       /* new_certificate_buf_size */
-                                                 NULL,                    /* new_certificate_actual_size */
-                                                 NULL,                    /* exported_cdi_buf */
-                                                 0,                       /* exported_cdi_buf_size */
-                                                 NULL,                    /* exported_cdi_actual_size */
-                                                 &test_params);           /* test_parameters */
-    //NOTE: This test should return DPE_NO_ERROR once related changes are implemented.
-    // Also, destroy the derived context and retain parent handle for subsequent tests.
-    if (dpe_err != DPE_INVALID_ARGUMENT) {
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params);
+
+    if (dpe_err != DPE_NO_ERROR) {
         TEST_FAIL("DPE DeriveContext test: Without optional parameter cert_id should "
                   "return invalid argument");
         return;
+    }
+    /* Update retained parent handle if context derived successfully in above test */
+    retained_rot_ctx_handle = dc_output.out_parent_handle;
+    DESTROY_SINGLE_CONTEXT(dc_output.out_ctx_handle);
+
+    ret->val = TEST_PASSED;
+}
+
+void derive_context_without_cert_id_multiple_ctx_test(struct test_result_t *ret)
+{
+    dpe_error_t dpe_err;
+    int out_ctx_handle, i;
+    int saved_handles_cnt = 0;
+    int saved_handles[MAX_NUM_OF_COMPONENTS] = {0};
+
+    call_derive_context_with_test_data(
+            ret,
+            &derive_context_test_dataset_3[0],
+            DERIVE_CONTEXT_TEST_DATA3_SIZE,
+            saved_handles,
+            &saved_handles_cnt,
+            &out_ctx_handle);
+    if (ret->val != TEST_PASSED) {
+        return;
+    }
+
+    /* Destroy the saved contexts for the subsequent test */
+    /* Since FW_1 (saved_handles[0]) will be present in two certificates,
+     * destroy it at the end.
+     */
+    for (i = saved_handles_cnt - 1; i >= 0; i--) {
+        DESTROY_SINGLE_CONTEXT(saved_handles[i]);
     }
 
     ret->val = TEST_PASSED;

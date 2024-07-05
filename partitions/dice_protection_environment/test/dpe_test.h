@@ -151,6 +151,13 @@ void derive_context_single_use_handle_test(struct test_result_t *ret);
 void derive_context_without_cert_id_test(struct test_result_t *ret);
 
 /**
+ * \brief Test the DPE DeriveContext without cert id argument 2.
+ *
+ * \param[out] ret  Test result
+ */
+void derive_context_without_cert_id_multiple_ctx_test(struct test_result_t *ret);
+
+/**
  * \brief Test the DPE DeriveContext with unsupported parameters.
  *
  * \param[out] ret  Test result

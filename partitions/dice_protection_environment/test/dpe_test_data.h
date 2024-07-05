@@ -20,6 +20,7 @@ extern "C" {
 #define RANDOM_DISTINCT_LOCALITY 0xFF
 
 #define DPE_PLATFORM_CERT_ID 0x200
+#define DPE_AP_FW_CERT_ID 0x300
 /* Certificate IDs used for tests where certificate contexts are finalized and
  * undestroyable contexts are created (i.e. no valid handle is returned for the context)
  */
@@ -31,6 +32,7 @@ extern "C" {
 
 #define DERIVE_CONTEXT_TEST_DATA1_SIZE 3
 #define DERIVE_CONTEXT_TEST_DATA2_SIZE 1
+#define DERIVE_CONTEXT_TEST_DATA3_SIZE 3
 
 #define DEFAULT_DICE_INPUT {                               \
         { 0xC0, 0xDE },                                    \
