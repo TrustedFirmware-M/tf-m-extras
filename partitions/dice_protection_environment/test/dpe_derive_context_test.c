@@ -194,6 +194,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     ADD_CERT_BUF(dc_output, DICE_CERT_SIZE);
     ADD_EXPORT_CDI_BUF(dc_output, DICE_MAX_ENCODED_CDI_SIZE);
 
+    dc_input.context_handle = retained_rot_ctx_handle;
     test_params.is_code_hash_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params);
     if (dpe_err != DPE_INVALID_ARGUMENT) {
@@ -223,6 +224,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     /* Update retained parent handle if context derived successfully in above test */
     retained_rot_ctx_handle = dc_output.out_parent_handle;
     DESTROY_SINGLE_CONTEXT(dc_output.out_ctx_handle);
+    dc_input.context_handle = retained_rot_ctx_handle;
 
     dc_input.dice_inputs.config_type = kDiceConfigTypeInline;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params);
@@ -243,6 +245,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     /* Update retained parent handle if context derived successfully in above test */
     retained_rot_ctx_handle = dc_output.out_parent_handle;
     DESTROY_SINGLE_CONTEXT(dc_output.out_ctx_handle);
+    dc_input.context_handle = retained_rot_ctx_handle;
 
     test_params.is_config_descriptor_missing = false;
     test_params.is_authority_hash_missing = true;
@@ -265,6 +268,7 @@ void derive_context_missing_dice_input_arg_test(struct test_result_t *ret)
     /* Update retained parent handle if context derived successfully in above test */
     retained_rot_ctx_handle = dc_output.out_parent_handle;
     DESTROY_SINGLE_CONTEXT(dc_output.out_ctx_handle);
+    dc_input.context_handle = retained_rot_ctx_handle;
 
     test_params.is_authority_descriptor_missing = false;
     test_params.is_mode_missing = true;
@@ -297,6 +301,7 @@ void derive_context_invalid_cbor_encoded_input_test(struct test_result_t *ret)
     ADD_CERT_BUF(dc_output, DICE_CERT_SIZE);
     ADD_EXPORT_CDI_BUF(dc_output, DICE_MAX_ENCODED_CDI_SIZE);
 
+    dc_input.context_handle = retained_rot_ctx_handle;
     test_params.is_encoded_cbor_corrupt = true;
 
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params);
@@ -575,6 +580,7 @@ void derive_context_without_cert_id_test(struct test_result_t *ret)
     struct derive_context_cmd_input_t dc_input = DEFAULT_DC_CMD_INPUT;
     struct derive_context_cmd_output_t dc_output = {0};
 
+    dc_input.context_handle = retained_rot_ctx_handle;
     test_params.is_cert_id_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params);
 
@@ -629,6 +635,7 @@ void derive_context_with_unsupported_params_test(struct test_result_t *ret)
     ADD_CERT_BUF(dc_output, DICE_CERT_SIZE);
     ADD_EXPORT_CDI_BUF(dc_output, DICE_MAX_ENCODED_CDI_SIZE);
 
+    dc_input.context_handle = retained_rot_ctx_handle;
     test_params.is_unsupported_params_added = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params);
     if (dpe_err != DPE_INVALID_ARGUMENT) {
@@ -690,6 +697,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
     ADD_CERT_BUF(dc_output, DICE_CERT_SIZE);
     ADD_EXPORT_CDI_BUF(dc_output, DICE_MAX_ENCODED_CDI_SIZE);
 
+    dc_input.context_handle = retained_rot_ctx_handle;
     test_params.is_allow_new_context_to_derive_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params);
     if (dpe_err != DPE_NO_ERROR) {
@@ -710,6 +718,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
     TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
     test_params.is_allow_new_context_to_derive_missing = false;
     test_params.is_create_certificate_missing = true;
+    dc_input.context_handle = retained_rot_ctx_handle;
     dc_input.return_certificate = true;
     dc_output.certificate_actual_size = 0;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params);
@@ -728,6 +737,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
 
     retained_rot_ctx_handle = dc_output.out_parent_handle;
     TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
+    dc_input.context_handle = retained_rot_ctx_handle;
     test_params.is_create_certificate_missing = false;
     test_params.is_return_certificate_missing = true;
     dc_output.certificate_actual_size = 0;
@@ -747,6 +757,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
 
     retained_rot_ctx_handle = dc_output.out_parent_handle;
     TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
+    dc_input.context_handle = retained_rot_ctx_handle;
     test_params.is_return_certificate_missing = false;
     test_params.is_allow_new_context_to_export_missing = true;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params);
@@ -761,6 +772,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
 
     retained_rot_ctx_handle = dc_output.out_parent_handle;
     TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
+    dc_input.context_handle = retained_rot_ctx_handle;
     test_params.is_allow_new_context_to_export_missing = false;
     test_params.is_export_cdi_missing = true;
     dc_output.exported_cdi_actual_size = 0;
@@ -783,6 +795,7 @@ void derive_context_without_optional_args_test(struct test_result_t *ret)
     /* This test will create undestroyable context as default value of
      * retain_parent_context is false
      */
+    dc_input.context_handle = retained_rot_ctx_handle;
     dc_input.cert_id = DPE_UNDESTROYABLE_CTX_CERT_ID_5;
     dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params);
     if (dpe_err != DPE_NO_ERROR) {

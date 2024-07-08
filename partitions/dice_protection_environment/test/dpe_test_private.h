@@ -21,7 +21,7 @@ extern "C" {
 
 #define CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params)   \
     dpe_derive_context_with_test_param(                                         \
-        retained_rot_ctx_handle, /* input_ctx_handle */                         \
+        dc_input.context_handle, /* input_ctx_handle */                         \
         dc_input.cert_id,                                                       \
         dc_input.retain_parent_context,                                         \
         dc_input.allow_new_context_to_derive,                                   \
