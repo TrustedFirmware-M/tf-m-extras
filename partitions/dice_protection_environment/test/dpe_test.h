@@ -158,6 +158,17 @@ void derive_context_without_cert_id_test(struct test_result_t *ret);
 void derive_context_without_cert_id_multiple_ctx_test(struct test_result_t *ret);
 
 /**
+ * \brief Mix use of custom arg (cert_id) and without it.
+ *        1) Call DeriveContext using cert_id argument, do not finalise the
+ *           certificate and call DeriveContext without cert_id argument.
+ *        2) Call DeriveContext without cert_id argument, do not finalise the
+ *           certificate and call DeriveContext with cert_id argument.
+ *
+ * \param[out] ret  Test result
+ */
+void derive_context_mixing_cert_id_negative_test(struct test_result_t *ret);
+
+/**
  * \brief Test the DPE DeriveContext with unsupported parameters.
  *
  * \param[out] ret  Test result

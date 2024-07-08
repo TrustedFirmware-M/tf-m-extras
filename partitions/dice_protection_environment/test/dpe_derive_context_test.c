@@ -625,6 +625,71 @@ void derive_context_without_cert_id_multiple_ctx_test(struct test_result_t *ret)
     ret->val = TEST_PASSED;
 }
 
+void derive_context_mixing_cert_id_negative_test(struct test_result_t *ret)
+{
+    dpe_error_t dpe_err;
+    struct derive_context_cmd_input_t dc_input = DEFAULT_DC_CMD_INPUT;
+    struct derive_context_cmd_output_t dc_output = {0};
+    struct dpe_derive_context_test_params_t test_params = {0};
+
+    /* 1. Call DeriveContext using cert_id argument, do not finalise the
+     *    certificate and call DeriveContext without cert_id argument
+     */
+    dc_input.context_handle = retained_rot_ctx_handle;
+
+    dpe_err = CALL_DERIVE_CONTEXT(dc_input, dc_output);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext call failed");
+        return;
+    }
+
+    /* Save the last handle for the subsequent test */
+    retained_rot_ctx_handle = dc_output.out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
+
+    /* Now call DeriveContext again without cert_id argument */
+    dc_input.context_handle = dc_output.out_ctx_handle;
+    test_params.is_cert_id_missing = true;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params);
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
+        TEST_FAIL("DPE DeriveContext test: Mixing use of cert_id arg on unfinished "
+                  "certificate should return invalid argument");
+        return;
+    }
+
+    DESTROY_SINGLE_CONTEXT(dc_output.out_ctx_handle);
+
+    /* 2. Call DeriveContext without cert_id argument, do not finalise the
+     *    certificate and call DeriveContext with cert_id argument
+     */
+    dc_input.context_handle = retained_rot_ctx_handle;
+    test_params.is_cert_id_missing = true;
+    dpe_err = CALL_DERIVE_CONTEXT_WITH_TEST_PARAM(dc_input, dc_output, test_params);
+
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE DeriveContext call failed");
+        return;
+    }
+
+    /* Save the last handle for the subsequent test */
+    retained_rot_ctx_handle = dc_output.out_parent_handle;
+    TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
+
+    /* Now call DeriveContext again with cert_id argument */
+    dc_input.context_handle = dc_output.out_ctx_handle;
+
+    dpe_err = CALL_DERIVE_CONTEXT(dc_input, dc_output);
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
+        TEST_FAIL("DPE DeriveContext test: Mixing use of cert_id arg on unfinished "
+                  "certificate should return invalid argument");
+        return;
+    }
+
+    DESTROY_SINGLE_CONTEXT(dc_output.out_ctx_handle);
+
+    ret->val = TEST_PASSED;
+}
+
 void derive_context_with_unsupported_params_test(struct test_result_t *ret)
 {
     dpe_error_t dpe_err;

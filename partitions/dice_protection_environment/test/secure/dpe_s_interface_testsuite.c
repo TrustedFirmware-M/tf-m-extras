@@ -76,6 +76,9 @@ static struct test_t dpe_s_tests[] = {
      "DPE complex sequence test 1"},
     {&derive_context_without_cert_id_multiple_ctx_test, "DPE_S_TEST_1033",
      "DPE DeriveContext - without cert_id parameter multiple context test"},
+    {&derive_context_mixing_cert_id_negative_test, "DPE_S_TEST_1034",
+     "DPE DeriveContext - Calling derive context with no cert_id on "
+     "non-finalised certificate"},
 
     /*
      * This destroys the RoT handle since retain_parent_context is false,
