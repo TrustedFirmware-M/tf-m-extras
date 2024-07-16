@@ -73,6 +73,56 @@ To meet the above requirements, ADAC protocol is integrated in TF-M as follows:
    reset, ADAC service does not initiate any reset and enables the debug
    immediately.
 
+************************************
+Code structure & Service Integration
+************************************
+
+The ADAC Service source and header files are located in the current directory.
+The interface for the ADAC runtime Service is located in ``interface/include``.
+The only header to be included by applications that want to use functions from
+the PSA API is ``tfm_adac_api.h``.
+
+Service interface
+=================
+The ADAC Service exposes the following interface:
+
+.. code-block:: c
+
+   /*!
+   * \brief  Authenticates the requested debug service.
+   *
+   * \param[in]  debug_request   Request identifier for the debug zone
+   *                             (valid values vary based on the platform
+   *                             Each  bit of the \p debug_request represents
+   *                             debug request for corresponding zone.
+   *                             e.g.
+   *                             If no bits are set => no debug request
+   *                             If bit0 is set     => start debug for zone1
+   *                             If bit0 is cleared => end debug for zone1
+   *                             If bit1 is set     => start debug for zone2
+   *                             If bit1 is cleared => end debug for zone2
+   *                             ...
+   *
+   *                             Enumeration of zones (zone1, zone2, etc.) is
+   *                             done by ``tfm_debug_zones`` (platform specific)
+   *
+   * \return Returns PSA_SUCCESS on success,
+   *         otherwise error as specified in \ref psa_status_t
+   */
+   psa_status_t tfm_adac_service(uint32_t debug_request)
+
+Service source files
+====================
+-  ``tfm_adac_api.c``: Implements the secure API layer to allow
+   other services in the secure domain to request functionalities
+   from the adac service using the PSA API interface.
+
+-  ``adac_req_mngr.c``: Includes the initialization entry of
+   adac service and handles adac service requests in IPC model.
+
+-  ``adac.c``: Implements core functionalities such as implementation
+   of APIs, handling and processing of debug request.
+
 Hardware abstraction layer Interface
 ====================================
 
@@ -122,4 +172,4 @@ To enable ADAC on RSE, below options must be configured:
 
 --------------
 
-*Copyright (c) 2023, Arm Limited. All rights reserved.*
+*Copyright (c) 2023-2024, Arm Limited. All rights reserved.*
