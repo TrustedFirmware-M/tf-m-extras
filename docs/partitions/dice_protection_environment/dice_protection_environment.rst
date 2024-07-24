@@ -170,6 +170,178 @@ Inverse of Seal.
 
 - Not currently implemented.
 
+**********
+Host Build
+**********
+
+Tested only on Linux and RSE as build platform.
+
+To enable the host build add this to the regular CMake command line:
+
+.. code-block:: bash
+
+    -DHOST_BUILD=ON
+
+Example script (tf-m, tf-m-tests, tf-m-extras path need to be updated):
+
+.. code-block:: bash
+
+    #!/usr/bin/env bash
+    ## Update this part ###
+    TFM_PATH=<tf-m path>
+    TFM_TEST_PATH=<tf-m-tests path>
+    TFM_EXTRAS_PATH=<tf-m-extras path>
+    CROSS_COMPILER_PATH=<cross-compiler path>
+    # Create the build directory
+    cd $TFM
+    rm -rf build
+    mkdir build
+    # Execute CMake configuration step to generate the build files
+    cmake \
+    -S $TFM_PATH \
+    -B $TFM_PATH/build \
+    -DTFM_PLATFORM=arm/rse/tc/tc2 \
+    -DTFM_TOOLCHAIN_FILE=$TF_M/toolchain_GNUARM.cmake \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DMCUBOOT_IMAGE_NUMBER=4 \
+    -DRSS_GPT_SUPPORT=0 \
+    -DTFM_EXTRAS_REPO_PATH=$TFM_EXTRAS_PATH \
+    -DTFM_SPM_LOG_LEVEL=3 \
+    -DRSE_LOAD_NS_IMAGE=OFF \
+    -DTFM_ISOLATION_LEVEL=1 \
+    -DCONFIG_TFM_SPM_BACKEND=IPC \
+    -DTFM_TEST_PATH=$TFM_TEST_PATH \
+    -DCROSS_COMPILE=$CROSS_COMPILER_PATH/gcc-arm-11.2-2022.02-x86_64-arm-none-eabi/bin/arm-none-eabi \
+    -DHOST_BUILD=ON
+    # Go to the build folder to execute only a partial build
+    cd $TFM_PATH/build
+    # Build only the host_app target and skip the rest
+    make dpe_host
+
+The compiled ``dpe_host`` app is installed to here:
+
+.. code-block:: bash
+
+    <TFM_PATH>/build/bin/host/dpe
+
+There are two main operational modes of the ``dpe_host`` app:
+
+- Regression mode: Invoking without any command line parameter results in
+  executing the regular regression test suite.
+- Fuzzer mode: Invoking with [-c, -d, -k -g, -r] options can be used to execute
+  a single DPE command.
+
+Code coverage
+=============
+
+The code coverage measurement is by default enabled in the DPE host build. The
+coverage report can be generated as follows:
+
+.. code-block:: bash
+
+    # Find where the *.gcda files are created
+    cd <TFM_BUILD_DIR>
+    find . -name *.gcda
+    lcov --capture --directory <LOCATION_OF_GCDA_FILES> --output-file ./dpe.info
+    genhtml --output-directory=./dpe_coverage ./dpe.info
+
+*********
+Fuzz test
+*********
+
+Compile and install `AFL++ <https://github.com/AFLplusplus/AFLplusplus/>`_,
+
+Read the `doc <https://github.com/AFLplusplus/AFLplusplus/blob/stable/docs/fuzzing_in_depth.md>`_
+on how to use the fuzzer.
+
+Create a symlink to ``afl-cc``:
+
+.. code-block:: bash
+
+    sudo ln -s afl-cc  afl-clang-lto
+
+Export this environment variable to instrument only the relevant part of the
+code:
+
+.. code-block:: bash
+
+    export AFL_LLVM_ALLOWLIST=<TFM_EXTRAS_PATH>/partitions/dice_protection_environment/test/fuzz/allowlist.txt
+
+Add this argument to the CMake command in the Host Build section.
+
+.. code-block:: bash
+
+    -DAFL_CC=<OFF, afl-clang-lto, ..>
+
+Recompile the ``dpe_host`` app with ``afl-cc``.
+
+Execute fuzzing:
+
+.. code-block:: bash
+
+    # Fuzz DeriveContext (dc)
+    afl-fuzz -i <TFM_EXTRAS_PATH>/partitions/dice_protection_environment/test/fuzz/input/raw/dc \
+    -o <TFM_PATH>/fuzz_out \
+    -- <TFM_PATH>/build/bin/host/dpe \
+    -d @@
+    # Fuzz CertifyKey (ck)
+    afl-fuzz -i <TFM_EXTRAS_PATH>/partitions/dice_protection_environment/test/fuzz/input/raw/ck \
+    -o <TFM_PATH>/fuzz_out \
+    -- <TFM_PATH>/build/bin/host/dpe \
+    -k @@
+    # Fuzz GetCertificateChain (gcc)
+    afl-fuzz -i <TFM_EXTRAS_PATH>/partitions/dice_protection_environment/test/fuzz/input/raw/gcc \
+    -o <TFM_PATH>/fuzz_out \
+    -- <TFM_PATH>/build/bin/host/dpe \
+    -g @@
+    # Fuzz CBOR parser (cbor)
+    afl-fuzz -i <TFM_EXTRAS_PATH>/partitions/dice_protection_environment/test/fuzz/input/cbor \
+    -o <TFM_PATH>/fuzz_out \
+    -- <TFM_PATH>/build/bin/host/dpe \
+    -c @@
+
+Generate initial input for the fuzzer:
+
+- Raw input means that a simplified subset (buffer related arguments are ignored)
+  of the DPE command arguments are provided in a binary format and functions in
+  ``<TFM_EXTRAS_PATH>/partitions/dice_protection_environment/test/host/cmd.c``
+  turns those into real DPE commands through the DPE client API calls. As a
+  result, the CBOR encoding of the commands is proper. The goal in to avoid error
+  cases due to CBOR encoding in the command decoder part and be able to test the
+  main functionality of the command. The raw binary input files can be generated
+  based on these hexdump like files:
+  ``<TFM_EXTRAS_PATH>/partitions/dice_protection_environment/test/fuzz/input/raw/*.txt``
+  with the following commands:
+
+.. code-block:: bash
+
+    xxd -r dc.txt dc_cmd.bin
+    xxd -r ck.txt ck_cmd.bin
+    xxd -r gcc.txt gcc_cmd.bin
+
+  Modifying the content of the ``*.txt`` files and generating the binary files
+  results in the modification of the DPE command arguments.
+
+  The first byte of the raw data is not strictly related to the DPE command. It
+  meants to indicate which hard-coded command sequence to executes before executing
+  the actual input. These hard-coded command sequences can be used to build a
+  certain state (certificate chain) of the service. They can be found here:
+  ``<TFM_EXTRAS_PATH>/partitions/dice_protection_environment/test/dpe_test_data.c``
+
+  DPE command arguments are mostly boolean values. To ensure the normal
+  distribution of these in the DPE commands, therefore odd value are converted
+  to true and even values to false in the raw input.
+
+- CBOR input means that the input provided through the command line is already a
+  proper CBOR encoded DPE command. The input does not go through the DPE client
+  API instead it is passed directly to the command parser. When the fuzzer
+  modifies the CBOR input it is expected that a lot of CBOR encoding error will
+  appear in the input. Therefore this is meant to mainly test the command parser
+  part of the DPE service. This type of input is collected so that during the
+  regression test the DPE commands are printed to the console and these are
+  turned into binary files.
+
+
 --------------
 
-*Copyright (c) 2023, Arm Limited. All rights reserved.*
+*Copyright (c) 2023-2024, Arm Limited. All rights reserved.*
