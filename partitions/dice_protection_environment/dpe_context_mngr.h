@@ -43,6 +43,16 @@ extern "C" {
 /* Current locality by default */
 #define DEFAULT_TARGET_LOCALITY  LOCALITY_NONE
 
+#define IF_DPE_ERROR_RETURN(err)            \
+    if (err != DPE_NO_ERROR) {              \
+        return err;                         \
+    }
+
+#define IF_DPE_ERROR_GO_TO_CLEAN_UP_AND_EXIT(err)   \
+    if (err != DPE_NO_ERROR) {                      \
+        goto clean_up_and_exit;                     \
+    }
+
 struct component_context_data_t {
     uint8_t  measurement_value[DICE_HASH_SIZE];
     uint8_t  measurement_descriptor[DICE_CODE_DESCRIPTOR_MAX_SIZE];

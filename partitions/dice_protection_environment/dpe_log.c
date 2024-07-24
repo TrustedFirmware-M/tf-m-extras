@@ -192,4 +192,26 @@ void log_dpe_cert_ctx_metadata(const struct cert_context_t *ctx_ptr)
                 LOG_BOOL_VAL(ctx_ptr->is_cdi_to_be_exported));
 }
 
+void log_derive_context_output(int *new_context_handle,
+                               int *new_parent_context_handle,
+                               struct component_context_t *derived_ctx,
+                               int free_component_idx,
+                               struct cert_context_t *cert_ctx,
+                               uint8_t *new_certificate_buf,
+                               size_t new_certificate_actual_size)
+{
+    log_derive_context_output_handles(*new_parent_context_handle,
+                                      *new_context_handle);
+
+    /* Log component context, certificate context & certificate if no error */
+    log_dpe_component_ctx_metadata(derived_ctx, free_component_idx);
+    if (cert_ctx != NULL) {
+        log_dpe_cert_ctx_metadata(cert_ctx);
+    }
+    if (new_certificate_actual_size > 0) {
+        log_intermediate_certificate(new_certificate_buf,
+                                     new_certificate_actual_size);
+    }
+}
+
 #endif /* TFM_PARTITION_LOG_LEVEL */

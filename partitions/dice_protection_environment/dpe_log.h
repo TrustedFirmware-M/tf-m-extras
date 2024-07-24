@@ -97,6 +97,17 @@ void log_dpe_component_ctx_metadata(const struct component_context_t *ctx_ptr,
  */
 void log_dpe_cert_ctx_metadata(const struct cert_context_t *ctx_ptr);
 
+/**
+ * \brief Log the derive context output.
+ */
+void log_derive_context_output(int *new_context_handle,
+                               int *new_parent_context_handle,
+                               struct component_context_t *derived_ctx,
+                               int free_component_idx,
+                               struct cert_context_t *cert_ctx,
+                               uint8_t *new_certificate_buf,
+                               size_t new_certificate_actual_size);
+
 #else /* TFM_PARTITION_LOG_LEVEL */
 
 #define log_derive_rot_context(...)
@@ -111,6 +122,7 @@ void log_dpe_cert_ctx_metadata(const struct cert_context_t *ctx_ptr);
 #define log_get_certificate_chain_output_handle(...)
 #define log_dpe_component_ctx_metadata(...)
 #define log_dpe_cert_ctx_metadata(...)
+#define log_derive_context_output(...)
 
 #endif /* TFM_PARTITION_LOG_LEVEL */
 
