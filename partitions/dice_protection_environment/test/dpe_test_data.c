@@ -204,3 +204,58 @@ const struct dpe_derive_context_test_data_t
         },
     },
 };
+
+/*
+ *                  Unfinished certificate context
+ *                           (w/o cert_id)
+ *                            (Leaf cert)
+ *                            +------+
+ *                            | FW_3 |
+ *                            +------+
+ *                               ^
+ *                               |
+ *                  +============|===========================+
+ * +===========+    |            |              Cert #1      |
+ * | RoT Cert  |    |            |             (w/o cert_id) |
+ * | (with     |    |            |                           |
+ * | cert_id)  |    |            |                           |
+ * |  +-----+  |    |         +------+             +------+  |
+ * |  |FW_0 | --------------> | FW_1 | ----------> | FW_2 |  |
+ * |  +-----+  |    |         +------+             +------+  |
+ * |           |    |                                        |
+ * +===========+    |                                        |
+ *                  |                                        |
+ *                  +========================================+
+ */
+const struct dpe_derive_context_test_data_t
+    derive_context_test_dataset_5[DERIVE_CONTEXT_TEST_DATA5_SIZE] = {
+    {
+        {
+            /* Not using cert_id */
+            .use_parent_handle = false,
+            .retain_parent_context = true,
+            .allow_new_context_to_derive = true,
+            .create_certificate = false,
+        },
+    },
+    {
+        {
+            /* Derive FW_2, Caller/Parent FW_1 */
+            /* Not using cert_id */
+            .use_parent_handle = true,
+            .retain_parent_context = true,
+            .allow_new_context_to_derive = true,
+            .create_certificate = true,         /* Cert #1  */
+        },
+    },
+    {
+        {
+            /* Derive FW_3, Caller/Parent FW_1 */
+            /* Not using cert_id */
+            .use_parent_handle = true,
+            .retain_parent_context = true,
+            .allow_new_context_to_derive = true,
+            .create_certificate = false,
+        },
+    },
+};

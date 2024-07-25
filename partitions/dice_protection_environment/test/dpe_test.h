@@ -170,8 +170,8 @@ void derive_context_mixing_cert_id_negative_test(struct test_result_t *ret);
 
 /**
  * \brief Mix use of custom arg (cert_id) and without it. Call DeriveContext
-          using cert_id argument, finalise the certificate and call
-          DeriveContext without cert_id argument and create another certificate(s).
+ *        using cert_id argument, finalise the certificate and call
+ *        DeriveContext without cert_id argument and create another certificate(s).
  *
  * \param[out] ret  Test result
  */
@@ -283,6 +283,16 @@ void certify_key_without_optional_args_test(struct test_result_t *ret);
  * \param[out] ret  Test result
  */
 void certify_key_with_unsupported_params_test(struct test_result_t *ret);
+
+/**
+ * \brief Mix use of custom arg (cert_id) and without it. Call DeriveContext
+ *        using cert_id argument, finalise the certificate and call
+ *        DeriveContext without cert_id argument and create leaf certificate with
+ *        CertifyKey
+ *
+ * \param[out] ret  Test result
+ */
+void certify_key_mixing_cert_id_multiple_ctx_test(struct test_result_t *ret);
 
 /**
  * \brief Test the DPE GetCertificateChain API.

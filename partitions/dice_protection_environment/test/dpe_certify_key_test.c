@@ -16,6 +16,8 @@ extern struct dpe_derive_context_test_data_t
               derive_context_test_dataset_1[DERIVE_CONTEXT_TEST_DATA1_SIZE];
 extern struct dpe_derive_context_test_data_t
               derive_context_test_dataset_2;
+extern struct dpe_derive_context_test_data_t
+              derive_context_test_dataset_5[DERIVE_CONTEXT_TEST_DATA5_SIZE];
 extern int retained_rot_ctx_handle;
 
 void call_derive_context_with_test_data(
@@ -655,6 +657,51 @@ void certify_key_without_optional_args_test(struct test_result_t *ret)
     if (ck_output.new_context_handle != INVALID_HANDLE) {
         TEST_FAIL("DPE CertifyKey test: Without optional parameter should not fail");
         return;
+    }
+
+    ret->val = TEST_PASSED;
+}
+
+void certify_key_mixing_cert_id_multiple_ctx_test(struct test_result_t *ret)
+{
+    dpe_error_t dpe_err;
+    int out_ctx_handle, i;
+    int saved_handles_cnt = 0;
+    int saved_handles[MAX_NUM_OF_COMPONENTS] = {0};
+    struct certify_key_cmd_input_t ck_input = DEFAULT_CK_CMD_INPUT;
+    struct certify_key_cmd_output_t ck_output = {0};
+    ADD_CERT_CHAIN_BUF(ck_output, 2000);
+    ADD_DERIVED_PUB_KEY_BUF(ck_output, DPE_ATTEST_PUB_KEY_SIZE);
+
+    call_derive_context_with_test_data(
+            ret,
+            &derive_context_test_dataset_5[0],
+            DERIVE_CONTEXT_TEST_DATA5_SIZE,
+            saved_handles,
+            &saved_handles_cnt,
+            &out_ctx_handle);
+    if (ret->val != TEST_PASSED) {
+        return;
+    }
+
+    /* Use the last handle for the CertifyKey call */
+    ck_input.context_handle = out_ctx_handle;
+    dpe_err = CALL_CERTIFY_KEY(ck_input, ck_output);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE CertifyKey call failed");
+        return;
+    }
+
+    /* Update renewed output handle from CertifyKey command */
+    for (i = 0; i < saved_handles_cnt; i++) {
+        if (GET_IDX(ck_output.new_context_handle) == GET_IDX(saved_handles[i])) {
+            saved_handles[i] = ck_output.new_context_handle;
+        }
+    }
+
+    /* Destroy the saved contexts for the subsequent test */
+    for (i = saved_handles_cnt - 1; i >= 0; i--) {
+        DESTROY_SINGLE_CONTEXT(saved_handles[i]);
     }
 
     ret->val = TEST_PASSED;

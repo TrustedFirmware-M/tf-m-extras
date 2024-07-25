@@ -34,6 +34,7 @@ extern "C" {
 #define DERIVE_CONTEXT_TEST_DATA2_SIZE 1
 #define DERIVE_CONTEXT_TEST_DATA3_SIZE 3
 #define DERIVE_CONTEXT_TEST_DATA4_SIZE 4
+#define DERIVE_CONTEXT_TEST_DATA5_SIZE 3
 
 #define DEFAULT_DICE_INPUT {                               \
         { 0xC0, 0xDE },                                    \
