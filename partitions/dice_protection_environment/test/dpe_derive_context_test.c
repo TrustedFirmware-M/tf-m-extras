@@ -17,6 +17,8 @@
 extern int retained_rot_ctx_handle;
 extern struct dpe_derive_context_test_data_t
               derive_context_test_dataset_3[DERIVE_CONTEXT_TEST_DATA3_SIZE];
+extern struct dpe_derive_context_test_data_t
+              derive_context_test_dataset_4[DERIVE_CONTEXT_TEST_DATA4_SIZE];
 
 void derive_context_api_test(struct test_result_t *ret)
 {
@@ -618,6 +620,32 @@ void derive_context_without_cert_id_multiple_ctx_test(struct test_result_t *ret)
     /* Since FW_1 (saved_handles[0]) will be present in two certificates,
      * destroy it at the end.
      */
+    for (i = saved_handles_cnt - 1; i >= 0; i--) {
+        DESTROY_SINGLE_CONTEXT(saved_handles[i]);
+    }
+
+    ret->val = TEST_PASSED;
+}
+
+void derive_context_mixing_cert_id_multiple_ctx_test(struct test_result_t *ret)
+{
+    dpe_error_t dpe_err;
+    int out_ctx_handle, i;
+    int saved_handles_cnt = 0;
+    int saved_handles[MAX_NUM_OF_COMPONENTS] = {0};
+
+    call_derive_context_with_test_data(
+            ret,
+            &derive_context_test_dataset_4[0],
+            DERIVE_CONTEXT_TEST_DATA4_SIZE,
+            saved_handles,
+            &saved_handles_cnt,
+            &out_ctx_handle);
+    if (ret->val != TEST_PASSED) {
+        return;
+    }
+
+    /* Destroy the saved contexts for the subsequent test */
     for (i = saved_handles_cnt - 1; i >= 0; i--) {
         DESTROY_SINGLE_CONTEXT(saved_handles[i]);
     }

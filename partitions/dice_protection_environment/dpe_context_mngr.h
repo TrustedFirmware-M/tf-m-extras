@@ -28,7 +28,7 @@ extern "C" {
 /* Below configuration defines are platform dependent */
 #define MAX_NUM_OF_COMPONENTS 20
 #ifdef DPE_TEST_MODE
-#define MAX_NUM_OF_CERTIFICATES 7
+#define MAX_NUM_OF_CERTIFICATES 8
 #else
 #define MAX_NUM_OF_CERTIFICATES 4
 #endif /* DPE_TEST_MODE */

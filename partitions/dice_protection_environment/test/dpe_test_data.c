@@ -138,3 +138,69 @@ const struct dpe_derive_context_test_data_t
         },
     },
 };
+
+/*
+ *                        +================+
+ *                        |    Cert #2     |
+ *                        | (w/o cert_id)  |
+ *                        |   +------+     |
+ *                        |   | FW_3 |     |
+ *                        |   +------+     |
+ *                        |      ^         |
+ *                        |      |         |
+ *                  +=====|======|=========|=================+      +============+
+ * +===========+    |     |      |         |    Cert #1      |      |   Cert #3  |
+ * | RoT Cert  |    |     |      |         |   (w/o cert_id) |      |   (with    |
+ * | (with     |    |     |      |         |                 |      |   cert_id) |
+ * | cert_id)  |    |     |      |         |                 |      |            |
+ * |  +-----+  |    |     |   +------+     |       +------+  |      |  +------+  |
+ * |  |FW_0 | --------------> | FW_1 | ----------> | FW_2 | ---------> | FW_4 |  |
+ * |  +-----+  |    |     |   +------+     |       +------+  |      |  +------+  |
+ * |           |    |     |                |                 |      |            |
+ * +===========+    |     +================+                 |      |            |
+ *                  |                                        |      |            |
+ *                  +========================================+      +============+
+ */
+const struct dpe_derive_context_test_data_t
+    derive_context_test_dataset_4[DERIVE_CONTEXT_TEST_DATA4_SIZE] = {
+    {
+        {
+             /* Derive FW_1, Caller/Parent FW_0 */
+            /* Not using cert_id */
+            .use_parent_handle = false,
+            .retain_parent_context = true,
+            .allow_new_context_to_derive = true,
+            .create_certificate = false,
+        },
+    },
+    {
+        {
+            /* Derive FW_2, Caller/Parent FW_1 */
+            /* Not using cert_id */
+            .use_parent_handle = false,
+            .retain_parent_context = true,
+            .allow_new_context_to_derive = true,
+            .create_certificate = true,    /* Cert #1 */
+        },
+    },
+    {
+        {
+            /* Derive FW_3, Caller/Parent FW_2 */
+            /* Not using cert_id */
+            .use_parent_handle = true,
+            .retain_parent_context = true,
+            .allow_new_context_to_derive = true,
+            .create_certificate = true,         /* Cert #2 */
+        },
+    },
+    {
+        {
+            /* Derive FW_4, Caller/Parent FW_2 */
+            .cert_id = DPE_PLATFORM_CERT_ID,
+            .use_parent_handle = true,
+            .retain_parent_context = true,
+            .allow_new_context_to_derive = true,
+            .create_certificate = true,         /* Cert #3 */
+        },
+    },
+};
