@@ -83,6 +83,8 @@ static struct test_t dpe_s_tests[] = {
      "DPE DeriveContext - with and without cert_id parameter multiple context test"},
     {&certify_key_mixing_cert_id_multiple_ctx_test, "DPE_S_TEST_1036",
      "DPE CertifyKey - with and without cert_id parameter multiple context test"},
+    {&get_certificate_chain_mixing_cert_id_multiple_ctx_test, "DPE_S_TEST_1037",
+     "DPE GetCertificateChain - with and without cert_id parameter multiple context test"},
 
     /*
      * This destroys the RoT handle since retain_parent_context is false,

@@ -302,6 +302,16 @@ void certify_key_mixing_cert_id_multiple_ctx_test(struct test_result_t *ret);
 void get_certificate_chain_test(struct test_result_t *ret);
 
 /**
+ * \brief Mix use of custom arg (cert_id) and without it. Call DeriveContext
+ *        using cert_id argument, finalise the certificate and call
+ *        DeriveContext without cert_id argument and create certificate. Finally
+ *        get the certificate chain.
+ *
+ * \param[out] ret  Test result
+ */
+void get_certificate_chain_mixing_cert_id_multiple_ctx_test(struct test_result_t *ret);
+
+/**
  * \brief Test complex sequence for DPE GetCertificateChain and CertifyKey.
  *
  * \param[out] ret  Test result
