@@ -156,14 +156,6 @@ struct certify_key_cmd_output_t {
     int             new_context_handle;
 };
 
-void call_derive_context_with_test_data(
-    struct test_result_t *ret,
-    struct dpe_derive_context_test_data_t *test_data,
-    int test_count,
-    int *saved_handles,
-    int *saved_handles_cnt,
-    int *out_ctx_handle);
-
 #ifdef __cplusplus
 }
 #endif

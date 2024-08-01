@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 
+//#include "array.h"
 #include "platform_locality.h"
 
 #define MAX_NUM_OF_COMPONENTS 20
@@ -30,11 +31,7 @@ extern "C" {
 #define DPE_UNDESTROYABLE_CTX_CERT_ID_4 0x904
 #define DPE_UNDESTROYABLE_CTX_CERT_ID_5 0x905
 
-#define DERIVE_CONTEXT_TEST_DATA1_SIZE 3
-#define DERIVE_CONTEXT_TEST_DATA2_SIZE 1
-#define DERIVE_CONTEXT_TEST_DATA3_SIZE 3
-#define DERIVE_CONTEXT_TEST_DATA4_SIZE 4
-#define DERIVE_CONTEXT_TEST_DATA5_SIZE 3
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #define DEFAULT_DICE_INPUT {                               \
         { 0xC0, 0xDE },                                    \
@@ -45,6 +42,29 @@ extern "C" {
         (uint8_t[]){ 0xC0, 0x9F, 0xDE, 0x5C },             \
         sizeof((uint8_t[]){ 0xC0, 0x9F, 0xDE, 0x5C }),     \
         { 0x47, 0x07 },                                    \
+        (uint8_t[]){ 0x47, 0x07, 0xDE, 0x5C },             \
+        sizeof((uint8_t[]){ 0x47, 0x07, 0xDE, 0x5C }),     \
+        kDiceModeDebug,                                    \
+        { 0x81, 0xDE },                                    \
+    }
+
+#define VAL_1(x)  x,
+#define VAL_2(x)  VAL_1(x)  VAL_1(x)
+#define VAL_4(x)  VAL_2(x)  VAL_2(x)
+#define VAL_8(x)  VAL_4(x)  VAL_4(x)
+#define VAL_16(x) VAL_8(x)  VAL_8(x)
+#define VAL_32(x) VAL_16(x) VAL_16(x)
+#define VAL_64(x) VAL_32(x) VAL_32(x)
+
+#define DICE_INPUT(val) {                                  \
+        { VAL_64(val) },                                   \
+        (uint8_t[]){ 0xC0, 0xDE, 0xDE, 0x5C },             \
+        sizeof((uint8_t[]){ 0xC0, 0xDE, 0xDE, 0x5C }),     \
+        kDiceConfigTypeDescriptor,                         \
+        { 0xC0, 0x9F, 0x16 },                              \
+        (uint8_t[]){ 0xC0, 0x9F, 0xDE, 0x5C },             \
+        sizeof((uint8_t[]){ 0xC0, 0x9F, 0xDE, 0x5C }),     \
+        { VAL_64(val) },                                   \
         (uint8_t[]){ 0x47, 0x07, 0xDE, 0x5C },             \
         sizeof((uint8_t[]){ 0x47, 0x07, 0xDE, 0x5C }),     \
         kDiceModeDebug,                                    \
@@ -71,6 +91,12 @@ struct dpe_derive_context_test_input_data_t {
     bool retain_parent_context;
     bool allow_new_context_to_derive;
     bool create_certificate;
+    const DiceInputValues dice_inputs;
+};
+
+struct dpe_derive_context_test_output_data_t {
+    int context_handle;
+    int parent_context_handle;
 };
 
 #define DEFAULT_CK_CMD_INPUT {                          \
@@ -82,8 +108,10 @@ struct dpe_derive_context_test_input_data_t {
         0,                      /* label_size */        \
     }
 
-struct dpe_derive_context_test_data_t {
-    struct dpe_derive_context_test_input_data_t inputs;
+struct dpe_test_data_t {
+    const struct dpe_derive_context_test_input_data_t  *test_data_in;
+    struct dpe_derive_context_test_output_data_t *test_data_out;
+    size_t test_count;
 };
 
 struct dpe_derive_context_test_params_t {

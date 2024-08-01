@@ -14,6 +14,7 @@ target_sources(tfm_test_suite_extra_ns
         ../dpe_certify_key_test.c
         ../dpe_derive_context_test.c
         ../dpe_test_data.c
+        ../dpe_test_common.c
         dpe_ns_interface_testsuite.c
 )
 

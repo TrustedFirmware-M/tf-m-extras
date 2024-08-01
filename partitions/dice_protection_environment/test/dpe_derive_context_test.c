@@ -9,16 +9,14 @@
 #include "dice_protection_environment.h"
 #include "../dpe_certificate_common.h"
 #include "dpe_test.h"
+#include "dpe_test_common.h"
 #include "dpe_test_data.h"
 #include "dpe_test_private.h"
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
 
 extern int retained_rot_ctx_handle;
-extern struct dpe_derive_context_test_data_t
-              derive_context_test_dataset_3[DERIVE_CONTEXT_TEST_DATA3_SIZE];
-extern struct dpe_derive_context_test_data_t
-              derive_context_test_dataset_4[DERIVE_CONTEXT_TEST_DATA4_SIZE];
+extern const struct dpe_test_data_t test_data[];
 
 void derive_context_api_test(struct test_result_t *ret)
 {
@@ -600,28 +598,19 @@ void derive_context_without_cert_id_test(struct test_result_t *ret)
 
 void derive_context_without_cert_id_multiple_ctx_test(struct test_result_t *ret)
 {
-    dpe_error_t dpe_err;
-    int out_ctx_handle, i;
-    int saved_handles_cnt = 0;
-    int saved_handles[MAX_NUM_OF_COMPONENTS] = {0};
+    int err;
+    const struct dpe_test_data_t *td = &test_data[2];
 
-    call_derive_context_with_test_data(
-            ret,
-            &derive_context_test_dataset_3[0],
-            DERIVE_CONTEXT_TEST_DATA3_SIZE,
-            saved_handles,
-            &saved_handles_cnt,
-            &out_ctx_handle);
-    if (ret->val != TEST_PASSED) {
+    err = build_certificate_chain(td);
+    if (err) {
+        TEST_FAIL("Building certificate chain based on test data failed");
         return;
     }
 
-    /* Destroy the saved contexts for the subsequent test */
-    /* Since FW_1 (saved_handles[0]) will be present in two certificates,
-     * destroy it at the end.
-     */
-    for (i = saved_handles_cnt - 1; i >= 0; i--) {
-        DESTROY_SINGLE_CONTEXT(saved_handles[i]);
+    err = destroy_multiple_context(td);
+    if (err) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
     }
 
     ret->val = TEST_PASSED;
@@ -629,25 +618,20 @@ void derive_context_without_cert_id_multiple_ctx_test(struct test_result_t *ret)
 
 void derive_context_mixing_cert_id_multiple_ctx_test(struct test_result_t *ret)
 {
-    dpe_error_t dpe_err;
-    int out_ctx_handle, i;
-    int saved_handles_cnt = 0;
-    int saved_handles[MAX_NUM_OF_COMPONENTS] = {0};
+    int err;
+    const struct dpe_test_data_t *td = &test_data[3];
 
-    call_derive_context_with_test_data(
-            ret,
-            &derive_context_test_dataset_4[0],
-            DERIVE_CONTEXT_TEST_DATA4_SIZE,
-            saved_handles,
-            &saved_handles_cnt,
-            &out_ctx_handle);
-    if (ret->val != TEST_PASSED) {
+    err = build_certificate_chain(td);
+    if (err) {
+        TEST_FAIL("Building certificate chain based on test data failed");
         return;
     }
 
     /* Destroy the saved contexts for the subsequent test */
-    for (i = saved_handles_cnt - 1; i >= 0; i--) {
-        DESTROY_SINGLE_CONTEXT(saved_handles[i]);
+    err = destroy_multiple_context(td);
+    if (err) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
     }
 
     ret->val = TEST_PASSED;

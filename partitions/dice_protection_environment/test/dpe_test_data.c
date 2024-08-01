@@ -6,8 +6,9 @@
  */
 
 #include "dice_protection_environment.h"
-#include "dpe_test_data.h"
 #include "dpe_test.h"
+#include "dpe_test_data.h"
+#include "dpe_test_private.h"
 
 int retained_rot_ctx_handle;
 
@@ -32,35 +33,38 @@ int retained_rot_ctx_handle;
  * |             |      |                                    |
  * +=============+      +====================================+
  */
-const struct dpe_derive_context_test_data_t
-    derive_context_test_dataset_1[DERIVE_CONTEXT_TEST_DATA1_SIZE] = {
+const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_0[] = {
     {
-        {
-            .cert_id = DPE_PLATFORM_CERT_ID,
-            .use_parent_handle = false,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = false,
-        },
-    },
-    {
-        {
-            .cert_id = DPE_CERT_ID_SAME_AS_PARENT,
-            .use_parent_handle = true,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = false,
-        },
-    },
-    {
-        {
-            .cert_id = DPE_CERT_ID_SAME_AS_PARENT,
-            .use_parent_handle = true,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = true, /* Finalise Platform certificate context */
-        },
-    },
+       .cert_id = DPE_PLATFORM_CERT_ID,
+       .use_parent_handle = false,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = false,
+       .dice_inputs = DICE_INPUT(0x11),
+   },
+   {
+       .cert_id = DPE_CERT_ID_SAME_AS_PARENT,
+       .use_parent_handle = true,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = false,
+       .dice_inputs = DICE_INPUT(0x22),
+   },
+   {
+       .cert_id = DPE_CERT_ID_SAME_AS_PARENT,
+       .use_parent_handle = true,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = true, /* Finalise Platform certificate context */
+       .dice_inputs = DICE_INPUT(0x33),
+   },
+};
+
+struct dpe_derive_context_test_output_data_t
+derive_context_test_data_out_0[ ARRAY_SIZE(derive_context_test_data_in_0) ] = {
+    { INVALID_HANDLE, INVALID_HANDLE },
+    { INVALID_HANDLE, INVALID_HANDLE },
+    { INVALID_HANDLE, INVALID_HANDLE },
 };
 
 /* Below dataset is used for CertifyKey command test
@@ -74,14 +78,20 @@ const struct dpe_derive_context_test_data_t
  * |             |
  * +=============+
  */
-const struct dpe_derive_context_test_data_t derive_context_test_dataset_2 = {
-    {
-        .cert_id = DPE_PLATFORM_CERT_ID,
-        .use_parent_handle = false,
-        .retain_parent_context = true,
-        .allow_new_context_to_derive = true,
-        .create_certificate = false,
-    },
+const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_1[] = {
+   {
+       .cert_id = DPE_PLATFORM_CERT_ID,
+       .use_parent_handle = false,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = false,
+       .dice_inputs = DICE_INPUT(0x11),
+   },
+};
+
+struct dpe_derive_context_test_output_data_t
+derive_context_test_data_out_1[ ARRAY_SIZE(derive_context_test_data_in_1) ] = {
+    { INVALID_HANDLE, INVALID_HANDLE },
 };
 
 /*
@@ -106,39 +116,41 @@ const struct dpe_derive_context_test_data_t derive_context_test_dataset_2 = {
  *                  |                                        |
  *                  +========================================+
  */
-const struct dpe_derive_context_test_data_t
-    derive_context_test_dataset_3[DERIVE_CONTEXT_TEST_DATA3_SIZE] = {
-    {
-        {
-            /* Not using cert_id */
-            .use_parent_handle = false,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = false,
-        },
-    },
-    {
-        {
-            /* Derive FW_2, Caller/Parent FW_1 */
-            /* Not using cert_id */
-            .use_parent_handle = true,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = true,
-        },
-    },
-    {
-        {
-            /* Derive FW_3, Caller/Parent FW_1 */
-            /* Not using cert_id */
-            .use_parent_handle = true,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = true,
-        },
-    },
+const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_2[] = {
+   {
+       /* Not using cert_id */
+       .use_parent_handle = false,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = false,
+       .dice_inputs = DICE_INPUT(0x11),
+   },
+   {
+       /* Derive FW_2, Caller/Parent FW_1 */
+       /* Not using cert_id */
+       .use_parent_handle = true,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = true,
+       .dice_inputs = DICE_INPUT(0x22),
+   },
+   {
+       /* Derive FW_3, Caller/Parent FW_1 */
+       /* Not using cert_id */
+       .use_parent_handle = true,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = true,
+       .dice_inputs = DICE_INPUT(0x33),
+   },
 };
 
+struct dpe_derive_context_test_output_data_t
+derive_context_test_data_out_2[ ARRAY_SIZE(derive_context_test_data_in_2) ] ={
+    { INVALID_HANDLE, INVALID_HANDLE },
+    { INVALID_HANDLE, INVALID_HANDLE },
+    { INVALID_HANDLE, INVALID_HANDLE },
+};
 /*
  *                        +================+
  *                        |    Cert #2     |
@@ -161,48 +173,51 @@ const struct dpe_derive_context_test_data_t
  *                  |                                        |      |            |
  *                  +========================================+      +============+
  */
-const struct dpe_derive_context_test_data_t
-    derive_context_test_dataset_4[DERIVE_CONTEXT_TEST_DATA4_SIZE] = {
-    {
-        {
-             /* Derive FW_1, Caller/Parent FW_0 */
-            /* Not using cert_id */
-            .use_parent_handle = false,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = false,
-        },
-    },
-    {
-        {
-            /* Derive FW_2, Caller/Parent FW_1 */
-            /* Not using cert_id */
-            .use_parent_handle = false,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = true,    /* Cert #1 */
-        },
-    },
-    {
-        {
-            /* Derive FW_3, Caller/Parent FW_2 */
-            /* Not using cert_id */
-            .use_parent_handle = true,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = true,         /* Cert #2 */
-        },
-    },
-    {
-        {
-            /* Derive FW_4, Caller/Parent FW_2 */
-            .cert_id = DPE_PLATFORM_CERT_ID,
-            .use_parent_handle = true,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = true,         /* Cert #3 */
-        },
-    },
+const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_3[] = {
+   {
+        /* Derive FW_1, Caller/Parent FW_0 */
+       /* Not using cert_id */
+       .use_parent_handle = false,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = false,     /* Cert #1 */
+       .dice_inputs = DICE_INPUT(0x11),
+   },
+   {
+       /* Derive FW_2, Caller/Parent FW_1 */
+       /* Not using cert_id */
+       .use_parent_handle = false,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = true,
+       .dice_inputs = DICE_INPUT(0x22),
+   },
+   {
+       /* Derive FW_3, Caller/Parent FW_2 */
+       /* Not using cert_id */
+       .use_parent_handle = true,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = true,         /* Cert #2 */
+       .dice_inputs = DICE_INPUT(0x33),
+   },
+   {
+       /* Derive FW_4, Caller/Parent FW_2 */
+       .cert_id = DPE_PLATFORM_CERT_ID,
+       .use_parent_handle = true,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = true,         /* Cert #3 */
+       .dice_inputs = DICE_INPUT(0x44),
+   },
+};
+
+struct dpe_derive_context_test_output_data_t
+derive_context_test_data_out_3[ ARRAY_SIZE(derive_context_test_data_in_3) ] = {
+    { INVALID_HANDLE, INVALID_HANDLE },
+    { INVALID_HANDLE, INVALID_HANDLE },
+    { INVALID_HANDLE, INVALID_HANDLE },
+    { INVALID_HANDLE, INVALID_HANDLE },
 };
 
 /*
@@ -227,35 +242,46 @@ const struct dpe_derive_context_test_data_t
  *                  |                                        |
  *                  +========================================+
  */
-const struct dpe_derive_context_test_data_t
-    derive_context_test_dataset_5[DERIVE_CONTEXT_TEST_DATA5_SIZE] = {
-    {
-        {
-            /* Not using cert_id */
-            .use_parent_handle = false,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = false,
-        },
-    },
-    {
-        {
-            /* Derive FW_2, Caller/Parent FW_1 */
-            /* Not using cert_id */
-            .use_parent_handle = true,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = true,         /* Cert #1  */
-        },
-    },
-    {
-        {
-            /* Derive FW_3, Caller/Parent FW_1 */
-            /* Not using cert_id */
-            .use_parent_handle = true,
-            .retain_parent_context = true,
-            .allow_new_context_to_derive = true,
-            .create_certificate = false,
-        },
-    },
+const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_4[] = {
+   {
+       /* Not using cert_id */
+       .use_parent_handle = false,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = false,
+       .dice_inputs = DICE_INPUT(0x11),
+   },
+   {
+       /* Derive FW_2, Caller/Parent FW_1 */
+       /* Not using cert_id */
+       .use_parent_handle = true,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = true,         /* Cert #1  */
+       .dice_inputs = DICE_INPUT(0x22),
+   },
+   {
+       /* Derive FW_3, Caller/Parent FW_1 */
+       /* Not using cert_id */
+       .use_parent_handle = true,
+       .retain_parent_context = true,
+       .allow_new_context_to_derive = true,
+       .create_certificate = false,
+       .dice_inputs = DICE_INPUT(0x33),
+   },
+};
+
+struct dpe_derive_context_test_output_data_t
+derive_context_test_data_out_4[ ARRAY_SIZE(derive_context_test_data_in_4) ] ={
+    { INVALID_HANDLE, INVALID_HANDLE },
+    { INVALID_HANDLE, INVALID_HANDLE },
+    { INVALID_HANDLE, INVALID_HANDLE },
+};
+
+const struct dpe_test_data_t test_data[5] = {
+    { derive_context_test_data_in_0, derive_context_test_data_out_0, ARRAY_SIZE(derive_context_test_data_in_0) },
+    { derive_context_test_data_in_1, derive_context_test_data_out_1, ARRAY_SIZE(derive_context_test_data_in_1) },
+    { derive_context_test_data_in_2, derive_context_test_data_out_2, ARRAY_SIZE(derive_context_test_data_in_2) },
+    { derive_context_test_data_in_3, derive_context_test_data_out_3, ARRAY_SIZE(derive_context_test_data_in_3) },
+    { derive_context_test_data_in_4, derive_context_test_data_out_4, ARRAY_SIZE(derive_context_test_data_in_4) },
 };
