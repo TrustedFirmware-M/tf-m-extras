@@ -8,25 +8,11 @@
 #ifndef __DPE_TEST_H__
 #define __DPE_TEST_H__
 
-#include "psa/crypto.h"
 #include "test_framework.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Below defined values MUST be identical to service internal definitions (dpe_context_mngr.h) */
-#define INVALID_HANDLE 0xFFFFFFFF
-#define ROT_CTX_HANDLE 0
-#define DPE_ATTEST_PUB_KEY_SIZE PSA_KEY_EXPORT_ECC_KEY_PAIR_MAX_SIZE(521)
-/* Below encoded CDI size accomodate both Attest and Seal CDI */
-#define DICE_MAX_ENCODED_CDI_SIZE ((2 * DICE_CDI_SIZE) + 16)
-
-/* Most significant 16 bits represent nonce & remaining 16 bits represent component index */
-#define GET_IDX(handle) (handle & 0xffff)
-#define GET_NONCE(handle) ((handle >> 16) & 0xffff)
-#define SET_IDX(handle, idx) ((handle & 0xffff0000) | idx)
-#define SET_NONCE(handle, nonce) ((handle & 0x00ffff) | (nonce << 16))
 
 /**
  * \brief Derive RoT context for the tests.
