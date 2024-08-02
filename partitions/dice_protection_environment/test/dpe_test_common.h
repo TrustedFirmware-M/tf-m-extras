@@ -24,6 +24,8 @@ void update_context_handle(const struct dpe_test_data_t *test_data,
 
 int get_last_context_handle(const struct dpe_test_data_t *td);
 
+int get_context_handle_from_fw_id(const struct dpe_test_data_t *td, enum fw_id id);
+
 #ifdef __cplusplus
 }
 #endif

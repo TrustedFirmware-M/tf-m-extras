@@ -132,3 +132,13 @@ int get_last_context_handle(const struct dpe_test_data_t *td)
 
     return td->test_data_out[len - 1].context_handle;
 }
+
+/* Components are expected to be ordered in the dpe_test_data */
+int get_context_handle_from_fw_id(const struct dpe_test_data_t *td, enum fw_id id)
+{
+    if (id >= 0 && id < td->test_count) {
+        return td->test_data_out[id].context_handle;
+    }
+
+    return INVALID_HANDLE;
+}

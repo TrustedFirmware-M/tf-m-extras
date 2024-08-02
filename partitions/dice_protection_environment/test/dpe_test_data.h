@@ -84,7 +84,15 @@ extern "C" {
         false                           /* export_cdi */                       \
     }
 
+enum fw_id {
+    FW_1,
+    FW_2,
+    FW_3,
+    FW_4,
+};
+
 struct dpe_derive_context_test_input_data_t {
+    enum fw_id id;
     uint32_t cert_id;
     /* If below flag is true, use previous parent handle or use derived context handle */
     bool use_parent_handle;

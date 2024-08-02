@@ -35,6 +35,7 @@ int retained_rot_ctx_handle;
  */
 const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_0[] = {
     {
+       .id = FW_1, /* Caller/Parent FW_0, which is the RoT context */
        .cert_id = DPE_PLATFORM_CERT_ID,
        .use_parent_handle = false,
        .retain_parent_context = true,
@@ -43,6 +44,7 @@ const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_0[
        .dice_inputs = DICE_INPUT(0x11),
    },
    {
+       .id = FW_2, /* Caller/Parent FW_1 */
        .cert_id = DPE_CERT_ID_SAME_AS_PARENT,
        .use_parent_handle = true,
        .retain_parent_context = true,
@@ -51,6 +53,7 @@ const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_0[
        .dice_inputs = DICE_INPUT(0x22),
    },
    {
+       .id = FW_3, /* Caller/Parent FW_1 */
        .cert_id = DPE_CERT_ID_SAME_AS_PARENT,
        .use_parent_handle = true,
        .retain_parent_context = true,
@@ -80,6 +83,7 @@ derive_context_test_data_out_0[ ARRAY_SIZE(derive_context_test_data_in_0) ] = {
  */
 const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_1[] = {
    {
+       .id = FW_1, /* Caller/Parent FW_0, which is the RoT context */
        .cert_id = DPE_PLATFORM_CERT_ID,
        .use_parent_handle = false,
        .retain_parent_context = true,
@@ -118,6 +122,7 @@ derive_context_test_data_out_1[ ARRAY_SIZE(derive_context_test_data_in_1) ] = {
  */
 const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_2[] = {
    {
+       .id = FW_1, /* Caller/Parent FW_0, which is the RoT context */
        /* Not using cert_id */
        .use_parent_handle = false,
        .retain_parent_context = true,
@@ -126,7 +131,7 @@ const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_2[
        .dice_inputs = DICE_INPUT(0x11),
    },
    {
-       /* Derive FW_2, Caller/Parent FW_1 */
+       .id = FW_2, /* Caller/Parent FW_1 */
        /* Not using cert_id */
        .use_parent_handle = true,
        .retain_parent_context = true,
@@ -135,7 +140,7 @@ const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_2[
        .dice_inputs = DICE_INPUT(0x22),
    },
    {
-       /* Derive FW_3, Caller/Parent FW_1 */
+       .id = FW_3, /* Caller/Parent FW_1 */
        /* Not using cert_id */
        .use_parent_handle = true,
        .retain_parent_context = true,
@@ -175,7 +180,7 @@ derive_context_test_data_out_2[ ARRAY_SIZE(derive_context_test_data_in_2) ] ={
  */
 const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_3[] = {
    {
-        /* Derive FW_1, Caller/Parent FW_0 */
+       .id = FW_1, /* Caller/Parent FW_0, which is the RoT context */
        /* Not using cert_id */
        .use_parent_handle = false,
        .retain_parent_context = true,
@@ -184,7 +189,7 @@ const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_3[
        .dice_inputs = DICE_INPUT(0x11),
    },
    {
-       /* Derive FW_2, Caller/Parent FW_1 */
+       .id = FW_2, /* Caller/Parent FW_1 */
        /* Not using cert_id */
        .use_parent_handle = false,
        .retain_parent_context = true,
@@ -193,7 +198,7 @@ const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_3[
        .dice_inputs = DICE_INPUT(0x22),
    },
    {
-       /* Derive FW_3, Caller/Parent FW_2 */
+       .id = FW_3, /* Caller/Parent FW_1 */
        /* Not using cert_id */
        .use_parent_handle = true,
        .retain_parent_context = true,
@@ -202,7 +207,7 @@ const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_3[
        .dice_inputs = DICE_INPUT(0x33),
    },
    {
-       /* Derive FW_4, Caller/Parent FW_2 */
+       .id = FW_4, /* Caller/Parent FW_2 */
        .cert_id = DPE_PLATFORM_CERT_ID,
        .use_parent_handle = true,
        .retain_parent_context = true,
@@ -244,6 +249,7 @@ derive_context_test_data_out_3[ ARRAY_SIZE(derive_context_test_data_in_3) ] = {
  */
 const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_4[] = {
    {
+       .id = FW_1, /* Caller/Parent FW_0, which is the RoT context */
        /* Not using cert_id */
        .use_parent_handle = false,
        .retain_parent_context = true,
@@ -252,7 +258,7 @@ const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_4[
        .dice_inputs = DICE_INPUT(0x11),
    },
    {
-       /* Derive FW_2, Caller/Parent FW_1 */
+       .id = FW_2, /* Caller/Parent FW_1 */
        /* Not using cert_id */
        .use_parent_handle = true,
        .retain_parent_context = true,
@@ -261,7 +267,7 @@ const struct dpe_derive_context_test_input_data_t derive_context_test_data_in_4[
        .dice_inputs = DICE_INPUT(0x22),
    },
    {
-       /* Derive FW_3, Caller/Parent FW_1 */
+       .id = FW_3, /* Caller/Parent FW_1 */
        /* Not using cert_id */
        .use_parent_handle = true,
        .retain_parent_context = true,
