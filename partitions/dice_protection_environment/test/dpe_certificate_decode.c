@@ -611,3 +611,57 @@ int compare_certificate_chains(struct certificate_chain *decoded_chain_1,
 
     return 0;
 }
+
+/* This is a simpler version of the previous function which only compares a
+ * subset of the certificate elements. It is meant to verify that a certificate
+ * chain does include the expected components but nothing else. The order of
+ * the components within the certificate does matter.
+ */
+int compare_certificate_chains_light(struct certificate_chain *decoded_chain_1,
+                                     struct certificate_chain *decoded_chain_2)
+{
+    int i, j;
+    struct certificate *chain_1_cert, *chain_2_cert;
+    struct component *chain_1_comp, *chain_2_comp;
+
+    if (decoded_chain_1->cert_cnt != decoded_chain_2->cert_cnt) {
+        TEST_LOG("Certificate chains diverge: Certificate count does not match");
+        return -1;
+    }
+
+    for (i = 0; i < decoded_chain_1->cert_cnt; i++) {
+
+        chain_1_cert = &decoded_chain_1->cert_arr[i];
+        chain_2_cert = &decoded_chain_2->cert_arr[i];
+
+        if (chain_1_cert->component_cnt != chain_2_cert->component_cnt) {
+            TEST_LOG("Certificate chains diverge: Component count does not match");
+            return -1;
+        }
+
+        for (j = 0; j < chain_1_cert->component_cnt; j++) {
+
+            chain_1_comp = &chain_1_cert->component_arr[j];
+            chain_2_comp = &chain_2_cert->component_arr[j];
+
+            if (memcmp(chain_1_comp->code_hash.ptr,
+                       chain_2_comp->code_hash.ptr,
+                       chain_1_comp->code_hash.len)) {
+                TEST_LOG("Certificate chains diverge: Component code hash does not match");
+                return -1;
+            }
+
+            if (memcmp(chain_1_comp->authority_hash.ptr,
+                       chain_2_comp->authority_hash.ptr,
+                       chain_1_comp->authority_hash.len)) {
+                TEST_LOG("Certificate chains diverge: Component authority hash does not match");
+                return -1;
+            }
+
+            //TODO: Add remaining checks except signature when remaining elements
+            //      are added to struct component type
+        }
+    }
+
+    return 0;
+}

@@ -149,3 +149,180 @@ void complex_sequence_test_1(struct test_result_t *ret)
 
     ret->val = TEST_PASSED;
 }
+
+static void
+init_certificate_chain(struct certificate_chain *expected_cert_chain)
+{
+    memset(expected_cert_chain, 0, sizeof(*expected_cert_chain));
+}
+
+/* TODO:
+ *   - Improve the way how expected_cert_chain is populated with data.
+ *   - Populate it based on the hard-coded dpe_test_data.
+ */
+static void
+add_to_certificate_chain(int idx,
+                         const DiceInputValues *dice_inputs,
+                         struct certificate_chain *expected_cert_chain)
+{
+    unsigned int *cnt;
+
+    /* Figure out where to copy data */
+    cnt = &expected_cert_chain->cert_arr[idx].component_cnt;
+
+    /* Code hash */
+    expected_cert_chain->cert_arr[idx].component_arr[*cnt].code_hash.ptr =
+        dice_inputs->code_hash;
+    expected_cert_chain->cert_arr[idx].component_arr[*cnt].code_hash.len =
+        DICE_HASH_SIZE;
+
+    /* Authority hash */
+    expected_cert_chain->cert_arr[idx].component_arr[*cnt].authority_hash.ptr =
+        dice_inputs->authority_hash;
+    expected_cert_chain->cert_arr[idx].component_arr[*cnt].authority_hash.len =
+        DICE_HASH_SIZE;
+
+    /* Increase component_cnt */
+    expected_cert_chain->cert_arr[idx].component_cnt++;
+}
+
+/*
+ *  This is meant to verify that a certificate chain does include the expected
+ *  components but nothing else.
+ *
+ *  This test will call commands in below order:
+ *      DeriveContext (several times as per derive_context_test_dataset_2)
+ *      GetCertificateChain(FW_2) and build the expected cert_chain as well.
+ *      GetCertificateChain(FW_3) and build the expected cert_chain as well.
+ *
+ *  The returned certificate chains are compared agianst the expected ones.
+ */
+void complex_sequence_test_2(struct test_result_t *ret)
+{
+    dpe_error_t dpe_err;
+    int in_handle, new_context_handle, err;
+    uint8_t certificate_chain_buf[CERT_CHAIN_SIZE];
+    size_t certificate_chain_actual_size;
+    UsefulBufC cert_chain_buf;
+    const struct dpe_test_data_t *td = &test_data[2];
+    struct certificate_chain decoded_cert_chain = {0};
+    struct certificate_chain expected_cert_chain = {0};
+    DiceInputValues def_dice_input = DEFAULT_DICE_INPUT;
+
+    err = build_certificate_chain(td);
+    if (err) {
+        TEST_FAIL("Building certificate chain based on test data failed");
+        return;
+    }
+
+    /********************** Get and verify first chain ************************/
+
+    in_handle = get_context_handle_from_fw_id(td, FW_2);
+
+    dpe_err = dpe_get_certificate_chain(in_handle,
+                                        true, /* retain_context */
+                                        false, /* clear_from_context */
+                                        certificate_chain_buf,
+                                        sizeof(certificate_chain_buf),
+                                        &certificate_chain_actual_size,
+                                        &new_context_handle);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE GetCertificateChain call failed");
+        return;
+    }
+
+    /* Update renewed output handle from GetCertificateChain command */
+    update_context_handle(td, in_handle, new_context_handle);
+
+    cert_chain_buf = (UsefulBufC){ certificate_chain_buf,
+                                   certificate_chain_actual_size };
+
+    /* Verify the first chain */
+    err = verify_certificate_chain(cert_chain_buf, &decoded_cert_chain, NULL);
+    if (err) {
+        TEST_FAIL("DPE certificate chain verification failed");
+        return;
+    }
+
+    /* This requires a bit of manual steps and the knowledge of hard-coded
+     * dpe_test_data because the comparison function is very simple:
+     *  - Always add def_dice_input to the 0th certificate.
+     *  - Add any further component to that certificate where it is expected to
+     *    be in.
+     *  - Add the components in reverse order (as opposed to the order in
+     *    dpe_test_data) to the certificate.
+     *  - Set the number of certificates in the chain at the end.
+     */
+    init_certificate_chain(&expected_cert_chain);
+    add_to_certificate_chain(0, &def_dice_input, &expected_cert_chain);
+    add_to_certificate_chain(1, &td->test_data_in[FW_2].dice_inputs, &expected_cert_chain);
+    add_to_certificate_chain(1, &td->test_data_in[FW_1].dice_inputs, &expected_cert_chain);
+    expected_cert_chain.cert_cnt = 2;
+
+    err = compare_certificate_chains_light(&decoded_cert_chain,
+                                           &expected_cert_chain);
+    if (err) {
+        TEST_FAIL("DPE certificate chain_1 and chain_2 comparison failed");
+        return;
+    }
+
+    /**********************  Get and verify second chain **********************/
+
+    in_handle = get_context_handle_from_fw_id(td, FW_3);
+
+    dpe_err = dpe_get_certificate_chain(in_handle,
+                                        true, /* retain_context */
+                                        false, /* clear_from_context */
+                                        certificate_chain_buf,
+                                        sizeof(certificate_chain_buf),
+                                        &certificate_chain_actual_size,
+                                        &new_context_handle);
+    if (dpe_err != DPE_NO_ERROR) {
+        TEST_FAIL("DPE GetCertificateChain call failed");
+        return;
+    }
+
+    /* Update renewed output handle from GetCertificateChain command */
+    update_context_handle(td, in_handle, new_context_handle);
+
+    cert_chain_buf = (UsefulBufC){ certificate_chain_buf,
+                                   certificate_chain_actual_size };
+
+    /* Verify the first chain */
+    err = verify_certificate_chain(cert_chain_buf, &decoded_cert_chain, NULL);
+    if (err) {
+        TEST_FAIL("DPE certificate chain verification failed");
+        return;
+    }
+
+    /* This requires a bit of manual steps and the knowledge of hard-coded
+     * dpe_test_data because the comparison function is very simple:
+     *  - Always add def_dice_input to the 0th certificate.
+     *  - Add any further component to that certificate where it is expected to
+     *    be in.
+     *  - Add the components in reverse order (as opposed to the order in
+     *    dpe_test_data) to the certificate.
+     *  - Set the number of certificates in the chain at the end.
+     */
+    init_certificate_chain(&expected_cert_chain);
+    add_to_certificate_chain(0, &def_dice_input, &expected_cert_chain);
+    add_to_certificate_chain(1, &td->test_data_in[FW_3].dice_inputs, &expected_cert_chain);
+    add_to_certificate_chain(1, &td->test_data_in[FW_1].dice_inputs, &expected_cert_chain);
+    expected_cert_chain.cert_cnt = 2;
+
+    err = compare_certificate_chains_light(&decoded_cert_chain,
+                                           &expected_cert_chain);
+    if (err) {
+        TEST_FAIL("DPE certificate chain_1 and chain_2 comparison failed");
+        return;
+    }
+
+    /* Destroy the saved contexts for the subsequent test */
+    err = destroy_multiple_context(td);
+    if (err) {
+        TEST_FAIL("DPE DestroyContext call failed");
+        return;
+    }
+
+    ret->val = TEST_PASSED;
+}

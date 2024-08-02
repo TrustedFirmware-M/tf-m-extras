@@ -304,6 +304,13 @@ void get_certificate_chain_mixing_cert_id_multiple_ctx_test(struct test_result_t
  */
 void complex_sequence_test_1(struct test_result_t *ret);
 
+/**
+ * \brief Test the content of two certificate chains created w/o cert-id.
+ *
+ * \param[out] ret  Test result
+ */
+void complex_sequence_test_2(struct test_result_t *ret);
+
 #ifdef __cplusplus
 }
 #endif
