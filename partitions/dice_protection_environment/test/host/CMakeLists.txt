@@ -109,6 +109,11 @@ target_compile_definitions(dpe_lib
         DPE_TEST_MODE
 )
 
+target_compile_options(dpe_lib
+    PRIVATE
+        --coverage
+)
+
 ############################### Test framework #################################
 
 add_subdirectory(${TFM_TEST_PATH}/tests_reg/test/framework/ test_framework)
@@ -181,4 +186,9 @@ target_compile_options(dpe_host
     PRIVATE
         -Og
         -g
+)
+
+target_link_options(dpe_host
+    PRIVATE
+        --coverage
 )
