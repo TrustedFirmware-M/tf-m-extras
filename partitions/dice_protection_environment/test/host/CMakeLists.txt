@@ -17,6 +17,17 @@ set(MBEDTLS_FATAL_WARNINGS OFF)
 set(ENABLE_DOCS OFF)
 set(INSTALL_MBEDTLS_HEADERS OFF)
 
+################################## Fuzzing #####################################
+
+if(FUZZ_TEST)
+    if(NOT DEFINED ENV{AFL_LLVM_ALLOWLIST})
+        message(FATAL_ERROR
+            "The AFL_LLVM_ALLOWLIST environment variable is not defined. "
+            "Define it as below to instrument only the DPE library:\n"
+            "export AFL_LLVM_ALLOWLIST=<TF_M_EXTRAS_PATH>/partitions/dice_protection_environment/test/fuzz/allowlist.txt")
+    endif()
+endif()
+
 ############################### Crypto Library #################################
 
 add_subdirectory(${MBEDCRYPTO_PATH} mbedtls)

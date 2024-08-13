@@ -1,0 +1,7 @@
+# DPE lib
+dpe_certificate.c
+dpe_cmd_decode.c
+dpe_context_mngr.c
+dpe_crypto_interface.c
+dpe_log.c
+dpe_cmd_encode.c
