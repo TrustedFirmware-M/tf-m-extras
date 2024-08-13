@@ -98,3 +98,30 @@ install(FILES       ${CMAKE_CURRENT_SOURCE_DIR}/interface/src/dpe_cmd_encode.c
 
 install(DIRECTORY   ${CMAKE_CURRENT_SOURCE_DIR}/interface/include/
         DESTINATION ${INSTALL_INTERFACE_INC_DIR})
+
+############################## Host Build ######################################
+
+if (HOST_BUILD)
+
+    find_package(Python3)
+
+    add_custom_target(dpe_host
+        ALL
+        SOURCES ${CMAKE_CURRENT_BINARY_DIR}/dpe_host/dpe_host
+    )
+
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dpe_host/dpe_host
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/test/host/main.c
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/dpe_host
+        COMMAND ${CMAKE_COMMAND} -S ${CMAKE_CURRENT_SOURCE_DIR}/test/host
+                                 -B ${CMAKE_CURRENT_BINARY_DIR}/dpe_host
+                                 -G ${CMAKE_GENERATOR}
+                                 -DMBEDCRYPTO_PATH=${MBEDCRYPTO_PATH} # External dependency
+                                 -DQCBOR_PATH=${QCBOR_PATH}           # External dependency
+                                 -DTFM_PATH=${CMAKE_SOURCE_DIR}       # To locate t_cose src
+                                 -DTFM_PARTITION_LOG_LEVEL=${TFM_PARTITION_LOG_LEVEL}
+        COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/dpe_host
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/dpe_host/dpe_host ${CMAKE_BINARY_DIR}/bin/host/dpe
+    )
+
+endif()
