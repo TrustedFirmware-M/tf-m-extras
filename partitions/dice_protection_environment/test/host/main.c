@@ -11,7 +11,17 @@
 #include "dice_protection_environment.h"
 #include "tfm_sp_log.h"
 
+#include "extra_s_tests.h"
+#include "test_framework.h"
+
 #include "cmd.h"
+
+static struct test_suite_t test_suites[] = {
+    {&register_testsuite_extra_s_interface, 0, 0, 0},
+    /* End of test suites */
+    {0, 0, 0, 0}
+};
+
 
 static int read_cmd(const char path[], char *cmd_buf, size_t *cmd_buf_size)
 {
@@ -52,7 +62,14 @@ int main(int argc, char **argv)
 
     dpe_lib_init(&context_handle);
 
-    if (argc == 2) {
+    /* Process command line arguments */
+    if (argc == 1) {
+       /*************** Invoked without any command line parameter ************/
+        printf("Execute DPE regression test\n");
+        /* Regression test prints the result to the console */
+        (void)run_test("DPE Regression", test_suites);
+
+    } else if (argc == 2) {
         ret = read_cmd(argv[1], cmd_in_buf, &cmd_in_size);
         if (ret < 0) {
             exit(1);
@@ -64,7 +81,7 @@ int main(int argc, char **argv)
             exit(1);
         }
     } else {
-        printf("Wrong number of input params! It must be 1!\n");
+        printf("Wrong number of input params! It must be either 0 or 1!\n");
         exit(1);
     }
 

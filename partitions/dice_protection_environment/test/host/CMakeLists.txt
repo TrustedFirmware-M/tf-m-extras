@@ -98,6 +98,44 @@ target_compile_definitions(dpe_lib
         DPE_TEST_MODE
 )
 
+############################### Test framework #################################
+
+add_subdirectory(${TFM_TEST_PATH}/tests_reg/test/framework/ test_framework)
+
+target_compile_definitions(tfm_test_framework_common
+    INTERFACE
+        USE_STDIO
+)
+
+target_include_directories(tfm_test_framework_common
+    INTERFACE
+        ${TFM_TEST_PATH}/tests_reg/test/secure_fw/suites/extra/secure
+)
+
+############################# DPE Regression Test ##############################
+
+# Empty target just to make build working
+add_library(tfm_t_cose_s  INTERFACE)
+
+add_library(tfm_test_suite_extra_s STATIC EXCLUDE_FROM_ALL)
+
+add_subdirectory(../secure dpe_reg_test)
+
+target_link_libraries(tfm_test_suite_extra_s
+    PRIVATE
+        t_cose
+        mbedtls
+        qcbor
+        tfm_test_framework_common
+)
+
+target_include_directories(tfm_test_suite_extra_s
+    PRIVATE
+        ${TFM_PATH}/interface/include
+       ../../interface/include
+       ${TFM_PATH}/platform/ext/target/arm/rse/common
+)
+
 ############################### DPE Host App ###################################
 
 add_executable(dpe_host)
@@ -114,6 +152,8 @@ target_sources(dpe_host
 target_link_libraries(dpe_host
     PUBLIC
         dpe_lib
+        tfm_test_suite_extra_s
+        tfm_test_framework_common
 )
 
 target_include_directories(dpe_host

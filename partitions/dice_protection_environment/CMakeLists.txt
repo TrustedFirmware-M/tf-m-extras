@@ -105,6 +105,10 @@ if (HOST_BUILD)
 
     find_package(Python3)
 
+    if (NOT DEFINED TFM_TEST_PATH)
+        message(FATAL_ERROR "TFM_TEST_PATH is not defined. It is needed to locate test framework source.")
+    endif()
+
     add_custom_target(dpe_host
         ALL
         SOURCES ${CMAKE_CURRENT_BINARY_DIR}/dpe_host/dpe_host
@@ -119,6 +123,7 @@ if (HOST_BUILD)
                                  -DMBEDCRYPTO_PATH=${MBEDCRYPTO_PATH} # External dependency
                                  -DQCBOR_PATH=${QCBOR_PATH}           # External dependency
                                  -DTFM_PATH=${CMAKE_SOURCE_DIR}       # To locate t_cose src
+                                 -DTFM_TEST_PATH=${TFM_TEST_PATH}     # To locate test framework src
                                  -DTFM_PARTITION_LOG_LEVEL=${TFM_PARTITION_LOG_LEVEL}
         COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/dpe_host
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/dpe_host/dpe_host ${CMAKE_BINARY_DIR}/bin/host/dpe
