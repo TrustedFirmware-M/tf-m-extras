@@ -10,6 +10,10 @@
 
 enum cmd {
     CBOR, /* CBOR encoded */
+    DC,   /* DeriveContext */
+    CK,   /* CertifyKey */
+    GCC,  /* GetCertificateChain*/
+    RND,  /* Random DPE command */
     MAX_CMD_VAL
 };
 

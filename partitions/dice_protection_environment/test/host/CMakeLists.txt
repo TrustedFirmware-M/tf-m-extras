@@ -170,6 +170,7 @@ target_link_libraries(dpe_host
 target_include_directories(dpe_host
     PRIVATE
         .
+        ../
 )
 
 target_compile_definitions(dpe_host
