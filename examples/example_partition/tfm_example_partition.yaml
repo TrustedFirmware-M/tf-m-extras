@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2020-2022, Arm Limited. All rights reserved.
+# Copyright (c) 2020-2024, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -11,7 +11,7 @@
   "type": "APPLICATION-ROT",
   "model": "SFN",
   "priority": "NORMAL",
-  "entry_point": "tfm_example_partition_main",
+  "entry_init": "tfm_example_partition_main",
   "stack_size": "0x200",
   "services": [
     {
