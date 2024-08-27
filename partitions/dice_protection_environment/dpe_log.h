@@ -106,7 +106,7 @@ void log_derive_context_output(int *new_context_handle,
                                int free_component_idx,
                                struct cert_context_t *cert_ctx,
                                uint8_t *new_certificate_buf,
-                               size_t new_certificate_actual_size);
+                               size_t *new_certificate_actual_size);
 
 #else /* TFM_PARTITION_LOG_LEVEL */
 

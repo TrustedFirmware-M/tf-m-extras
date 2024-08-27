@@ -976,7 +976,7 @@ dpe_error_t derive_context_request(int input_ctx_handle,
                               free_component_idx,
                               derived_ctx->linked_cert_ctx,
                               new_certificate_buf,
-                              *new_certificate_actual_size);
+                              new_certificate_actual_size);
 
     return DPE_NO_ERROR;
 
