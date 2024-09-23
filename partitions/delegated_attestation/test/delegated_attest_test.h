@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022-2024, Arm Limited. All rights reserved.
  * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
  * or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
  *
@@ -11,10 +11,7 @@
 #define __DELEGATED_ATTEST_TEST_H__
 
 #include "test_framework.h"
-#include "psa/crypto_types.h"
-#include "psa/crypto_values.h"
-#include "psa/crypto_sizes.h"
-#include "region_defs.h"
+#include "psa/crypto.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +22,7 @@ extern "C" {
  *
  * \brief Size of platform attestation token buffer in bytes.
  */
-#define PLATFORM_TOKEN_BUFF_SIZE    (PSA_INITIAL_ATTEST_MAX_TOKEN_SIZE)
+#define PLATFORM_TOKEN_BUFF_SIZE    (0x800)
 
 /**
  * \def DELEGATED_ATTEST_KEY_MAX_SIZE
