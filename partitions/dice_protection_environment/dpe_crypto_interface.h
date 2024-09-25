@@ -36,13 +36,15 @@ psa_status_t derive_attestation_key(struct cert_context_t *cert_ctx);
 psa_status_t derive_attestation_cdi(struct cert_context_t *cert_ctx,
                                     const struct cert_context_t *parent_cert_ctx);
 /**
- * \brief Derives sealing CDI for a certificate
+ * \brief Derives seal CDI for a certificate
  *
  * \param[in] cert_ctx  Pointer to current certificate context.
+ * \param[in] parent_cert_ctx  Pointer to parent certificate context.
  *
  * \return Returns error code as specified in \ref psa_status_t
  */
-psa_status_t derive_sealing_cdi(struct cert_context_t *cert_ctx);
+psa_status_t derive_seal_cdi(struct cert_context_t *cert_ctx,
+                             const struct cert_context_t *parent_cert_ctx);
 
 /**
  * \brief Derives certificate id from the certificate's attestation public key

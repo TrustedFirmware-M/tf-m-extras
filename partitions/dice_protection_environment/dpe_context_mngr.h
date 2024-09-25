@@ -83,8 +83,8 @@ struct component_context_t {
 };
 
 struct cert_context_data_t {
-    psa_key_id_t cdi_key_id;
-    uint8_t cdi_seal[DICE_CDI_SIZE];
+    psa_key_id_t attest_cdi_key_id;
+    psa_key_id_t seal_cdi_key_id;
     uint8_t cdi_id[DICE_ID_SIZE];
     psa_key_id_t attest_key_id;
     uint8_t attest_pub_key[DPE_ATTEST_PUB_KEY_SIZE];
@@ -108,6 +108,7 @@ struct cert_context_t {
     struct cert_context_data_t data;
     struct linked_components_t linked_components;
     uint8_t attest_cdi_hash_input[DPE_HASH_ALG_SIZE];
+    uint8_t seal_cdi_hash_input[DPE_HASH_ALG_SIZE];
     enum cert_ctx_state_t state;
     bool is_external_pub_key_provided;
     bool is_cdi_to_be_exported;

@@ -18,6 +18,10 @@
 #include "psa/crypto.h"
 
 #define CONTEXT_DATA_MAX_SIZE sizeof(struct component_context_data_t)
+#define SEAL_CONTEXT_DATA_MAX_SIZE (DICE_HASH_SIZE       \
+                                    + sizeof(DiceMode)   \
+                                    + DICE_HIDDEN_SIZE)
+
 
 static struct component_context_t component_ctx_array[MAX_NUM_OF_COMPONENTS];
 static struct cert_context_t cert_ctx_array[MAX_NUM_OF_CERTIFICATES];
@@ -136,7 +140,8 @@ static void initialise_certificate_context(struct cert_context_t *cert_ctx)
     (void)memset(&cert_ctx->attest_cdi_hash_input, 0,
                  sizeof(cert_ctx->attest_cdi_hash_input));
     (void)memset(&cert_ctx->data, 0, sizeof(struct cert_context_data_t));
-    cert_ctx->data.cdi_key_id = PSA_KEY_ID_NULL;
+    cert_ctx->data.attest_cdi_key_id = PSA_KEY_ID_NULL;
+    cert_ctx->data.seal_cdi_key_id = PSA_KEY_ID_NULL;
     cert_ctx->data.attest_key_id = PSA_KEY_ID_NULL;
     cert_ctx->linked_components.count = 0;
     for (j = 0; j < ARRAY_SIZE(cert_ctx->linked_components.ptr); j++) {
@@ -266,6 +271,32 @@ static psa_status_t get_component_data_for_attest_cdi(uint8_t *dest_buf,
     return PSA_SUCCESS;
 }
 
+/* Seal_CDI Input requires {authority, mode, hidden} in same order */
+static psa_status_t get_component_data_for_seal_cdi(uint8_t *dest_buf,
+                                                    size_t max_size,
+                                                    size_t *dest_size,
+                                                    const struct component_context_t *comp_ctx)
+{
+    size_t out_size = 0;
+
+    if ((DICE_HASH_SIZE + sizeof(comp_ctx->data.mode) + DICE_HIDDEN_SIZE) > max_size) {
+        return PSA_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    memcpy(&dest_buf[out_size], comp_ctx->data.signer_id, DICE_HASH_SIZE);
+    out_size += DICE_HASH_SIZE;
+
+    memcpy(&dest_buf[out_size], &comp_ctx->data.mode, sizeof(comp_ctx->data.mode));
+    out_size += sizeof(comp_ctx->data.mode);
+
+    memcpy(&dest_buf[out_size], comp_ctx->data.hidden, DICE_HIDDEN_SIZE);
+    out_size += DICE_HIDDEN_SIZE;
+
+    *dest_size = out_size;
+
+    return PSA_SUCCESS;
+}
+
 static psa_status_t compute_attestation_cdi_input(struct cert_context_t *cert_ctx)
 {
     psa_status_t status;
@@ -317,6 +348,65 @@ static psa_status_t compute_attestation_cdi_input(struct cert_context_t *cert_ct
                              &hash_len);
 
     assert(hash_len == DPE_HASH_ALG_SIZE);
+
+    return status;
+}
+
+static psa_status_t compute_seal_cdi_input(struct cert_context_t *cert_ctx)
+{
+    psa_status_t status;
+    uint8_t seal_ctx_data[SEAL_CONTEXT_DATA_MAX_SIZE];
+    size_t ctx_data_size, hash_len;
+    uint16_t i, num_of_linked_components;
+    struct component_context_t *comp_ctx;
+
+    num_of_linked_components = cert_ctx->linked_components.count;
+    if (num_of_linked_components == 0) {
+        /* No components to hash */
+        return PSA_SUCCESS;
+    }
+
+    psa_hash_operation_t hash_op = psa_hash_operation_init();
+    status = psa_hash_setup(&hash_op, DPE_HASH_ALG);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    //TODO:
+    /* How to combine measurements of multiple SW components into a single hash
+     * is not yet defined by the Open DICE profile. This implementation
+     * concatenates the data of all SW components which belong to the same
+     * certificate and hash it.
+     */
+    for (i = 0; i < num_of_linked_components; i++) {
+        comp_ctx = cert_ctx->linked_components.ptr[i];
+        status = get_component_data_for_seal_cdi(seal_ctx_data,
+                                                 sizeof(seal_ctx_data),
+                                                 &ctx_data_size,
+                                                 comp_ctx);
+        if (status != PSA_SUCCESS) {
+            goto exit;
+        }
+
+        status = psa_hash_update(&hash_op,
+                                 seal_ctx_data,
+                                 ctx_data_size);
+        if (status != PSA_SUCCESS) {
+            goto exit;
+        }
+    }
+
+    status = psa_hash_finish(&hash_op,
+                             &cert_ctx->seal_cdi_hash_input[0],
+                             sizeof(cert_ctx->seal_cdi_hash_input),
+                             &hash_len);
+
+    assert(hash_len == DPE_HASH_ALG_SIZE);
+
+exit:
+    if (status != PSA_SUCCESS) {
+        psa_hash_abort(&hash_op);
+    }
 
     return status;
 }
@@ -377,7 +467,12 @@ static dpe_error_t prepare_certificate(struct cert_context_t *cert_ctx)
             return DPE_INTERNAL_ERROR;
         }
 
-        status = derive_sealing_cdi(cert_ctx);
+        status = compute_seal_cdi_input(cert_ctx);
+        if (status != PSA_SUCCESS) {
+            return DPE_INTERNAL_ERROR;
+        }
+
+        status = derive_seal_cdi(cert_ctx, parent_cert_ctx);
         if (status != PSA_SUCCESS) {
             return DPE_INTERNAL_ERROR;
         }
@@ -541,13 +636,17 @@ assign_components_to_certificate(struct component_context_t *comp_ctx,
  */
 static dpe_error_t create_rot_context(int *rot_ctx_handle)
 {
+    psa_key_id_t rot_cdi_key_id;
     struct component_context_t *rot_comp_ctx = &component_ctx_array[0];
     struct cert_context_t *rot_cert_ctx = &cert_ctx_array[0];
 
     rot_cert_ctx->is_rot_cert_ctx = true;
     rot_cert_ctx->parent_cert_ptr = NULL;
     /* Get the RoT CDI key for the RoT certificate */
-    rot_cert_ctx->data.cdi_key_id = dpe_plat_get_rot_cdi_key_id();
+    rot_cdi_key_id = dpe_plat_get_rot_cdi_key_id();
+    rot_cert_ctx->data.attest_cdi_key_id = rot_cdi_key_id;
+    /* Same CDI to be used for further derivation */
+    rot_cert_ctx->data.seal_cdi_key_id = rot_cdi_key_id;
     /* Init RoT context, ready to be derived in next call to DeriveContext */
     rot_comp_ctx->nonce = 0;
     /* Set the target locality for RoT context */

@@ -30,6 +30,7 @@ extern "C" {
 #define DPE_ATTEST_CDI_LABEL "CDI_Attest"
 #define DPE_SEAL_CDI_LABEL   "CDI_Seal"
 #define DPE_ATTEST_EXPORTED_CDI_LABEL "Exported_CDI_Attest" /* Custom Label - yet to be specified */
+#define DPE_SEAL_EXPORTED_CDI_LABEL "Exported_CDI_Seal" /* Custom Label - yet to be specified */
 
 #define DPE_ATTEST_KEY_CURVE_TYPE PSA_ECC_FAMILY_SECP_R1
 #define DPE_ATTEST_KEY_TYPE       PSA_KEY_TYPE_ECC_KEY_PAIR(DPE_ATTEST_KEY_CURVE_TYPE)
