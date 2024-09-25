@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2022-2024, Arm Limited. All rights reserved.
+# Copyright (c) 2022, Arm Limited. All rights reserved.
 # Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
 # or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
 #
@@ -24,5 +24,4 @@ target_link_libraries(tfm_test_suite_extra_s
     PRIVATE
         tfm_sprt #for public header: tfm_delegated_attestation.h
         platform_region_defs
-        psa_crypto_config
 )

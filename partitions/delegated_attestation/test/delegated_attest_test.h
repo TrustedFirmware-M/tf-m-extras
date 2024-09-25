@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, Arm Limited. All rights reserved.
  * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
  * or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
  *
@@ -11,8 +11,10 @@
 #define __DELEGATED_ATTEST_TEST_H__
 
 #include "test_framework.h"
-#include "psa/crypto.h"
-#include "psa/initial_attestation.h"
+#include "psa/crypto_types.h"
+#include "psa/crypto_values.h"
+#include "psa/crypto_sizes.h"
+#include "region_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
