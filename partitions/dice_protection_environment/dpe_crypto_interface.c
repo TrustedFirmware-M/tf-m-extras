@@ -339,20 +339,23 @@ psa_status_t get_certificate_cdi_value(const struct cert_context_t *cert_ctx,
     return status;
 }
 
-void destroy_certificate_context_keys(const struct cert_context_t *cert_ctx)
+void destroy_certificate_context_keys(struct cert_context_t *cert_ctx)
 {
-    if (cert_ctx->data.cdi_key_id != PSA_KEY_ID_NULL) {
+    if (cert_ctx->data.attest_cdi_key_id != PSA_KEY_ID_NULL) {
         /* Remove any previously derived keys */
-        (void)psa_destroy_key(cert_ctx->data.cdi_key_id);
+        (void)psa_destroy_key(cert_ctx->data.attest_cdi_key_id);
+        cert_ctx->data.attest_cdi_key_id = PSA_KEY_ID_NULL;
     }
 
     if (cert_ctx->data.seal_cdi_key_id != PSA_KEY_ID_NULL) {
         /* Remove any previously derived keys */
         (void)psa_destroy_key(cert_ctx->data.seal_cdi_key_id);
+        cert_ctx->data.seal_cdi_key_id = PSA_KEY_ID_NULL;
     }
 
     if (cert_ctx->data.attest_key_id != PSA_KEY_ID_NULL) {
         /* Remove any previously derived keys */
         (void)psa_destroy_key(cert_ctx->data.attest_key_id);
+        cert_ctx->data.attest_key_id = PSA_KEY_ID_NULL;
     }
 }

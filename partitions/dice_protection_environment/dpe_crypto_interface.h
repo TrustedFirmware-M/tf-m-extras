@@ -95,7 +95,7 @@ psa_status_t get_certificate_cdi_value(const struct cert_context_t *cert_ctx,
  * \param[in] cert_ctx  Pointer to current certificate context.
  *
  */
-void destroy_certificate_context_keys(const struct cert_context_t *cert_ctx);
+void destroy_certificate_context_keys(struct cert_context_t *cert_ctx);
 
 #ifdef __cplusplus
 }
