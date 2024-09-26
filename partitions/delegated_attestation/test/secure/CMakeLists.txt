@@ -25,5 +25,6 @@ target_link_libraries(tfm_test_suite_extra_s
         tfm_sprt #for public header: tfm_delegated_attestation.h
         platform_region_defs
         psa_crypto_config
+        tfm_t_cose_s
         qcbor
 )

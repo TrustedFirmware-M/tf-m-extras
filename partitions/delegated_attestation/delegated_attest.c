@@ -7,18 +7,20 @@
  */
 
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
+
 #include "delegated_attest.h"
+#include "measured_boot_api.h"
 #include "psa/crypto.h"
 #include "psa/initial_attestation.h"
-#include "region_defs.h"
-#include "tfm_attest_iat_defs.h"
-#include "tfm_crypto_defs.h"
-#include "measured_boot_api.h"
 #include "qcbor/qcbor.h"
 #include "q_useful_buf.h"
+#include "region_defs.h"
+#include "t_cose_key.h"
 #include "t_cose_standard_constants.h"
+#include "tfm_attest_iat_defs.h"
+#include "tfm_crypto_defs.h"
+
 
 /**
  * The size of X and Y coordinate in 2 parameter style EC public
@@ -49,126 +51,6 @@ static uint8_t boot_state_buffer[TFM_ATTEST_BOOT_RECORDS_MAX_SIZE];
  */
 static psa_algorithm_t dak_pub_hash_algo = PSA_ALG_NONE;
 
-static inline psa_status_t
-map_to_cose_curve(uint32_t key_bits, size_t *curve)
-{
-    switch (key_bits) {
-    case 256:
-        *curve = COSE_ELLIPTIC_CURVE_P_256;
-        break;
-    case 384:
-        *curve = COSE_ELLIPTIC_CURVE_P_384;
-        break;
-    case 521:
-        *curve = COSE_ELLIPTIC_CURVE_P_521;
-        break;
-    default:
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    return PSA_SUCCESS;
-}
-
-static psa_status_t
-encode_pub_key_to_cose_key(psa_key_id_t           key_id,
-                           struct q_useful_buf    cose_key_buf,
-                           struct q_useful_buf_c *cose_key)
-{
-    QCBORError              qcbor_result;
-    QCBOREncodeContext      cbor_encode_ctx;
-    struct q_useful_buf_c   pub_key;
-    struct q_useful_buf_c   x_coord;
-    struct q_useful_buf_c   y_coord;
-    size_t                  key_coord_len;
-    uint8_t                 *x_coord_ptr;
-    uint8_t                 *y_coord_ptr;
-    UsefulBuf_MAKE_STACK_UB(x_coord_buf, ECC_COORD_SIZE);
-    UsefulBuf_MAKE_STACK_UB(y_coord_buf, ECC_COORD_SIZE);
-    UsefulBuf_MAKE_STACK_UB(pub_key_buf, PSA_KEY_EXPORT_ECC_PUBLIC_KEY_MAX_SIZE(521));
-    psa_key_attributes_t    attr = PSA_KEY_ATTRIBUTES_INIT;
-    psa_status_t            status;
-    size_t                  key_bits;
-    size_t                  cose_curve;
-    uint8_t                 first_byte;
-
-    /* Export the public part of the DAK */
-    status = psa_export_public_key(key_id,
-                                   pub_key_buf.ptr,
-                                   pub_key_buf.len,
-                                   &pub_key.len);
-    if (status != PSA_SUCCESS) {
-        return status;
-    }
-
-    pub_key.ptr = pub_key_buf.ptr;
-
-    status = psa_get_key_attributes(key_id, &attr);
-    if (status != PSA_SUCCESS) {
-        return status;
-    }
-
-    key_bits = psa_get_key_bits(&attr);
-    status = map_to_cose_curve(key_bits, &cose_curve);
-        if (status != PSA_SUCCESS) {
-        return status;
-    }
-
-    /* TODO: support key compression when key starts with either 0x02 or 0x03 byte */
-    first_byte = ((uint8_t *)pub_key.ptr)[0];
-    if (first_byte != 0x04) {
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    /* Key is made up of a 0x4 byte and two coordinates
-     * 0x04 || X_COORD || Y_COORD
-     */
-    key_coord_len = (pub_key.len - 1) / 2;
-    x_coord_ptr = ((uint8_t *)pub_key.ptr) + 1;
-    y_coord_ptr = ((uint8_t *)pub_key.ptr) + 1 + key_coord_len;
-
-    /* Place they key parts into the x and y buffers. Stars at index 1 to skip
-     * the 0x4 byte.
-     */
-    x_coord = UsefulBuf_CopyPtr(x_coord_buf,
-                                x_coord_ptr,
-                                key_coord_len);
-
-    y_coord = UsefulBuf_CopyPtr(y_coord_buf,
-                                y_coord_ptr,
-                                key_coord_len);
-
-    if (UsefulBuf_IsNULLC(x_coord) || UsefulBuf_IsNULLC(y_coord)) {
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    /* Encode it into a COSE_Key structure */
-    QCBOREncode_Init(&cbor_encode_ctx, cose_key_buf);
-    QCBOREncode_OpenMap(&cbor_encode_ctx);
-    QCBOREncode_AddInt64ToMapN(&cbor_encode_ctx,
-                               COSE_KEY_COMMON_KTY,
-                               COSE_KEY_TYPE_EC2);
-    QCBOREncode_AddInt64ToMapN(&cbor_encode_ctx,
-                               COSE_KEY_PARAM_CRV,
-                               cose_curve);
-    QCBOREncode_AddBytesToMapN(&cbor_encode_ctx,
-                               COSE_KEY_PARAM_X_COORDINATE,
-                               x_coord);
-    QCBOREncode_AddBytesToMapN(&cbor_encode_ctx,
-                               COSE_KEY_PARAM_Y_COORDINATE,
-                               y_coord);
-    QCBOREncode_CloseMap(&cbor_encode_ctx);
-
-    qcbor_result = QCBOREncode_Finish(&cbor_encode_ctx, cose_key);
-    if (qcbor_result == QCBOR_ERR_BUFFER_TOO_SMALL) {
-        return PSA_ERROR_INSUFFICIENT_MEMORY;
-    } else if (qcbor_result != QCBOR_SUCCESS) {
-        /* likely from array not closed, too many closes, ... */
-        return PSA_ERROR_GENERIC_ERROR;
-    }
-
-    return PSA_SUCCESS;
-}
-
 /**
  * \brief Static function to verify the hash of the public DAK
  *
@@ -182,8 +64,11 @@ static psa_status_t
 verify_dak_pub_hash(const uint8_t *dak_pub_hash, size_t dak_pub_hash_len)
 {
     psa_status_t status;
+    struct t_cose_key dak_key;
     struct q_useful_buf_c cose_key;
-    UsefulBuf_MAKE_STACK_UB(cose_key_buf, MAX_ENCODED_COSE_KEY_SIZE);
+    enum t_cose_err_t cose_res;
+    /* Buffer large enough for P-521 public key */
+    Q_USEFUL_BUF_MAKE_STACK_UB(cose_key_buf, MAX_ENCODED_COSE_KEY_SIZE);
 
     /* Verify the size of the hash */
     if (dak_pub_hash_len != PSA_HASH_LENGTH(dak_pub_hash_algo)) {
@@ -191,9 +76,13 @@ verify_dak_pub_hash(const uint8_t *dak_pub_hash, size_t dak_pub_hash_len)
     }
 
     /* Turns SEC1 encoding to a CBOR serialized COSE_Key object */
-    status = encode_pub_key_to_cose_key(dak_key_id, cose_key_buf, &cose_key);
-    if (status != PSA_SUCCESS) {
-        return status;
+    dak_key.crypto_lib = T_COSE_CRYPTO_LIB_PSA;
+    dak_key.k.key_handle = dak_key_id;
+    cose_res = t_cose_key_encode(dak_key,
+                                 cose_key_buf,
+                                 &cose_key);
+    if (cose_res != T_COSE_SUCCESS) {
+        return PSA_ERROR_GENERIC_ERROR;
     }
 
     /* Calculate and compare the hash of the public DAK */
