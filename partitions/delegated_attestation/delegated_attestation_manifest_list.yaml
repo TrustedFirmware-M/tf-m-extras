@@ -20,7 +20,7 @@
       "pid": 277,
       "linker_pattern": {
         "library_list": [
-          "*tfm_*partition_delegated_attestation*"
+          "*tfm_*partition_delegated_attest*"
         ]
       }
     }
