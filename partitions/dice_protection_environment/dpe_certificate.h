@@ -17,7 +17,22 @@
 extern "C" {
 #endif
 
-#define DICE_MAX_ENCODED_PUBLIC_KEY_SIZE         (DPE_ATTEST_PUB_KEY_SIZE + 32)
+/**
+ * The size of X and Y coordinate in 2 parameter style EC public
+ * key. Format is as defined in [COSE (RFC 8152)]
+ * (https://tools.ietf.org/html/rfc8152) and [SEC 1: Elliptic Curve
+ * Cryptography](http://www.secg.org/sec1-v2.pdf).
+ *
+ * This size is well-known and documented in public standards.
+ */
+#define ECC_COORD_SIZE PSA_BITS_TO_BYTES(DPE_ATTEST_KEY_BITS)
+
+#define MAX_ENCODED_COSE_KEY_SIZE \
+    1 + /* 1 byte to encode map */ \
+    2 + /* 2 bytes to encode key type */ \
+    2 + /* 2 bytes to encode curve */ \
+    2 * /* the X and Y coordinates + encoding */ \
+        (ECC_COORD_SIZE + 1 + 2)
 
 /**
  * \brief Encodes and signs the certificate for a context

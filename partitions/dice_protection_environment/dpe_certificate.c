@@ -13,6 +13,7 @@
 #include "dpe_plat.h"
 #include "qcbor/qcbor_encode.h"
 #include "t_cose_common.h"
+#include "t_cose_key.h"
 #include "t_cose_sign1_sign.h"
 
 #define ID_HEX_SIZE (2 * DICE_ID_SIZE)      /* Size of CDI encoded to ascii hex */
@@ -156,96 +157,61 @@ static void encode_issuer_claim(QCBOREncodeContext *cbor_enc_ctx,
                                             sizeof(cdi_id_hex) });
 }
 
-static void encode_public_key(QCBOREncodeContext *cbor_enc_ctx,
-                              const uint8_t *pub_key,
-                              size_t pub_key_size)
+static dpe_error_t encode_public_key(QCBOREncodeContext *cbor_enc_ctx,
+                                     psa_key_id_t attest_key_id)
 {
-    /* As per RFC8152 */
-    const int64_t cose_key_type_value = DPE_T_COSE_KEY_TYPE_VAL;
-    const int64_t cose_key_ops_value = DPE_T_COSE_KEY_OPS_VAL;
-    const int64_t cose_key_ec2_curve_value = DPE_T_COSE_KEY_EC2_CURVE_VAL;
-    const int64_t cose_key_alg_value = DPE_T_COSE_KEY_ALG_VAL;
+    Q_USEFUL_BUF_MAKE_STACK_UB(cose_key_buf, MAX_ENCODED_COSE_KEY_SIZE);
+    struct t_cose_key attest_key;
+    struct q_useful_buf_c cose_key;
+    enum t_cose_err_t cose_res;
 
-    QCBOREncode_OpenMap(cbor_enc_ctx);
+    /* Export the public key and encodes it to be a COSE_Key object */
+    attest_key.crypto_lib = T_COSE_CRYPTO_LIB_PSA;
+    attest_key.k.key_handle = attest_key_id;
+    cose_res = t_cose_key_encode(attest_key,
+                                 cose_key_buf,
+                                 &cose_key);
+    if (cose_res != T_COSE_SUCCESS) {
+        return DPE_INTERNAL_ERROR;
+    }
 
-    /* Add the key type as int */
-    QCBOREncode_AddInt64ToMapN(cbor_enc_ctx,
-                               DPE_CERT_LABEL_COSE_KEY_TYPE,
-                               cose_key_type_value);
+    QCBOREncode_AddEncoded(cbor_enc_ctx, cose_key);
 
-    /* Add the algorithm as int */
-    QCBOREncode_AddInt64ToMapN(cbor_enc_ctx,
-                               DPE_CERT_LABEL_COSE_KEY_ALG,
-                               cose_key_alg_value);
+    return DPE_NO_ERROR;
+}
 
-    /* Add the key operation as [+ (tstr/int)] */
-    QCBOREncode_OpenArrayInMapN(cbor_enc_ctx, DPE_CERT_LABEL_COSE_KEY_OPS);
-    QCBOREncode_AddInt64(cbor_enc_ctx,
-                               cose_key_ops_value);
-    QCBOREncode_CloseArray(cbor_enc_ctx);
+static dpe_error_t add_public_key_claim(QCBOREncodeContext *cbor_enc_ctx,
+                                        psa_key_id_t attest_key_id)
+{
+    dpe_error_t err;
 
-    /* Add the curve */
-    QCBOREncode_AddInt64ToMapN(cbor_enc_ctx,
-                               DPE_CERT_LABEL_COSE_KEY_EC2_CURVE,
-                               cose_key_ec2_curve_value);
-
-    /*
-     * From psa/crypto.h:
-     *
-     * For other elliptic curve public keys (key types for which
-     *   #PSA_KEY_TYPE_IS_ECC_PUBLIC_KEY is true), the format is the uncompressed
-     *   representation defined by SEC1 &sect;2.3.3 as the content of an ECPoint.
-     *   Let `m` be the bit size associated with the curve, i.e. the bit size of
-     *   `q` for a curve over `F_q`. The representation consists of:
-     *      - The byte 0x04;
-     *      - `x_P` as a `ceiling(m/8)`-byte string, big-endian;
-     *      - `y_P` as a `ceiling(m/8)`-byte string, big-endian.
-
-     * Furthermore, as per rfc5480 section-2.2:
-     *
-     * The first octet of the OCTET STRING indicates whether the key is
-     * compressed or uncompressed. The uncompressed form is indicated by 0x04
-     * and the compressed form is indicated by either 0x02 or 0x03.
+    /* COSE_Key is encoded as a map. This map is wrapped into the a
+     * byte string and it is further encoded as a map.
      */
-    QCBOREncode_AddBytesToMapN(cbor_enc_ctx,
-                               DPE_CERT_LABEL_COSE_KEY_EC2_X,
-                               (UsefulBufC){ &pub_key[1],
-                                             pub_key_size / 2 });
-
-    QCBOREncode_AddBytesToMapN(cbor_enc_ctx,
-                               DPE_CERT_LABEL_COSE_KEY_EC2_Y,
-                               (UsefulBufC){ &pub_key[1 + (pub_key_size / 2)],
-                                             pub_key_size / 2 });
-
-    QCBOREncode_CloseMap(cbor_enc_ctx);
-
-}
-
-static void add_public_key_claim(QCBOREncodeContext *cbor_enc_ctx,
-                                 const uint8_t *pub_key,
-                                 size_t pub_key_size)
-{
-    UsefulBufC wrapped;
-
-    /* Cose key is encoded as a map. This map is wrapped into the a
-     * byte string and it is further encoded as a map */
     QCBOREncode_BstrWrapInMapN(cbor_enc_ctx, DPE_CERT_LABEL_SUBJECT_PUBLIC_KEY);
-    encode_public_key(cbor_enc_ctx, pub_key, pub_key_size);
-    QCBOREncode_CloseBstrWrap2(cbor_enc_ctx, true, &wrapped);
-    assert(wrapped.len <= DICE_MAX_ENCODED_PUBLIC_KEY_SIZE);
+    err = encode_public_key(cbor_enc_ctx, attest_key_id);
+    if (err != DPE_NO_ERROR) {
+        return err;
+    }
+    QCBOREncode_CloseBstrWrap2(cbor_enc_ctx, false, NULL);
+
+    return DPE_NO_ERROR;
 }
 
-static void add_public_key_to_certificate_chain(QCBOREncodeContext *cbor_enc_ctx,
-                                                const uint8_t *pub_key,
-                                                size_t pub_key_size)
+static dpe_error_t add_public_key_to_certificate_chain(QCBOREncodeContext *cbor_enc_ctx,
+                                                       psa_key_id_t attest_key_id)
 {
-    UsefulBufC wrapped;
+    dpe_error_t err;
 
-    /* Cose key is encoded as a map wrapped into a byte string */
+    /* COSE_Key is encoded as a map wrapped into a byte string */
     QCBOREncode_BstrWrap(cbor_enc_ctx);
-    encode_public_key(cbor_enc_ctx, pub_key, pub_key_size);
-    QCBOREncode_CloseBstrWrap2(cbor_enc_ctx, true, &wrapped);
-    assert(wrapped.len <= DICE_MAX_ENCODED_PUBLIC_KEY_SIZE);
+    err = encode_public_key(cbor_enc_ctx, attest_key_id);
+    if (err != DPE_NO_ERROR) {
+        return err;
+    }
+    QCBOREncode_CloseBstrWrap2(cbor_enc_ctx, false, NULL);
+
+    return DPE_NO_ERROR;
 }
 
 static dpe_error_t certificate_encode_finish(QCBOREncodeContext *cbor_enc_ctx,
@@ -460,9 +426,10 @@ static dpe_error_t encode_certificate_internal(const struct cert_context_t *cert
                     cert_ctx->data.external_key_deriv_label_len);
 
     /* Add public key claim */
-    add_public_key_claim(cbor_enc_ctx,
-                         &cert_ctx->data.attest_pub_key[0],
-                         cert_ctx->data.attest_pub_key_len);
+    err = add_public_key_claim(cbor_enc_ctx, cert_ctx->data.attest_key_id);
+    if (err != DPE_NO_ERROR) {
+        return err;
+    }
 
     /* Add key usage claim */
     add_key_usage_claim(cbor_enc_ctx);
@@ -548,20 +515,13 @@ static dpe_error_t close_certificate_chain(QCBOREncodeContext *cbor_enc_ctx,
 
 static dpe_error_t add_root_attestation_public_key(QCBOREncodeContext *cbor_enc_ctx)
 {
-    psa_status_t status;
-    psa_key_id_t attest_key_id;
-    uint8_t attest_pub_key[DPE_ATTEST_PUB_KEY_SIZE];
-    size_t attest_pub_key_len;
+    psa_key_id_t attest_key_id = dpe_plat_get_root_attest_key_id();
+    dpe_error_t err;
 
-    attest_key_id = dpe_plat_get_root_attest_key_id();
-
-    status = psa_export_public_key(attest_key_id, attest_pub_key,
-                                   sizeof(attest_pub_key), &attest_pub_key_len);
-    if (status != PSA_SUCCESS) {
-        return DPE_INTERNAL_ERROR;
+    err = add_public_key_to_certificate_chain(cbor_enc_ctx, attest_key_id);
+    if (err != DPE_NO_ERROR) {
+        return err;
     }
-
-    add_public_key_to_certificate_chain(cbor_enc_ctx, &attest_pub_key[0], attest_pub_key_len);
 
     return DPE_NO_ERROR;
 }
