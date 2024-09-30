@@ -12,12 +12,13 @@
 #include "dpe_test_common.h"
 #include "dpe_test_data.h"
 #include "dpe_test_private.h"
+#include "t_cose_key.h"
 
 extern const struct dpe_test_data_t test_data[];
 extern int retained_rot_ctx_handle;
 
 static int get_and_verify_certificate_chain(int in_handle,
-                                            psa_key_id_t *pub_key_id,
+                                            struct t_cose_key *pub_key_id,
                                             int *out_ctx_handle)
 {
     uint8_t certificate_buf[1650];
@@ -50,7 +51,7 @@ static int get_and_verify_certificate_chain(int in_handle,
 }
 
 static int get_and_verify_leaf_certificate(int in_handle,
-                                           psa_key_id_t pub_key_id,
+                                           struct t_cose_key pub_key_id,
                                            int *out_ctx_handle)
 {
     UsefulBufC cert_buf;
@@ -105,7 +106,7 @@ static int get_and_verify_leaf_certificate(int in_handle,
  */
 void certify_key_core_functionality_test_01(struct test_result_t *ret)
 {
-    psa_key_id_t pub_key_id;
+    struct t_cose_key pub_key_id;
     int err, in_handle, out_ctx_handle;
     const struct dpe_test_data_t *td = &test_data[0];
 
@@ -160,7 +161,7 @@ void certify_key_core_functionality_test_01(struct test_result_t *ret)
  */
 void certify_key_core_functionality_test_02(struct test_result_t *ret)
 {
-    psa_key_id_t pub_key_id;
+    struct t_cose_key pub_key_id;
     int err, in_handle, out_ctx_handle;
     const struct dpe_test_data_t *td = &test_data[1];
 

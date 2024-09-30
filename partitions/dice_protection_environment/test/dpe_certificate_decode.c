@@ -14,6 +14,8 @@
 #include "psa/error.h"
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
+#include "t_cose_common.h"
+#include "t_cose_key.h"
 #include "t_cose_sign1_verify.h"
 #include "test_log.h"
 
@@ -33,57 +35,6 @@ static QCBORError get_array_len(QCBORItem *item, unsigned int *array_len)
     return QCBOR_SUCCESS;
 }
 
-/*
- * TODO:
- *     - Determine key_type and key_alg from COSE_Key
- */
-static QCBORError get_public_key(UsefulBufC cose_key,
-                                 UsefulOutBuf *pub_key_buf,
-                                 UsefulBufC *pub_key)
-{
-    QCBORDecodeContext decode_ctx;
-    QCBORError qcbor_err;
-    UsefulBufC coordinate = { NULL, 0 };
-
-    UsefulOutBuf_Reset(pub_key_buf);
-
-    QCBORDecode_Init(&decode_ctx, cose_key, QCBOR_DECODE_MODE_NORMAL);
-    QCBORDecode_EnterMap(&decode_ctx, NULL);
-    /*
-     * From psa/crypto.h:
-     *
-     * For other elliptic curve public keys (key types for which
-     *   #PSA_KEY_TYPE_IS_ECC_PUBLIC_KEY is true), the format is the uncompressed
-     *   representation defined by SEC1 &sect;2.3.3 as the content of an ECPoint.
-     *   Let `m` be the bit size associated with the curve, i.e. the bit size of
-     *   `q` for a curve over `F_q`. The representation consists of:
-     *      - The byte 0x04;
-     *      - `x_P` as a `ceiling(m/8)`-byte string, big-endian;
-     *      - `y_P` as a `ceiling(m/8)`-byte string, big-endian.
-     */
-    UsefulOutBuf_AppendByte(pub_key_buf, 0x04);
-
-    QCBORDecode_GetByteStringInMapN(&decode_ctx,
-                                    DPE_CERT_LABEL_COSE_KEY_EC2_X,
-                                    &coordinate);
-    UsefulOutBuf_AppendUsefulBuf(pub_key_buf, coordinate);
-
-    QCBORDecode_GetByteStringInMapN(&decode_ctx,
-                                    DPE_CERT_LABEL_COSE_KEY_EC2_Y,
-                                    &coordinate);
-    UsefulOutBuf_AppendUsefulBuf(pub_key_buf, coordinate);
-
-    QCBORDecode_ExitMap(&decode_ctx);
-
-    qcbor_err = QCBORDecode_Finish(&decode_ctx);
-    if (qcbor_err != QCBOR_SUCCESS) {
-        return qcbor_err;
-    }
-
-    *pub_key = UsefulOutBuf_OutUBuf(pub_key_buf);
-
-    return QCBOR_SUCCESS;
-}
 
 static QCBORError get_next_certificate(QCBORDecodeContext *decode_ctx,
                                        UsefulBufC *cert_buf)
@@ -289,24 +240,21 @@ static QCBORError verify_encoding(UsefulBufC cert_buf, struct certificate *cert)
 }
 
 static enum t_cose_err_t verify_signature(UsefulBufC cert_buf,
-                                          psa_key_id_t pub_key_id)
+                                          struct t_cose_key pub_key_id)
 {
-    enum t_cose_err_t              t_cose_error;
+    enum t_cose_err_t cose_err;
     struct t_cose_sign1_verify_ctx verify_ctx;
-    struct t_cose_key              crypto_key;
     UsefulBufC payload;
 
     t_cose_sign1_verify_init(&verify_ctx, 0); /* T_COSE_OPT_DECODE_ONLY */
 
-    crypto_key.crypto_lib = T_COSE_CRYPTO_LIB_PSA;
-    crypto_key.k.key_handle = pub_key_id;
+    t_cose_sign1_set_verification_key(&verify_ctx, pub_key_id);
+    cose_err =  t_cose_sign1_verify(&verify_ctx,
+                                    cert_buf, /* COSE_Sign1 to verify */
+                                    &payload,
+                                    NULL);    /* Don't return parameters */
 
-    t_cose_sign1_set_verification_key(&verify_ctx, crypto_key);
-    t_cose_error =  t_cose_sign1_verify(&verify_ctx,
-                                        cert_buf, /* COSE_Sign1 to verify */
-                                        &payload,
-                                        NULL);    /* Don't return parameters */
-    return t_cose_error;
+    return cose_err;
 }
 
 /*
@@ -316,10 +264,10 @@ static enum t_cose_err_t verify_signature(UsefulBufC cert_buf,
  *  - T_COSE_ERR_* : -2
  */
 int verify_certificate(UsefulBufC cert_buf,
-                       psa_key_id_t pub_key_id,
+                       struct t_cose_key pub_key_id,
                        struct certificate *cert)
 {
-    enum t_cose_err_t t_cose_err;
+    enum t_cose_err_t cose_err;
     QCBORError qcbor_err;
 
     qcbor_err = verify_encoding(cert_buf, cert);
@@ -330,9 +278,9 @@ int verify_certificate(UsefulBufC cert_buf,
     /* If the corresponding public key is not known then only verify the
      * certificate's structure.
      */
-    if (pub_key_id != PSA_KEY_ID_NULL ) {
-        t_cose_err = verify_signature(cert_buf, pub_key_id);
-        if (t_cose_err != T_COSE_SUCCESS) {
+    if (pub_key_id.k.key_handle != PSA_KEY_ID_NULL ) {
+        cose_err = verify_signature(cert_buf, pub_key_id);
+        if (cose_err != T_COSE_SUCCESS) {
             return -2;
         }
     }
@@ -340,56 +288,17 @@ int verify_certificate(UsefulBufC cert_buf,
     return 0;
 }
 
-/*
- * TODO:
- *     - Determine key_type and key_alg from COSE_Key
- */
-static psa_status_t register_pub_key(UsefulBufC pub_key,
-                                     psa_key_id_t *pub_key_id)
-{
-    psa_status_t psa_err;
-    psa_key_attributes_t key_attributes;
-    psa_key_type_t key_type = PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1);
-    psa_algorithm_t key_alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
-
-    key_attributes = psa_key_attributes_init();
-
-    /* Set the algorithm and operations the key can be used with / for */
-    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_VERIFY_HASH);
-    psa_set_key_algorithm(&key_attributes, key_alg);
-
-    psa_set_key_type(&key_attributes, key_type);
-
-    psa_err = psa_import_key(&key_attributes,
-                              pub_key.ptr,
-                              pub_key.len,
-                              pub_key_id);
-
-    return psa_err;
-}
-
-inline psa_status_t unregister_pub_key(psa_key_id_t pub_key_id)
+/* TODO: The t_cose lib has no API for this purpose use the PSA API instead */
+inline int unregister_pub_key(struct t_cose_key pub_key_id)
 {
     psa_status_t psa_err;
 
-    psa_err = psa_destroy_key(pub_key_id);
-
-    return psa_err;
-}
-
-static psa_status_t update_public_key(UsefulBufC pub_key,
-                                      psa_key_id_t *pub_key_id)
-{
-    psa_status_t psa_err;
-
-    psa_err = unregister_pub_key(*pub_key_id);
+    psa_err = psa_destroy_key(pub_key_id.k.key_handle);
     if (psa_err != PSA_SUCCESS) {
-        return psa_err;
+        return -3;
     }
 
-    psa_err = register_pub_key(pub_key, pub_key_id);
-
-    return psa_err;
+    return 0;
 }
 
 /*
@@ -407,16 +316,16 @@ static psa_status_t update_public_key(UsefulBufC pub_key,
  */
 int verify_certificate_chain(UsefulBufC cert_chain_buf,
                              struct certificate_chain *cert_chain,
-                             psa_key_id_t *last_pub_key_id)
+                             struct t_cose_key *last_pub_key_id)
 {
     int i, err;
     QCBORError qcbor_err;
     QCBORDecodeContext decode_ctx;
-    UsefulOutBuf_MakeOnStack(pub_key_buf, DPE_ATTEST_PUB_KEY_SIZE);
-    UsefulBufC pub_key, cert_buf;
+    UsefulBufC cert_buf;
     QCBORItem item;
     psa_status_t psa_err;
-    psa_key_id_t pub_key_id;
+    struct t_cose_key pub_key_id;
+    enum t_cose_err_t cose_err;
 
     memset(cert_chain, 0, sizeof(struct certificate_chain));
 
@@ -432,19 +341,17 @@ int verify_certificate_chain(UsefulBufC cert_chain_buf,
     /* Root public key: COSE_Key */
     QCBORDecode_GetByteString(&decode_ctx, &cert_chain->root_pub_key);
 
-    /* Decode the COSE_Key and extract the public key */
-    qcbor_err = get_public_key(cert_chain->root_pub_key, &pub_key_buf, &pub_key);
-    if (qcbor_err != QCBOR_SUCCESS) {
-        return -1;
-    }
-
     /* The first item in the chain is the root public key and not a certificate */
     cert_chain->cert_cnt--;
 
-    psa_err = register_pub_key(pub_key, &pub_key_id);
-    if (psa_err != PSA_SUCCESS) {
-        return -3;
+    /* Decode the COSE_Key and register the public key to the crypto backend */
+    pub_key_id.crypto_lib = T_COSE_CRYPTO_LIB_PSA;
+    pub_key_id.k.key_handle = PSA_KEY_ID_NULL;
+    cose_err = t_cose_key_decode(cert_chain->root_pub_key, &pub_key_id);
+    if (cose_err != T_COSE_SUCCESS) {
+        return -2;
     }
+
 
     if (cert_chain->cert_cnt == 0) {
         /* There is no certificate in the chain */
@@ -462,18 +369,16 @@ int verify_certificate_chain(UsefulBufC cert_chain_buf,
             return err;
         }
 
-        /* Decode the COSE_Key and extract the public key */
-        qcbor_err = get_public_key(cert_chain->cert_arr[i].pub_key,
-                                   &pub_key_buf,
-                                   &pub_key);
-        if (qcbor_err != QCBOR_SUCCESS) {
-            return -1;
+        /* Remove the previous key from the crypto backend */
+        err = unregister_pub_key(pub_key_id);
+        if (err != 0) {
+            return -3;
         }
 
-        /* Set the key to verify the next certificate in the chain */
-        psa_err = update_public_key(pub_key, &pub_key_id);
-        if (psa_err != PSA_SUCCESS) {
-            return -3;
+        /* Decode the COSE_Key and register the public key to the crypto backend */
+        cose_err = t_cose_key_decode(cert_chain->cert_arr[i].pub_key, &pub_key_id);
+        if (cose_err != T_COSE_SUCCESS) {
+            return -2;
         }
     }
 

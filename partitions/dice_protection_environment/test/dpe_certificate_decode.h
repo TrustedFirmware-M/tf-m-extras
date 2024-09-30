@@ -9,8 +9,9 @@
 #define __DPE_CERTIFICATE_DECODE_H__
 
 #include <stdbool.h>
-#include "psa/crypto.h"
-#include "qcbor/qcbor_decode.h"
+
+#include "qcbor/UsefulBuf.h"
+#include "t_cose_key.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,14 +60,14 @@ struct certificate_chain {
 };
 
 int verify_certificate(UsefulBufC cert_buf,
-                       psa_key_id_t pub_key_id,
+                       struct t_cose_key pub_key_id,
                        struct certificate *cert);
 
 int verify_certificate_chain(UsefulBufC cert_chain_buf,
                              struct certificate_chain *cert_chain,
-                             psa_key_id_t *last_pub_key_id);
+                             struct t_cose_key *last_pub_key_id);
 
-psa_status_t unregister_pub_key(psa_key_id_t pub_key_id);
+int unregister_pub_key(struct t_cose_key pub_key_id);
 
 int compare_certificate_chains(struct certificate_chain *decoded_chain_1,
                                struct certificate_chain *decoded_chain_2);
