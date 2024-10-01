@@ -62,9 +62,9 @@ recorded sample.
 - Gabor Toth `gabor.toth@arm.com <gabor.toth@arm.com>`_
 - Mark Horvath `mark.horvath@arm.com <mark.horvath@arm.com>`_
 
-####
+****
 ADAC
-####
+****
 
 ADAC partition for authenticated debug and access control for RSE platform.
 
@@ -82,6 +82,17 @@ and manage DICE secrets.
 **Maintainers**
 
 - Maulik Patel `Maulik.Patel@arm.com <Maulik.Patel@arm.com>`_
+
+**********
+SCMI Comms
+**********
+
+A partition that can subscribe to SCMI system power state notifications from
+SCP.
+
+**Maintainers**
+
+- Jamie Fox `jamie.fox@arm.com <jamie.fox@arm.com>`_
 
 ---------------------------
 
