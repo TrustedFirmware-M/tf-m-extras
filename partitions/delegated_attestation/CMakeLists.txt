@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2022, Arm Limited. All rights reserved.
+# Copyright (c) 2022-2024, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -55,6 +55,7 @@ target_link_libraries(tfm_app_rot_partition_delegated_attest
         tfm_attestation_defs
         qcbor
         psa_crypto_config
+        tfm_t_cose_defs
 )
 
 ############################ Secure API ########################################

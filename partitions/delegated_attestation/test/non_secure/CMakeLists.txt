@@ -25,4 +25,5 @@ target_link_libraries(tfm_test_suite_extra_ns
         platform_region_defs
         delegated_attest_api_ns
         psa_crypto_config
+        qcbor
 )
