@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+# Copyright (c) 2022-2024, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -62,20 +62,6 @@ target_sources(tfm_sprt
 
 target_include_directories(tfm_sprt
     PUBLIC
-        ${INTERFACE_INC_DIR}
-)
-
-############################ Non-secure API ####################################
-
-add_library(adac_api_ns INTERFACE)
-
-target_sources(adac_api_ns
-    INTERFACE
-        ${INTERFACE_SRC_DIR}/tfm_adac_api.c
-)
-
-target_include_directories(adac_api_ns
-    INTERFACE
         ${INTERFACE_INC_DIR}
 )
 

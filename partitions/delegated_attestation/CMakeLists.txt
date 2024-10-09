@@ -73,20 +73,6 @@ target_include_directories(tfm_sprt
         ${INTERFACE_INC_DIR}
 )
 
-############################ Non-secure API ####################################
-
-add_library(delegated_attest_api_ns INTERFACE)
-
-target_sources(delegated_attest_api_ns
-    INTERFACE
-        ${INTERFACE_SRC_DIR}/tfm_delegated_attestation_api.c
-)
-
-target_include_directories(delegated_attest_api_ns
-    INTERFACE
-        ${INTERFACE_INC_DIR}
-)
-
 ############################ Partition Defs ####################################
 
 target_link_libraries(tfm_partitions

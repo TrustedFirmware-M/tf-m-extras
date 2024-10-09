@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2022, Arm Limited. All rights reserved.
+# Copyright (c) 2022-2024, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -84,20 +84,6 @@ target_sources(tfm_sprt
 target_include_directories(tfm_sprt
     PUBLIC
         ${INTERFACE_INC_DIR}
-)
-
-############################ Non-secure API ####################################
-
-add_library(measured_boot_api_ns INTERFACE)
-
-target_include_directories(measured_boot_api_ns
-    INTERFACE
-        ${INTERFACE_INC_DIR}
-)
-
-target_sources(measured_boot_api_ns
-    INTERFACE
-        ${INTERFACE_SRC_DIR}/measured_boot_api.c
 )
 
 ############################ Partition Defs ####################################
