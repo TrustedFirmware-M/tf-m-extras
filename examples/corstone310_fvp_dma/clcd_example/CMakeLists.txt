@@ -33,6 +33,7 @@ endif()
 
 include(${TFM_TOOLCHAIN_FILE})
 project("TF-M Example"  LANGUAGES C)
+tfm_toolchain_reload_compiler()
 
 set(FREERTOS_SRC_PATH     "DOWNLOAD"  CACHE PATH  "Path to FreeRTOS kernel (or DOWNLOAD to fetch automatically")
 

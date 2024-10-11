@@ -30,6 +30,7 @@ endif()
 
 include(${TFM_TOOLCHAIN_FILE})
 project("TF-M Example"  LANGUAGES C)
+tfm_toolchain_reload_compiler()
 
 add_executable(tfm_ns)
 
