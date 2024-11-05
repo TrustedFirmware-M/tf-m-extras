@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2022-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -58,32 +58,14 @@ extern "C" {
     0x49, 0x08, 0x93, 0xA8, 0x01, 0x07, 0xEF, 0x01,   \
     0x83, 0x09, 0x22, 0xCD, 0x09, 0x61, 0xB6, 0xFF
 
-#define TEST_VALUE_SIGNER_ID                          \
-    (struct test_buf_t) {                             \
-     (uint8_t[]){SIGNER_ID_TEST_0},                   \
-     SIGNER_ID_MAX_SIZE                               \
-    }
-
 #define SW_VERSION_TEST_0                             \
     0x32, 0x35, 0x35, 0x2E, 0x32, 0x35, 0x35, 0x2E,   \
-    0x36, 0x35, 0x35, 0x33, 0x35, 0x0
+    0x36, 0x35, 0x35, 0x33, 0x35
 
-#define TEST_VALUE_SW_VERSION                         \
-    (struct test_buf_t) {                             \
-     (uint8_t[]){SW_VERSION_TEST_0},                  \
-     (VERSION_MAX_SIZE - 1)                           \
-    }
-
-#define SW_MEASUREMENT_DESC_TEST_0                    \
+#define SW_TYPE_DESC_TEST_0                           \
     0x4D, 0x45, 0x41, 0x53, 0x55, 0x52, 0x45, 0x44,   \
     0x5F, 0x42, 0x4F, 0x4F, 0x54, 0x5F, 0x54, 0x45,   \
-    0x53, 0x54, 0x53, 0x0
-
-#define TEST_VALUE_SW_MEASUREMENT_DESC                \
-    (struct test_buf_t) {                             \
-     (uint8_t[]){SW_MEASUREMENT_DESC_TEST_0},         \
-     (SW_TYPE_MAX_SIZE - 1)                           \
-    }
+    0x53, 0x54, 0x53
 
 #define TEST_VALUE_ZERO                               \
     (struct test_buf_t) {                             \

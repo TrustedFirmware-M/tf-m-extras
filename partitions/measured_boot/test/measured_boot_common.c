@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022-2024, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -11,13 +11,35 @@
 #include "psa/crypto_types.h"
 #include "psa/crypto_values.h"
 
-struct test_measurement_data_t input_test_data[TEST_DATA_COUNT] = {
+const uint8_t sw_type_desc[] = { SW_TYPE_DESC_TEST_0 };
+const uint8_t sw_version[]   = { SW_VERSION_TEST_0 };
+const uint8_t signer_id[]    = { SIGNER_ID_TEST_0 };
+
+#define TEST_VALUE_SW_TYPE_DESC  \
+    (struct test_buf_t) {        \
+        sw_type_desc,            \
+        sizeof(sw_type_desc)     \
+    }
+
+#define TEST_VALUE_SW_VERSION    \
+    (struct test_buf_t) {        \
+        sw_version,              \
+        sizeof(sw_version)       \
+    }
+
+#define TEST_VALUE_SIGNER_ID     \
+    (struct test_buf_t) {        \
+        signer_id,               \
+        sizeof(signer_id)        \
+    }
+
+const struct test_measurement_data_t input_test_data[TEST_DATA_COUNT] = {
     {
     .slot_index = TEST_1001_SLOT_INDEX,
     .measurement_algo = PSA_ALG_SHA_256,
     .signer_id = TEST_VALUE_SIGNER_ID,
     .version = TEST_VALUE_SW_VERSION,
-    .sw_type = TEST_VALUE_SW_MEASUREMENT_DESC,
+    .sw_type = TEST_VALUE_SW_TYPE_DESC,
     .hash_buf = {(uint8_t[]){SW_SHA256_VAL_TEST_0}, SHA256_SIZE},
     },
     {
@@ -25,7 +47,7 @@ struct test_measurement_data_t input_test_data[TEST_DATA_COUNT] = {
     .measurement_algo = PSA_ALG_SHA_256,
     .signer_id = TEST_VALUE_SIGNER_ID,
     .version = TEST_VALUE_SW_VERSION,
-    .sw_type = TEST_VALUE_SW_MEASUREMENT_DESC,
+    .sw_type = TEST_VALUE_SW_TYPE_DESC,
     .hash_buf = {(uint8_t[]){SW_SHA256_VAL_TEST_1}, SHA256_SIZE},
     },
     {
@@ -33,7 +55,7 @@ struct test_measurement_data_t input_test_data[TEST_DATA_COUNT] = {
     .measurement_algo = PSA_ALG_SHA_512,
     .signer_id = TEST_VALUE_SIGNER_ID,
     .version = TEST_VALUE_SW_VERSION,
-    .sw_type = TEST_VALUE_SW_MEASUREMENT_DESC,
+    .sw_type = TEST_VALUE_SW_TYPE_DESC,
     .hash_buf = {(uint8_t[]){SW_SHA512_VAL_TEST_2}, SHA512_SIZE},
     },
     {
@@ -41,19 +63,19 @@ struct test_measurement_data_t input_test_data[TEST_DATA_COUNT] = {
     .measurement_algo = PSA_ALG_SHA_512,
     .signer_id = TEST_VALUE_SIGNER_ID,
     .version = TEST_VALUE_SW_VERSION,
-    .sw_type = TEST_VALUE_SW_MEASUREMENT_DESC,
+    .sw_type = TEST_VALUE_SW_TYPE_DESC,
     .hash_buf = {(uint8_t[]){SW_SHA512_VAL_TEST_3}, SHA512_SIZE},
     },
 };
 
 #if MEASUREMENT_VALUE_SIZE == 32
-struct test_measurement_data_t expected_test_data[TEST_DATA_COUNT] = {
+const struct test_measurement_data_t expected_test_data[TEST_DATA_COUNT] = {
     {
     .slot_index = TEST_1001_SLOT_INDEX,
     .measurement_algo = PSA_ALG_SHA_256,
     .signer_id = TEST_VALUE_SIGNER_ID,
     .version = TEST_VALUE_SW_VERSION,
-    .sw_type = TEST_VALUE_SW_MEASUREMENT_DESC,
+    .sw_type = TEST_VALUE_SW_TYPE_DESC,
     .hash_buf = {(uint8_t[]){EXPECTED_SHA256_MEASUREMENT_VAL_TEST_0},
                  SHA256_SIZE},
     },
@@ -71,7 +93,7 @@ struct test_measurement_data_t expected_test_data[TEST_DATA_COUNT] = {
     .measurement_algo = PSA_ALG_SHA_512,
     .signer_id = TEST_VALUE_SIGNER_ID,
     .version = TEST_VALUE_SW_VERSION,
-    .sw_type = TEST_VALUE_SW_MEASUREMENT_DESC,
+    .sw_type = TEST_VALUE_SW_TYPE_DESC,
     .hash_buf = {(uint8_t[]){EXPECTED_SHA256_MEASUREMENT_VAL_TEST_2},
                  SHA256_SIZE},
     },
@@ -86,13 +108,13 @@ struct test_measurement_data_t expected_test_data[TEST_DATA_COUNT] = {
     },
 };
 #elif MEASUREMENT_VALUE_SIZE == 64
-struct test_measurement_data_t expected_test_data[TEST_DATA_COUNT] = {
+const struct test_measurement_data_t expected_test_data[TEST_DATA_COUNT] = {
     {
     .slot_index = TEST_1001_SLOT_INDEX,
     .measurement_algo = PSA_ALG_SHA_256,
     .signer_id = TEST_VALUE_SIGNER_ID,
     .version = TEST_VALUE_SW_VERSION,
-    .sw_type = TEST_VALUE_SW_MEASUREMENT_DESC,
+    .sw_type = TEST_VALUE_SW_TYPE_DESC,
     .hash_buf = {(uint8_t[]){EXPECTED_SHA512_MEASUREMENT_VAL_TEST_0},
                  SHA512_SIZE},
     },
@@ -110,7 +132,7 @@ struct test_measurement_data_t expected_test_data[TEST_DATA_COUNT] = {
     .measurement_algo = PSA_ALG_SHA_512,
     .signer_id = TEST_VALUE_SIGNER_ID,
     .version = TEST_VALUE_SW_VERSION,
-    .sw_type = TEST_VALUE_SW_MEASUREMENT_DESC,
+    .sw_type = TEST_VALUE_SW_TYPE_DESC,
     .hash_buf = {(uint8_t[]){EXPECTED_SHA512_MEASUREMENT_VAL_TEST_2},
                  SHA512_SIZE},
     },
@@ -184,7 +206,7 @@ void load_default_valid_test_data(struct measurement_t *measurement)
            tmp.len);
     measurement->metadata.version_size = tmp.len;
 
-    tmp = TEST_VALUE_SW_MEASUREMENT_DESC;
+    tmp = TEST_VALUE_SW_TYPE_DESC;
     memcpy((uint8_t *)measurement->metadata.sw_type, (uint8_t *)tmp.ptr,
            tmp.len);
     measurement->metadata.sw_type_size = tmp.len;
