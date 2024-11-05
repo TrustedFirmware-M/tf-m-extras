@@ -86,8 +86,13 @@ psa_status_t tfm_measured_boot_extend_measurement(
         .sw_type = {0},
         .sw_type_size = sw_type_size,
     };
-    if (sw_type_size > 0 && sw_type[sw_type_size - 1] == '\0') {
-        extend_iov.sw_type_size--;
+
+    if (version_size > VERSION_MAX_SIZE) {
+       return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (version_size > 0 && version[version_size - 1] == '\0') {
+        version_size--;
     }
 
     psa_invec in_vec[] = {
@@ -97,13 +102,13 @@ psa_status_t tfm_measured_boot_extend_measurement(
         {.base = version, .len = version_size},
         {.base = measurement_value, .len = measurement_value_size}
     };
-    if (version_size > 0 && version[version_size - 1] == '\0') {
-        in_vec[2].len--;
-    }
 
     if (sw_type != NULL) {
         if (extend_iov.sw_type_size > SW_TYPE_MAX_SIZE) {
             return PSA_ERROR_INVALID_ARGUMENT;
+        }
+        if (sw_type_size > 0 && sw_type[sw_type_size - 1] == '\0') {
+            extend_iov.sw_type_size--;
         }
         memcpy(extend_iov.sw_type, sw_type, extend_iov.sw_type_size);
     }
