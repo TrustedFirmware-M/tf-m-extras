@@ -44,7 +44,8 @@ target_include_directories(tfm_psa_rot_partition_scmi_comms
 target_link_libraries(tfm_psa_rot_partition_scmi_comms
     PRIVATE
         tfm_sprt
-        scmi_hal
+        $<$<BOOL:${TEST_S_SCMI_COMMS}>:scmi_test_hal>
+        $<$<NOT:$<BOOL:${TEST_S_SCMI_COMMS}>>:scmi_hal>
         platform_s
 )
 

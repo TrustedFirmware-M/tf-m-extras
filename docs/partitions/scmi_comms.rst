@@ -67,6 +67,26 @@ comms partition (see
 :doc:`TF-M Secure IRQ integration guide<TF-M:integration_guide/tfm_secure_irq_integration_guide>`
 for more details).
 
+*******
+Testing
+*******
+
+A regression test suite for the Secure processing environment is provided in
+``test/secure/scmi_s_testsuite.c``. To test the partition locally, the tests
+rely on modifying the partition to use the ``TFM_TIMER0_IRQ`` IRQ source to
+trigger its interrupt handler. The tests then use the ``tfm_plat_test.h`` APIs
+to trigger the timer interrupt and cause the partition to handle an SCMI
+message. They also reimplement the HAL so that the shared memory and doorbell
+state are in local memory.
+
+To run the tests, all of the following build options need to be supplied:
+
+- ``TFM_EXTRA_MANIFEST_LIST_FILES``: Change to use
+  ``<tf-m-extras-repo>/partitions/scmi/test/secure/scmi_comms_manifest_list.yaml``
+  instead of the standard manifest.
+- ``EXTRA_S_TEST_SUITE_PATH``: ``<tfm_extras_dir>/partitions/scmi/test/secure``
+- ``TEST_S_SCMI_COMMS``: Set to ``ON`` to enable the tests and test HAL.
+
 **********
 References
 **********

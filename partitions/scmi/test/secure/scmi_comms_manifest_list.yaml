@@ -1,0 +1,28 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
+#
+#-------------------------------------------------------------------------------
+
+{
+  "description": "SCMI Comms partition manifest",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "description": "SCMI Comms Partition",
+      "manifest": "scmi_comms.yaml",
+      "output_path": "secure_fw/partitions/scmi",
+      "conditional": "TFM_PARTITION_SCMI_COMMS",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 279,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_scmi_comms.*"
+        ]
+      }
+    }
+  ]
+}

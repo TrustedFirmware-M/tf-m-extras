@@ -1,0 +1,22 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
+#
+#-------------------------------------------------------------------------------
+
+{
+  "psa_framework_version": 1.1,
+  "name": "SCMI_COMMS_PARTITION",
+  "type": "PSA-ROT",
+  "priority": "NORMAL",
+  "model": "IPC",
+  "entry_point": "scmi_comms_main",
+  "stack_size": "0x400",
+  "irqs": [
+    {
+      "source": "TFM_TIMER0_IRQ",
+      "name": "SCP_DOORBELL",
+      "handling": "SLIH",
+    }
+  ],
+}
