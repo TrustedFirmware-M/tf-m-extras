@@ -12,16 +12,16 @@ endif()
 cmake_minimum_required(VERSION 3.15)
 cmake_policy(SET CMP0079 NEW)
 
-add_library(tfm_app_rot_partition_adac STATIC)
+add_library(tfm_psa_rot_partition_adac STATIC)
 
-target_sources(tfm_app_rot_partition_adac
+target_sources(tfm_psa_rot_partition_adac
     PRIVATE
         adac.c
         adac_req_mngr.c
 )
 
 # Add the generated source files
-target_sources(tfm_app_rot_partition_adac
+target_sources(tfm_psa_rot_partition_adac
     # The intermedia file defines the partition stack.
     PRIVATE
         ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/adac/auto_generated/intermedia_tfm_adac.c
@@ -33,7 +33,7 @@ target_sources(tfm_partitions
 )
 
 # Set include directories
-target_include_directories(tfm_app_rot_partition_adac
+target_include_directories(tfm_psa_rot_partition_adac
     PUBLIC
         ${CMAKE_BINARY_DIR}/generated/secure_fw/partitions/adac
     PRIVATE
@@ -41,9 +41,9 @@ target_include_directories(tfm_app_rot_partition_adac
 )
 
 # Add dependency to the manifest_tool
-add_dependencies(tfm_app_rot_partition_adac manifest_tool)
+add_dependencies(tfm_psa_rot_partition_adac manifest_tool)
 
-target_link_libraries(tfm_app_rot_partition_adac
+target_link_libraries(tfm_psa_rot_partition_adac
     PRIVATE
         platform_s
         tfm_sprt
@@ -69,7 +69,7 @@ target_include_directories(tfm_sprt
 
 target_link_libraries(tfm_partitions
     INTERFACE
-        tfm_app_rot_partition_adac
+        tfm_psa_rot_partition_adac
 )
 
 target_compile_definitions(tfm_config
