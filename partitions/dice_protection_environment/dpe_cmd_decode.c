@@ -215,7 +215,6 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     uint8_t *new_certificate_buf = ALLOC_TEMP_BUF;
     uint8_t exported_cdi_buf[DICE_MAX_ENCODED_CDI_SIZE];
     uint32_t cert_id;
-    uint64_t cert_id64;
     size_t new_certificate_actual_size = 0;
     size_t exported_cdi_actual_size = 0;
     QCBORItem item;
@@ -253,7 +252,7 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     memcpy(&context_handle, out.ptr, out.len);
     COUNT_ARGS(num_of_valid_arguments);
 
-    QCBORDecode_GetUInt64InMapN(decode_ctx, DPE_DERIVE_CONTEXT_CERT_ID, &cert_id64);
+    QCBORDecode_GetUInt64InMapN(decode_ctx, DPE_DERIVE_CONTEXT_CERT_ID, &cert_id);
     /* Check if cert_id was encoded in the received command buffer */
     CHECK_AND_COUNT_OPTIONAL_ARGUMENT(decode_ctx);
 
@@ -313,13 +312,6 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
         /* Extra unsupported arguments encoded in command map */
         return DPE_INVALID_ARGUMENT;
     }
-
-    /* The QCBOR function uses a 64-bit pointer, but the context info is on 32 bit */
-    if (cert_id64 > UINT32_MAX) {
-        return DPE_INVALID_ARGUMENT;
-    }
-
-    cert_id = (uint32_t)cert_id64;
 
     dpe_err = derive_context_request(context_handle, cert_id, retain_parent_context,
                                      allow_new_context_to_derive, create_certificate,
