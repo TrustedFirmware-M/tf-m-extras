@@ -146,7 +146,7 @@ pair from the accumulated context information for that certificiate and certifie
 the public key.
 
 - If the input certificate context (certificate linked to component context) is
-  already finalised, then it creates a new leaf certficiate with no measurements.
+  already finalised, then it creates a new leaf certificate with no measurements.
 
 - If the input certificate context is not finalised, then it creates a leaf certificate
   with all the measurements accumulated for that certificate context.

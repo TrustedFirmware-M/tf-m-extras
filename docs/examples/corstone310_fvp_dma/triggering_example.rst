@@ -4,7 +4,7 @@ DMA350 Triggering interface example
 
 Example usage of triggering flow control with DMA350. The DMA350 is configured to control
 the data exchange with the UARTs. The CPU can enter into WFI() and the DMA will signal, when
-the transactions are done. The CPU only wakes up to proccess the received data, then goes back
+the transactions are done. The CPU only wakes up to process the received data, then goes back
 to sleep.
 
 ***********

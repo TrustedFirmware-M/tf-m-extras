@@ -29,7 +29,7 @@ External Trusted Secure Storage
 
 ETSS partition for providing external trusted secure storage services
 to protect assets stored in external secure Flash from a variety of
-security attacks. Avaialble from **TF-M v1.4.0**
+security attacks. Available from **TF-M v1.4.0**
 
 **Maintainers**
 

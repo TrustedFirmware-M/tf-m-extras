@@ -22,7 +22,7 @@ RPMC is a memory device which provides non-volatile monotonic counters for
 replay protection.
 
 Authentication Flash mainly provides authentication mechanism to enhance the
-security of data transmition.
+security of data transmission.
 
 Compared to previous two security Flash, the full featured secure Flash performs
 authentication, encryption along with a full range of additional security
@@ -142,13 +142,13 @@ contexts should be declared.
 
 The secure Flash framework module aims to generalize the application interface
 of secure Flash driver, and cover different vendors' security memory products.
-It can be intergated with different software platforms and OSes, and consists of
+It can be integrated with different software platforms and OSes, and consists of
 four parts: secure Flash API layer, secure Flash common layer, vendor specific
 layer and crypto service interface.
 
 - Secure Flash API layer: This layer mainly manages application's access permission based on
   application identification and pre-provisioned information. The implementation of this layer
-  varies accross software platforms and OSes. Here integrated with TF-M, this layer manages access
+  varies across software platforms and OSes. Here integrated with TF-M, this layer manages access
   permissions based on client id, and derives parameters passed to secure Flash common layer.
 
 - Secure Flash common layer: This layer abstracts secure Flash operations, and calls binding vendor

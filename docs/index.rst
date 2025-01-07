@@ -76,7 +76,7 @@ for any question.
    If your contribution consists of pre-bulit binaries, please upload your
    binary components to
    `Trusted Firmware binary repository (tf-binaries) <https://git.trustedfirmware.org/tf-binaries.git/about/>`_.
-   This respository accepts source files only.
+   This repository accepts source files only.
 
 Additional requirements
 =======================
