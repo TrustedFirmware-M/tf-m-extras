@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2025, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -12,9 +12,9 @@
 #include "dpe_crypto_interface.h"
 #include "dpe_plat.h"
 #include "qcbor/qcbor_encode.h"
-#include "t_cose_common.h"
-#include "t_cose_key.h"
-#include "t_cose_sign1_sign.h"
+#include "t_cose/t_cose_common.h"
+#include "t_cose/t_cose_key.h"
+#include "t_cose/t_cose_sign1_sign.h"
 
 #define ID_HEX_SIZE (2 * DICE_ID_SIZE)      /* Size of CDI encoded to ascii hex */
 #define LABEL_HEX_SIZE (2 * DPE_EXTERNAL_LABEL_MAX_SIZE)
@@ -64,8 +64,7 @@ static dpe_error_t certificate_encode_start(QCBOREncodeContext *cbor_enc_ctx,
     /* DPE Certificate is untagged COSE_Sign1 message */
     t_cose_sign1_sign_init(signer_ctx, T_COSE_OPT_OMIT_CBOR_TAG, DPE_T_COSE_ALG);
 
-    attest_key.crypto_lib = T_COSE_CRYPTO_LIB_PSA;
-    attest_key.k.key_handle = private_key;
+    attest_key.key.handle = private_key;
 
     t_cose_sign1_set_signing_key(signer_ctx, attest_key, attest_key_id);
 
@@ -166,8 +165,7 @@ static dpe_error_t encode_public_key(QCBOREncodeContext *cbor_enc_ctx,
     enum t_cose_err_t cose_res;
 
     /* Export the public key and encodes it to be a COSE_Key object */
-    attest_key.crypto_lib = T_COSE_CRYPTO_LIB_PSA;
-    attest_key.k.key_handle = attest_key_id;
+    attest_key.key.handle = attest_key_id;
     cose_res = t_cose_key_encode(attest_key,
                                  cose_key_buf,
                                  &cose_key);

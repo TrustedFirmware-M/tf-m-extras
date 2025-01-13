@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2024-2025, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -11,7 +11,7 @@
 #include <stdbool.h>
 
 #include "qcbor/UsefulBuf.h"
-#include "t_cose_key.h"
+#include "t_cose/t_cose_key.h"
 
 #ifdef __cplusplus
 extern "C" {

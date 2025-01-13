@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2024-2025, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -14,9 +14,9 @@
 #include "psa/error.h"
 #include "qcbor/qcbor_decode.h"
 #include "qcbor/qcbor_spiffy_decode.h"
-#include "t_cose_common.h"
-#include "t_cose_key.h"
-#include "t_cose_sign1_verify.h"
+#include "t_cose/t_cose_common.h"
+#include "t_cose/t_cose_key.h"
+#include "t_cose/t_cose_sign1_verify.h"
 #include "test_log.h"
 
 /* Uncomment this define to print the certificate chain */
@@ -278,7 +278,7 @@ int verify_certificate(UsefulBufC cert_buf,
     /* If the corresponding public key is not known then only verify the
      * certificate's structure.
      */
-    if (pub_key_id.k.key_handle != PSA_KEY_ID_NULL ) {
+    if (pub_key_id.key.handle != PSA_KEY_ID_NULL ) {
         cose_err = verify_signature(cert_buf, pub_key_id);
         if (cose_err != T_COSE_SUCCESS) {
             return -2;
@@ -293,7 +293,7 @@ inline int unregister_pub_key(struct t_cose_key pub_key_id)
 {
     psa_status_t psa_err;
 
-    psa_err = psa_destroy_key(pub_key_id.k.key_handle);
+    psa_err = psa_destroy_key(pub_key_id.key.handle);
     if (psa_err != PSA_SUCCESS) {
         return -3;
     }
@@ -345,8 +345,7 @@ int verify_certificate_chain(UsefulBufC cert_chain_buf,
     cert_chain->cert_cnt--;
 
     /* Decode the COSE_Key and register the public key to the crypto backend */
-    pub_key_id.crypto_lib = T_COSE_CRYPTO_LIB_PSA;
-    pub_key_id.k.key_handle = PSA_KEY_ID_NULL;
+    pub_key_id.key.handle = PSA_KEY_ID_NULL;
     cose_err = t_cose_key_decode(cert_chain->root_pub_key, &pub_key_id);
     if (cose_err != T_COSE_SUCCESS) {
         return -2;

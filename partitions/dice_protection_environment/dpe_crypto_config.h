@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2025, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -9,7 +9,7 @@
 #define __DPE_CRYPTO_CONFIG_H__
 
 #include "psa/crypto.h"
-#include "t_cose_common.h"
+#include "t_cose/t_cose_common.h"
 
 #ifdef __cplusplus
 extern "C" {

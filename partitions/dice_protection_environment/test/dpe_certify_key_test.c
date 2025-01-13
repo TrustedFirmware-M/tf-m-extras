@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2025, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -12,7 +12,7 @@
 #include "dpe_test_common.h"
 #include "dpe_test_data.h"
 #include "dpe_test_private.h"
-#include "t_cose_key.h"
+#include "t_cose/t_cose_key.h"
 
 extern const struct dpe_test_data_t test_data[];
 extern int retained_rot_ctx_handle;

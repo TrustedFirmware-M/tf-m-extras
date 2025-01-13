@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2022-2025, Arm Limited. All rights reserved.
  * Copyright (c) 2018-2023, Laurence Lundblade.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -14,10 +14,10 @@
 #include "psa/crypto.h"
 #include "psa/initial_attestation.h"
 #include "qcbor/qcbor.h"
-#include "q_useful_buf.h"
 #include "region_defs.h"
-#include "t_cose_key.h"
-#include "t_cose_standard_constants.h"
+#include "t_cose/q_useful_buf.h"
+#include "t_cose/t_cose_key.h"
+#include "t_cose/t_cose_standard_constants.h"
 #include "tfm_attest_iat_defs.h"
 #include "tfm_crypto_defs.h"
 
@@ -76,8 +76,7 @@ verify_dak_pub_hash(const uint8_t *dak_pub_hash, size_t dak_pub_hash_len)
     }
 
     /* Turns SEC1 encoding to a CBOR serialized COSE_Key object */
-    dak_key.crypto_lib = T_COSE_CRYPTO_LIB_PSA;
-    dak_key.k.key_handle = dak_key_id;
+    dak_key.key.handle = dak_key_id;
     cose_res = t_cose_key_encode(dak_key,
                                  cose_key_buf,
                                  &cose_key);
