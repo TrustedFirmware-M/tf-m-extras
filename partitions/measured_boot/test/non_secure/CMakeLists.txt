@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2022-2024, Arm Limited. All rights reserved.
+# Copyright (c) 2022-2025, Arm Limited. All rights reserved.
 # Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
 # or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
 #
@@ -9,9 +9,10 @@
 
 cmake_policy(SET CMP0079 NEW)
 
-if(${MEASURED_BOOT_HASH_ALG} STREQUAL "PSA_ALG_SHA_512")
+string(REPLACE "SHA" "PSA_ALG_SHA_" PSA_MEASUREMENT_HASH_ALG ${MEASURED_BOOT_HASH_ALG})
+if(${PSA_MEASUREMENT_HASH_ALG} STREQUAL "PSA_ALG_SHA_512")
     set(MEASUREMENT_VALUE_SIZE 64)
-elseif(${MEASURED_BOOT_HASH_ALG} STREQUAL "PSA_ALG_SHA_256")
+elseif(${PSA_MEASUREMENT_HASH_ALG} STREQUAL "PSA_ALG_SHA_256")
     set(MEASUREMENT_VALUE_SIZE 32)
 else()
     message(FATAL_ERROR "Unknown hash algorithm")
@@ -32,7 +33,7 @@ target_include_directories(tfm_test_suite_extra_ns
 
 target_compile_definitions(tfm_test_suite_extra_ns
     PRIVATE
-        MEASURED_BOOT_HASH_ALG=${MEASURED_BOOT_HASH_ALG}
+        MEASURED_BOOT_HASH_ALG=${PSA_MEASUREMENT_HASH_ALG}
         MEASUREMENT_VALUE_SIZE=${MEASUREMENT_VALUE_SIZE}
 )
 
