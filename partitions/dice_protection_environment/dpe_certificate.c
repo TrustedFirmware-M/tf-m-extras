@@ -29,7 +29,7 @@ static void convert_to_ascii_hex(const uint8_t *in,
     size_t out_pos = 0;
 
     for (in_pos = 0; in_pos < in_size && out_pos < out_size; in_pos++) {
-        out[out_pos++] = hex_table[(in[in_pos] & 0xF0 >> 4)];
+        out[out_pos++] = hex_table[(in[in_pos] & 0xF0) >> 4];
         out[out_pos++] = hex_table[in[in_pos] & 0x0F];
     }
 }
