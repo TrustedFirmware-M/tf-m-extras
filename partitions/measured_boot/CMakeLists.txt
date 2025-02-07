@@ -52,23 +52,21 @@ target_link_libraries(tfm_psa_rot_partition_measured_boot
         psa_crypto_config
 )
 
-string(REPLACE "SHA" "PSA_ALG_SHA_" PSA_MEASUREMENT_HASH_ALG ${MEASURED_BOOT_HASH_ALG})
-
-if(${PSA_MEASUREMENT_HASH_ALG} STREQUAL "PSA_ALG_SHA_512")
+if(${MEASURED_BOOT_HASH_ALG} STREQUAL "PSA_ALG_SHA_512")
     # In accordance with IANA hash algorithm registry:
     # https://www.iana.org/assignments/hash-function-text-names/hash-function-text-names.xml
     set(MEASUREMENT_HASH_ALGO_NAME "sha-512")
     set(MEASUREMENT_VALUE_SIZE            64)
-elseif(${PSA_MEASUREMENT_HASH_ALG} STREQUAL "PSA_ALG_SHA_256")
+elseif(${MEASURED_BOOT_HASH_ALG} STREQUAL "PSA_ALG_SHA_256")
     set(MEASUREMENT_HASH_ALGO_NAME "sha-256")
     set(MEASUREMENT_VALUE_SIZE            32)
 else()
-    message(FATAL_ERROR "Unknown hash algorithm ${PSA_MEASUREMENT_HASH_ALG}")
+    message(FATAL_ERROR "Unknown hash algorithm")
 endif()
 
 target_compile_definitions(tfm_psa_rot_partition_measured_boot
     PRIVATE
-        TFM_MEASURED_BOOT_HASH_ALG=${PSA_MEASUREMENT_HASH_ALG}
+        TFM_MEASURED_BOOT_HASH_ALG=${MEASURED_BOOT_HASH_ALG}
         MEASUREMENT_VALUE_SIZE=${MEASUREMENT_VALUE_SIZE}
         $<$<BOOL:${CONFIG_TFM_BOOT_STORE_MEASUREMENTS}>:CONFIG_TFM_BOOT_STORE_MEASUREMENTS>
 )
