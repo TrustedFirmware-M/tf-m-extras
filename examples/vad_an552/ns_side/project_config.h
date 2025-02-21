@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -55,7 +55,7 @@
 
 #define ATTEST_STACK_SIZE                      0x700
 
-#define ATTEST_TOKEN_PROFILE_PSA_IOT_1         1
+#define ATTEST_TOKEN_PROFILE_PSA_2_0_0         1
 
 
 #define ITS_CREATE_FLASH_LAYOUT                1
