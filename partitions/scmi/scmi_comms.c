@@ -9,7 +9,7 @@
 #include "scmi_comms.h"
 #include "scmi_hal.h"
 #include "scmi_protocol.h"
-#include "tfm_sp_log.h"
+#include "tfm_log_unpriv.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -375,9 +375,9 @@ void scmi_comms_main(void)
      */
     err = scmi_comms_notification_subscribe(&agent_buf);
     if (err == SCMI_COMMS_SUCCESS) {
-        LOG_INFFMT("SCMI Comms subscribed to power state notifications\r\n");
+        INFO_UNPRIV_RAW("SCMI Comms subscribed to power state notifications\n");
     } else {
-        LOG_ERRFMT("SCMI Comms failed to subscribe to power state notifications\r\n");
+        ERROR_UNPRIV_RAW("SCMI Comms failed to subscribe to power state notifications\n");
     }
 
     while (1) {

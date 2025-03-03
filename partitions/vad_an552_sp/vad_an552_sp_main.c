@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -12,7 +12,7 @@
 #include "vad_an552_defs.h"
 #include "vad_an552.h"
 #include "timeout.h"
-#include "tfm_sp_log.h"
+#include "tfm_log_unpriv.h"
 #include "vad_an552_device_definition.h"
 #include "audio_codec_mps3.h"
 #include "cmsis.h"
@@ -203,7 +203,7 @@ void vad_main(void)
        IRQ is triggered */
     audio_i2s_mps3_set_rx_buff_water_lvl(&MPS3_I2S_DEV_S, 1);
 
-    LOG_DBGFMT("[VAD] Secure partition initialized\r\n");
+    VERBOSE_UNPRIV_RAW("[VAD] Secure partition initialized\n");
 
     while (1) {
         signals = psa_wait(PSA_WAIT_ANY, PSA_BLOCK);

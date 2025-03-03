@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -7,7 +7,7 @@
 
 #include "measured_boot_utils.h"
 #include "measured_boot_api.h"
-#include "tfm_sp_log.h"
+#include "tfm_log_unpriv.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -17,18 +17,18 @@ static void print_byte_array(const uint8_t *array, size_t len)
     size_t i;
 
     if (array == NULL || len == 0) {
-        LOG_DBGFMT("\r\n");
+        VERBOSE_UNPRIV_RAW("\n");
     } else {
         for (i = 0; i < len; ++i) {
             if (array[i] < 0x10) {
-               LOG_DBGFMT(" 0%x", array[i]);
+               VERBOSE_UNPRIV_RAW(" 0%x", array[i]);
             } else {
-                LOG_DBGFMT(" %x", array[i]);
+                VERBOSE_UNPRIV_RAW(" %x", array[i]);
             }
             if ((i & 0xFu) == 0xFu) {
-                LOG_DBGFMT("\r\n");
+                VERBOSE_UNPRIV_RAW("\n");
                 if (i < (len - 1)) {
-                    LOG_DBGFMT("               :");
+                    VERBOSE_UNPRIV_RAW("               :");
                 }
             }
         }
@@ -58,16 +58,16 @@ void log_extend_measurement(uint8_t index,
     uint8_t string_buf[((SW_TYPE_MAX_SIZE > VERSION_MAX_SIZE) ?
                          SW_TYPE_MAX_SIZE : VERSION_MAX_SIZE) + 1];
 
-    LOG_DBGFMT("Measured Boot : store and extend measurement:\r\n");
-    LOG_DBGFMT(" - slot        : %u\r\n", index);
-    LOG_DBGFMT(" - signer_id   :");
+    VERBOSE_UNPRIV_RAW("Measured Boot : store and extend measurement:\n");
+    VERBOSE_UNPRIV_RAW(" - slot        : %u\n", index);
+    VERBOSE_UNPRIV_RAW(" - signer_id   :");
     print_byte_array(signer_id, signer_id_size);
     add_null_terminator(string_buf, version, version_size);
-    LOG_DBGFMT(" - version     : %s\r\n", string_buf);
-    LOG_DBGFMT(" - algorithm   : %x\r\n", measurement_algo);
+    VERBOSE_UNPRIV_RAW(" - version     : %s\n", string_buf);
+    VERBOSE_UNPRIV_RAW(" - algorithm   : %x\n", measurement_algo);
     add_null_terminator(string_buf, sw_type, sw_type_size);
-    LOG_DBGFMT(" - sw_type     : %s\r\n", string_buf);
-    LOG_DBGFMT(" - measurement :");
+    VERBOSE_UNPRIV_RAW(" - sw_type     : %s\n", string_buf);
+    VERBOSE_UNPRIV_RAW(" - measurement :");
     print_byte_array(measurement_value, measurement_value_size);
-    LOG_DBGFMT(" - locking     : %s\r\n", lock_measurement ? "true" : "false");
+    VERBOSE_UNPRIV_RAW(" - locking     : %s\n", lock_measurement ? "true" : "false");
 }

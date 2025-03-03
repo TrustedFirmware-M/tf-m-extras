@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -11,7 +11,7 @@
 
 #include "psa/service.h"
 #include "psa_manifest/tfm_dma350_example_partition.h"
-#include "tfm_sp_log.h"
+#include "tfm_log_unpriv.h"
 
 #include "dma350_privileged_config.h"
 #include "dma350_lib.h"
@@ -30,12 +30,12 @@ static bool test_wrong_channel(void)
     enum dma350_lib_error_t status;
     union dma350_ch_status_t ch_status;
 
-    LOG_INFFMT("[DMA-350 Partition] Wrong channel test\r\n");
+    INFO_UNPRIV_RAW("[DMA-350 Partition] Wrong channel test\n");
 
     /* Channel 22 is not a valid channel number */
     status = dma350_ch_get_status_unpriv(22, &ch_status);
     if (status != DMA350_LIB_ERR_CHANNEL_INVALID) {
-        LOG_INFFMT("[DMA-350 Partition] Unexpected dma350_ch_get_status_unpriv return value (%d), expected: %d\r\n",
+        INFO_UNPRIV_RAW("[DMA-350 Partition] Unexpected dma350_ch_get_status_unpriv return value (%d), expected: %d\n",
                    status, DMA350_LIB_ERR_CHANNEL_INVALID);
         return true;
     }
@@ -43,12 +43,12 @@ static bool test_wrong_channel(void)
     /* Channel 1 is not accessable by unprivileged */
     status = dma350_ch_get_status_unpriv(1, &ch_status);
     if (status != DMA350_LIB_ERR_RANGE_NOT_ACCESSIBLE) {
-        LOG_INFFMT("[DMA-350 Partition] Unexpected dma350_ch_get_status_unpriv return value (%d), expected: %d\r\n",
+        INFO_UNPRIV_RAW("[DMA-350 Partition] Unexpected dma350_ch_get_status_unpriv return value (%d), expected: %d\n",
                    status, DMA350_LIB_ERR_RANGE_NOT_ACCESSIBLE);
         return true;
     }
 
-    LOG_INFFMT("[DMA-350 Partition] Test success!\r\n\r\n");
+    INFO_UNPRIV_RAW("[DMA-350 Partition] Test success!\r\n\n");
     return false;
 }
 
@@ -56,7 +56,7 @@ static bool test_memcopy_blocking(void)
 {
     enum dma350_lib_error_t status;
 
-    LOG_INFFMT("[DMA-350 Partition] Blocking memcopy test\r\n");
+    INFO_UNPRIV_RAW("[DMA-350 Partition] Blocking memcopy test\n");
 
     /* Blocking unprivileged usage of the DMA in our reference solution is
      * prohibited, as the request is processed within an SVC handler context */
@@ -66,12 +66,12 @@ static bool test_memcopy_blocking(void)
                                      DMA350_LIB_EXEC_BLOCKING);
 
     if (status != DMA350_LIB_ERR_CFG_ERR) {
-        LOG_INFFMT("[DMA-350 Partition] Unexpected dma350_memcpy_unpriv return value (%d), expected: %d\r\n",
+        INFO_UNPRIV_RAW("[DMA-350 Partition] Unexpected dma350_memcpy_unpriv return value (%d), expected: %d\n",
                    status, DMA350_LIB_ERR_CFG_ERR);
         return true;
     }
 
-    LOG_INFFMT("[DMA-350 Partition] Test success!\r\n\r\n");
+    INFO_UNPRIV_RAW("[DMA-350 Partition] Test success!\r\n\n");
     return false;
 }
 
@@ -79,7 +79,7 @@ static bool test_memcopy_non_blocking_priv_address(void)
 {
     enum dma350_lib_error_t status;
 
-    LOG_INFFMT("[DMA-350 Partition] Non-blocking memcopy with privileged address test\r\n");
+    INFO_UNPRIV_RAW("[DMA-350 Partition] Non-blocking memcopy with privileged address test\n");
 
     /* Access for privileged memory should be rejected. */
     status = dma350_memcpy_unpriv(0, (void *)&REGION_NAME(Image$$, ER_TFM_DATA, $$Base),
@@ -88,12 +88,12 @@ static bool test_memcopy_non_blocking_priv_address(void)
                                      DMA350_LIB_EXEC_IRQ);
 
     if (status != DMA350_LIB_ERR_RANGE_NOT_ACCESSIBLE) {
-        LOG_INFFMT("[DMA-350 Partition] Unexpected dma350_memcpy_unpriv return value (%d), expected: %d\r\n",
+        INFO_UNPRIV_RAW("[DMA-350 Partition] Unexpected dma350_memcpy_unpriv return value (%d), expected: %d\n",
                    status, DMA350_LIB_ERR_RANGE_NOT_ACCESSIBLE);
         return true;
     }
 
-    LOG_INFFMT("[DMA-350 Partition] Test success!\r\n\r\n");
+    INFO_UNPRIV_RAW("[DMA-350 Partition] Test success!\r\n\n");
     return false;
 }
 
@@ -102,7 +102,7 @@ static bool test_memcopy_non_blocking(void)
     enum dma350_lib_error_t status;
     union dma350_ch_status_t ch_status;
 
-    LOG_INFFMT("[DMA-350 Partition] Non-blocking memcopy test\r\n");
+    INFO_UNPRIV_RAW("[DMA-350 Partition] Non-blocking memcopy test\n");
 
     /* Clear destination */
     memset(DMA350_TEST_MEMORY_TO, '.', DMA350_TEST_COPY_COUNT);
@@ -115,25 +115,25 @@ static bool test_memcopy_non_blocking(void)
                                      DMA350_LIB_EXEC_IRQ);
 
     if (status != DMA350_LIB_ERR_NONE) {
-        LOG_INFFMT("[DMA-350 Partition] Memcpy failed (%d)\r\n", status);
+        INFO_UNPRIV_RAW("[DMA-350 Partition] Memcpy failed (%d)\n", status);
         psa_irq_disable(TFM_DMA0_CH0_IRQ_SIGNAL);
         return true;
     } else {
-        LOG_INFFMT("[DMA-350 Partition] Waiting for DMA0 CH0 interrupt..\r\n");
+        INFO_UNPRIV_RAW("[DMA-350 Partition] Waiting for DMA0 CH0 interrupt..\n");
         if (psa_wait(TFM_DMA0_CH0_IRQ_SIGNAL, PSA_BLOCK) != TFM_DMA0_CH0_IRQ_SIGNAL) {
             psa_panic();
         }
-        LOG_INFFMT("[DMA-350 Partition] DMA0 CH0 interrupt received.\r\n");
+        INFO_UNPRIV_RAW("[DMA-350 Partition] DMA0 CH0 interrupt received.\n");
 
         /* Check if the operation is completed without error */
         status = dma350_ch_get_status_unpriv(0, &ch_status);
         if (status != DMA350_LIB_ERR_NONE) {
-            LOG_INFFMT("[DMA-350 Partition] Couldn't get status (%d)\r\n",
+            INFO_UNPRIV_RAW("[DMA-350 Partition] Couldn't get status (%d)\n",
                        status);
             return true;
         }
         if (!ch_status.b.STAT_DONE || ch_status.b.STAT_ERR) {
-            LOG_INFFMT("[DMA-350 Partition] Channel not finished properly. Status: 0x%x\r\n",
+            INFO_UNPRIV_RAW("[DMA-350 Partition] Channel not finished properly. Status: 0x%x\n",
                        ch_status.w);
             return true;
         }
@@ -141,7 +141,7 @@ static bool test_memcopy_non_blocking(void)
         /* Clear channel irq */
         status = dma350_clear_done_irq_unpriv(0);
         if (status != DMA350_LIB_ERR_NONE) {
-            LOG_INFFMT("[DMA-350 Partition] Couldn't clear irq (%d)\r\n",
+            INFO_UNPRIV_RAW("[DMA-350 Partition] Couldn't clear irq (%d)\n",
                        status);
             return true;
         }
@@ -152,12 +152,12 @@ static bool test_memcopy_non_blocking(void)
         /* Verify results */
         if (strncmp(DMA350_TEST_MEMORY_FROM, DMA350_TEST_MEMORY_TO,
                         DMA350_TEST_COPY_COUNT)) {
-            LOG_INFFMT("[DMA-350 Partition] Copied data mismatch\r\n");
+            INFO_UNPRIV_RAW("[DMA-350 Partition] Copied data mismatch\n");
             return true;
         }
     }
 
-    LOG_INFFMT("[DMA-350 Partition] Test success!\r\n\r\n");
+    INFO_UNPRIV_RAW("[DMA-350 Partition] Test success!\r\n\n");
     return false;
 }
 
@@ -170,24 +170,24 @@ void tfm_dma350_example_partition_main(void)
     bool failed = false;
 
     if(test_wrong_channel()) {
-        LOG_ERRFMT("[DMA-350 Partition] Wrong channel test failed\r\n");
+        ERROR_UNPRIV_RAW("[DMA-350 Partition] Wrong channel test failed\n");
         failed = true;
     }
     if(test_memcopy_blocking()) {
-        LOG_ERRFMT("[DMA-350 Partition] Blocking memcopy test failed\r\n");
+        ERROR_UNPRIV_RAW("[DMA-350 Partition] Blocking memcopy test failed\n");
         failed = true;
     }
     if(test_memcopy_non_blocking_priv_address()) {
-        LOG_ERRFMT("[DMA-350 Partition] Non-blocking memcopy with privileged address test failed\r\n");
+        ERROR_UNPRIV_RAW("[DMA-350 Partition] Non-blocking memcopy with privileged address test failed\n");
         failed = true;
     }
     if(test_memcopy_non_blocking()) {
-        LOG_ERRFMT("[DMA-350 Partition] Non-blocking memcopy test failed\r\n");
+        ERROR_UNPRIV_RAW("[DMA-350 Partition] Non-blocking memcopy test failed\n");
         failed = true;
     }
 
     if(!failed) {
-        LOG_INFFMT("[DMA-350 Partition] All tests passed\r\n\r\n");
+        INFO_UNPRIV_RAW("[DMA-350 Partition] All tests passed\r\n\n");
     }
 
     /*

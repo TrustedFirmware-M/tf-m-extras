@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -24,7 +24,7 @@
 #include "dpe_test_data.h"
 #include "dpe_test_private.h"
 
-#include "tfm_sp_log.h"
+#include "tfm_log_unpriv.h"
 
 #define CLIENT_ID_NS -1
 
@@ -121,17 +121,17 @@ static void print_buf(const unsigned char *buf, size_t size)
     if (buf != NULL) {
         for (i = 0; i < size; ++i) {
             if ((i & 0xF) == 0) {
-                LOG_DBGFMT("\r\n");
+                VERBOSE_UNPRIV_RAW("\n");
             }
             if (buf[i] < 0x10) {
-                LOG_DBGFMT(" 0%x", buf[i]);
+                VERBOSE_UNPRIV_RAW(" 0%x", buf[i]);
             } else {
-                LOG_DBGFMT(" %x", buf[i]);
+                VERBOSE_UNPRIV_RAW(" %x", buf[i]);
             }
         }
     }
-    LOG_DBGFMT("\r\n");
-    LOG_DBGFMT("\r\n");
+    VERBOSE_UNPRIV_RAW("\n");
+    VERBOSE_UNPRIV_RAW("\n");
 }
 
 static void build_internal_state(int *context_handle, unsigned char test_data_id)
@@ -139,7 +139,7 @@ static void build_internal_state(int *context_handle, unsigned char test_data_id
     struct test_result_t test_ret = {0};
     int err;
 
-    LOG_DBGFMT("\nDeriving RoT context:\n");
+    VERBOSE_UNPRIV_RAW("\nDeriving RoT context:\n");
     derive_rot_certificate_context(&test_ret);
     if (test_ret.val != TEST_PASSED) {
         printf("ERROR: RoT context derivation failed\n");
@@ -147,16 +147,16 @@ static void build_internal_state(int *context_handle, unsigned char test_data_id
     }
 
     if (test_data_id < ARRAY_SIZE(test_data)) {
-        LOG_DBGFMT("\nBuilding internal state: test_data[%d]\n", test_data_id);
+        VERBOSE_UNPRIV_RAW("\nBuilding internal state: test_data[%d]\n", test_data_id);
         err = build_certificate_chain(&test_data[test_data_id]);
         if (err) {
             printf("\nERROR: Building certificate chain based on test data failed: %d\n", err);
             exit(1);
         }
-        LOG_DBGFMT("Building internal state: Done\n\n");
+        VERBOSE_UNPRIV_RAW("Building internal state: Done\n\n");
         *context_handle = get_last_context_handle(&test_data[test_data_id]);
     } else {
-        LOG_DBGFMT("Building internal state: No\n\n");
+        VERBOSE_UNPRIV_RAW("Building internal state: No\n\n");
         *context_handle = retained_rot_ctx_handle;
     }
 }
@@ -207,14 +207,14 @@ cbor_cmd(const char *cmd_in_buf, size_t cmd_in_size, int *context_handle)
 
     (void)context_handle;
 
-    LOG_DBGFMT("DPE request (%ld):\n", cmd_in_size);
+    VERBOSE_UNPRIV_RAW("DPE request (%ld):\n", cmd_in_size);
     print_buf(cmd_in_buf, cmd_in_size);
 
     err = dpe_command_decode(CLIENT_ID_NS,
                              cmd_in_buf, cmd_in_size,
                              cmd_out_buf, &cmd_out_size);
 
-    LOG_DBGFMT("DPE response (%ld):\n", cmd_out_size);
+    VERBOSE_UNPRIV_RAW("DPE response (%ld):\n", cmd_out_size);
     print_buf(cmd_out_buf, cmd_out_size);
 
     return err;
@@ -271,13 +271,13 @@ dc_cmd(const char *cmd_in_buf, size_t cmd_in_size, int *context_handle)
     err = CALL_DERIVE_CONTEXT(dc_input, dc_output);
 
     if (dc_output.certificate_actual_size > 0) {
-            LOG_DBGFMT("Certificate:\n");
+            VERBOSE_UNPRIV_RAW("Certificate:\n");
             print_buf(dc_output.certificate_buf,
                       dc_output.certificate_actual_size);
     }
 
     if (dc_output.exported_cdi_actual_size > 0) {
-            LOG_DBGFMT("CDIs:\n");
+            VERBOSE_UNPRIV_RAW("CDIs:\n");
             print_buf(dc_output.exported_cdi_buf,
                       dc_output.exported_cdi_actual_size);
     }
@@ -325,13 +325,13 @@ ck_cmd(const char *cmd_in_buf, size_t cmd_in_size, int *context_handle)
     err = CALL_CERTIFY_KEY(ck_input, ck_output);
 
     if (ck_output.certificate_chain_actual_size > 0) {
-            LOG_DBGFMT("Certificate:\n");
+            VERBOSE_UNPRIV_RAW("Certificate:\n");
             print_buf(ck_output.certificate_chain_buf,
                       ck_output.certificate_chain_actual_size);
     }
 
     if (ck_output.derived_public_key_actual_size > 0) {
-            LOG_DBGFMT("Public key:\n");
+            VERBOSE_UNPRIV_RAW("Public key:\n");
             print_buf(ck_output.derived_public_key_buf,
                       ck_output.derived_public_key_actual_size);
     }
@@ -375,7 +375,7 @@ gcc_cmd(const char *cmd_in_buf, size_t cmd_in_size, int *context_handle)
                                     &new_context_handle);
 
     if (cert_size > 0) {
-            LOG_DBGFMT("Certificate:\n");
+            VERBOSE_UNPRIV_RAW("Certificate:\n");
             print_buf(cert_buf, cert_size);
     }
 

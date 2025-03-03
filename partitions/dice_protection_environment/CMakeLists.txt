@@ -125,7 +125,7 @@ if (HOST_BUILD)
                                  -DTFM_PATH=${CMAKE_SOURCE_DIR}       # To locate tfm_t_cose.cmake
                                  -DT_COSE_PATH=${T_COSE_PATH}         # External dependency
                                  -DTFM_TEST_PATH=${TFM_TEST_PATH}     # To locate test framework src
-                                 -DTFM_PARTITION_LOG_LEVEL=${TFM_PARTITION_LOG_LEVEL}
+                                 -DLOG_LEVEL_UNPRIV=${TFM_PARTITION_LOG_LEVEL}
                                  $<$<BOOL:${AFL_CC}>:-DCMAKE_C_COMPILER=${AFL_CC}>
                                  $<$<BOOL:${AFL_CC}>:-DFUZZ_TEST=ON>
         COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/dpe_host

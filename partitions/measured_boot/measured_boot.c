@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -13,7 +13,7 @@
 #include "boot_hal.h"
 #include "service_api.h"
 #include "tfm_strnlen.h"
-#include "tfm_sp_log.h"
+#include "tfm_log_unpriv.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
@@ -358,9 +358,9 @@ psa_status_t measured_boot_extend_measurement(uint8_t index,
 
 error:
     if (status != PSA_SUCCESS) {
-        LOG_DBGFMT("Measured Boot : measurement extension failed.\r\n");
+        VERBOSE_UNPRIV_RAW("Measured Boot : measurement extension failed.\n");
     } else {
-        LOG_DBGFMT("Measured Boot : measurement extended successfully.\r\n");
+        VERBOSE_UNPRIV_RAW("Measured Boot : measurement extended successfully.\n");
     }
 
     return status;

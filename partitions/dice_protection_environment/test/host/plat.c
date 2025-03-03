@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 #include "dpe_plat.h"
-#include "tfm_sp_log.h"
+#include "tfm_log_unpriv.h"
 
 extern psa_key_id_t rot_cdi_id;
 extern psa_key_id_t root_attest_key_id;

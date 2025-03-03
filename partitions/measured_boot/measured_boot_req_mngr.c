@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -8,7 +8,7 @@
 #include <string.h>
 #include "measured_boot.h"
 #include "measured_boot_defs.h"
-#include "tfm_sp_log.h"
+#include "tfm_log_unpriv.h"
 
 #include "psa/service.h"
 #include "psa_manifest/pid.h"
@@ -165,7 +165,7 @@ psa_status_t tfm_measured_boot_init(void)
     /* Initialise all measurements & related metadata */
     initialise_all_measurements();
 
-    LOG_DBGFMT("Measured Boot : selected algorithm: %x\r\n",
+    VERBOSE_UNPRIV_RAW("Measured Boot : selected algorithm: %x\n",
                TFM_MEASURED_BOOT_HASH_ALG);
 
 #ifdef CONFIG_TFM_BOOT_STORE_MEASUREMENTS

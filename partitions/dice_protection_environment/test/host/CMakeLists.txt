@@ -86,7 +86,6 @@ target_include_directories(dpe_lib
         ../..
         ${TFM_PATH}/platform/ext/target/arm/rse/common       # platform_locality.h
         ${TFM_PATH}/platform/ext/target/arm/rse/common/dpe   # dpe_plat.h
-        ${TFM_PATH}/secure_fw/partitions/lib/runtime/include # tfm_sp_log.h
     PRIVATE
         ${TFM_PATH}/secure_fw/include                        # array.h
 
@@ -102,7 +101,7 @@ target_link_libraries(dpe_lib
 
 target_compile_definitions(dpe_lib
     PUBLIC
-        TFM_PARTITION_LOG_LEVEL=${TFM_PARTITION_LOG_LEVEL}
+        LOG_LEVEL_UNPRIV=${TFM_PARTITION_LOG_LEVEL}
     PRIVATE
         DPE_TEST_MODE
 )

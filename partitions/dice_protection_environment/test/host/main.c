@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -10,7 +10,7 @@
 #include <stdlib.h>
 
 #include "dice_protection_environment.h"
-#include "tfm_sp_log.h"
+#include "tfm_log_unpriv.h"
 
 #include "extra_s_tests.h"
 #include "test_framework.h"
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
 
     } else if (argc == 3) {
         /****************** Input params are provided *************************/
-        LOG_INFFMT("Execute DPE API test (%s %s)\n", argv[1], argv[2]);
+        INFO_UNPRIV_RAW("Execute DPE API test (%s %s)\n", argv[1], argv[2]);
         ret = read_cmd(argv[2], cmd_in_buf, &cmd_in_size);
         if (ret < 0) {
             exit(1);

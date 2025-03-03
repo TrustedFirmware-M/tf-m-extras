@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -10,13 +10,13 @@
 
 #include "dice_protection_environment.h"
 #include "dpe_context_mngr.h"
-#include "tfm_sp_log.h"
+#include "tfm_log_unpriv.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if (TFM_PARTITION_LOG_LEVEL >= TFM_PARTITION_LOG_LEVEL_DEBUG)
+#if (LOG_LEVEL_UNPRIV >= LOG_LEVEL_VERBOSE)
 
 /**
  * \brief Log the derive rot context command parameters.
@@ -108,7 +108,7 @@ void log_derive_context_output(int *new_context_handle,
                                uint8_t *new_certificate_buf,
                                size_t *new_certificate_actual_size);
 
-#else /* TFM_PARTITION_LOG_LEVEL */
+#else /* LOG_LEVEL_UNPRIV */
 
 #define log_derive_rot_context(...)
 #define log_derive_context(...)
@@ -124,7 +124,7 @@ void log_derive_context_output(int *new_context_handle,
 #define log_dpe_cert_ctx_metadata(...)
 #define log_derive_context_output(...)
 
-#endif /* TFM_PARTITION_LOG_LEVEL */
+#endif /* LOG_LEVEL_UNPRIV */
 
 #ifdef __cplusplus
 }

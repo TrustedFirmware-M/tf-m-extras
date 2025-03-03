@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
  * or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
  *
@@ -10,7 +10,7 @@
 #include "extra_s_tests.h"
 #include "dma350_lib.h"
 #include "platform_base_address.h"
-#include "tfm_sp_log.h"
+#include "tfm_log_unpriv.h"
 
 #include <string.h>
 

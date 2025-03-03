@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -9,7 +9,7 @@
 
 #include "psa/service.h"
 #include "psa_manifest/tfm_example_partition.h"
-#include "tfm_sp_log.h"
+#include "tfm_log_unpriv.h"
 
 /**
  * \brief An example service implementation that prints out an argument from the
@@ -38,7 +38,7 @@ psa_status_t tfm_example_service_sfn(const psa_msg_t *msg)
 
         /* Print arg from client */
         psa_read(msg->handle, 0, &arg, sizeof(arg));
-        LOG_INFFMT("[Example partition] Service called! arg=%p\r\n", arg);
+        INFO_UNPRIV_RAW("[Example partition] Service called! arg=%x\n", arg);
 
         status = PSA_SUCCESS;
         break;
@@ -56,7 +56,7 @@ psa_status_t tfm_example_service_sfn(const psa_msg_t *msg)
  */
 psa_status_t tfm_example_partition_main(void)
 {
-    LOG_INFFMT("Example Partition initializing\r\n");
+    INFO_UNPRIV_RAW("Example Partition initializing\n");
 
     return PSA_SUCCESS;
 }
