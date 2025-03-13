@@ -206,7 +206,7 @@ Example script (tf-m, tf-m-tests, tf-m-extras path need to be updated):
     -DMCUBOOT_IMAGE_NUMBER=4 \
     -DRSS_GPT_SUPPORT=0 \
     -DTFM_EXTRAS_REPO_PATH=$TFM_EXTRAS_PATH \
-    -DTFM_SPM_LOG_LEVEL=3 \
+    -DTFM_SPM_LOG_LEVEL=LOG_LEVEL_DEBUG \
     -DRSE_LOAD_NS_IMAGE=OFF \
     -DTFM_ISOLATION_LEVEL=1 \
     -DCONFIG_TFM_SPM_BACKEND=IPC \
@@ -344,4 +344,4 @@ Generate initial input for the fuzzer:
 
 --------------
 
-*Copyright (c) 2023-2024, Arm Limited. All rights reserved.*
+*SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors*
