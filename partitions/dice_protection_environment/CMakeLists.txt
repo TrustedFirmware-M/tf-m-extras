@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2023-2024, Arm Limited. All rights reserved.
+# Copyright (c) 2023-2025, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -122,7 +122,8 @@ if (HOST_BUILD)
                                  -G ${CMAKE_GENERATOR}
                                  -DMBEDCRYPTO_PATH=${MBEDCRYPTO_PATH} # External dependency
                                  -DQCBOR_PATH=${QCBOR_PATH}           # External dependency
-                                 -DTFM_PATH=${CMAKE_SOURCE_DIR}       # To locate t_cose src
+                                 -DTFM_PATH=${CMAKE_SOURCE_DIR}       # To locate tfm_t_cose.cmake
+                                 -DT_COSE_PATH=${T_COSE_PATH}         # External dependency
                                  -DTFM_TEST_PATH=${TFM_TEST_PATH}     # To locate test framework src
                                  -DTFM_PARTITION_LOG_LEVEL=${TFM_PARTITION_LOG_LEVEL}
                                  $<$<BOOL:${AFL_CC}>:-DCMAKE_C_COMPILER=${AFL_CC}>

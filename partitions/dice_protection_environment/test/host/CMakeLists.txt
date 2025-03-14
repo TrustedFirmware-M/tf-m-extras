@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2024, Arm Limited. All rights reserved.
+# Copyright (c) 2024-2025, Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -46,15 +46,13 @@ target_compile_definitions(qcbor
 
 ############################### T_COSE Library #################################
 
-set(T_COSE_PATH ${TFM_PATH}/lib/ext/t_cose)
-
 # Empty target just to make build working
 add_library(tfm_config INTERFACE)
 
 # Empty target just to make build working
 add_library(psa_crypto_config INTERFACE)
 
-include(${T_COSE_PATH}/tfm_t_cose.cmake)
+include(${TFM_PATH}/lib/ext/t_cose/tfm_t_cose.cmake)
 
 add_library(t_cose STATIC EXCLUDE_FROM_ALL)
 
