@@ -224,7 +224,7 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
     /* Initialise optional parameters with their default value in case
      * they are not encoded in the input command
      */
-    cert_id = DPE_CERT_ID_INVALID;
+    cert_id64 = DPE_CERT_ID_INVALID;
     retain_parent_context = false;
     allow_new_context_to_derive = true;
     create_certificate = true;
