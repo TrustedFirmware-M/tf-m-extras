@@ -59,6 +59,11 @@ if(${PSA_MEASUREMENT_HASH_ALG} STREQUAL "PSA_ALG_SHA_512")
     # https://www.iana.org/assignments/hash-function-text-names/hash-function-text-names.xml
     set(MEASUREMENT_HASH_ALGO_NAME "sha-512")
     set(MEASUREMENT_VALUE_SIZE            64)
+elseif(${PSA_MEASUREMENT_HASH_ALG} STREQUAL "PSA_ALG_SHA_384")
+    # In accordance with IANA hash algorithm registry:
+    # https://www.iana.org/assignments/hash-function-text-names/hash-function-text-names.xml
+    set(MEASUREMENT_HASH_ALGO_NAME "sha-384")
+    set(MEASUREMENT_VALUE_SIZE            48)
 elseif(${PSA_MEASUREMENT_HASH_ALG} STREQUAL "PSA_ALG_SHA_256")
     set(MEASUREMENT_HASH_ALGO_NAME "sha-256")
     set(MEASUREMENT_VALUE_SIZE            32)
