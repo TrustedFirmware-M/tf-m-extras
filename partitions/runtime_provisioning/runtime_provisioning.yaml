@@ -1,0 +1,22 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
+#
+#-------------------------------------------------------------------------------
+
+{
+  "psa_framework_version": 1.1,
+  "name": "RUNTIME_PROVISIONING_PARTITION",
+  "type": "PSA-ROT",
+  "priority": "NORMAL",
+  "model": "IPC",
+  "entry_point": "runtime_provisioning_main",
+  "stack_size": "0x400",
+  "irqs": [
+    {
+      "source": "RUNTIME_PROVISIONING_MESSAGE_IRQ",
+      "name": "RUNTIME_PROVISIONING_MESSAGE",
+      "handling": "SLIH",
+    }
+  ],
+}

@@ -1,0 +1,28 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
+#
+#-------------------------------------------------------------------------------
+
+{
+  "description": "Runtime provisioning partition manifest",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "description": "Runtime provisioning partition",
+      "manifest": "runtime_provisioning.yaml",
+      "output_path": "secure_fw/partitions/runtime_provisioning",
+      "conditional": "TFM_PARTITION_RUNTIME_PROVISIONING",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 280,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_runtime_provisioning.*"
+        ]
+      }
+    }
+  ]
+}
