@@ -44,24 +44,21 @@ static dpe_error_t store_linked_component(struct cert_context_t *cert_ctx,
 static void remove_linked_component(struct cert_context_t *cert_ctx,
                                     const struct component_context_t *comp_ctx)
 {
-    int i, pos;
-
     /* Find the position of the input component */
-    for (i = 0; i < ARRAY_SIZE(cert_ctx->linked_components.ptr); i++) {
+    for (int i = 0; i < ARRAY_SIZE(cert_ctx->linked_components.ptr); i++) {
         if (cert_ctx->linked_components.ptr[i] == comp_ctx) {
-            pos = i;
-            break;
+            /* Left shift remaining elements by 1 from current position */
+            for(; i < ARRAY_SIZE(cert_ctx->linked_components.ptr) - 1; i++) {
+                cert_ctx->linked_components.ptr[i] = cert_ctx->linked_components.ptr[i + 1];
+            }
+            cert_ctx->linked_components.ptr[i] = NULL;
+            cert_ctx->linked_components.count--;
+            return;
         }
     }
 
-    assert(i < ARRAY_SIZE(cert_ctx->linked_components.ptr));
-
-    /* Left shift remaining elements by 1 from current position */
-    for(i = pos; i < ARRAY_SIZE(cert_ctx->linked_components.ptr) - 1; i++) {
-        cert_ctx->linked_components.ptr[i] = cert_ctx->linked_components.ptr[i + 1];
-    }
-    cert_ctx->linked_components.ptr[i] = NULL;
-    cert_ctx->linked_components.count--;
+    /* Element not found in linked_components */
+    assert(0 && "Element not found in linked_components");
 }
 
 static int get_free_component_context_index(void)
