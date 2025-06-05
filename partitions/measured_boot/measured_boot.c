@@ -283,6 +283,7 @@ psa_status_t measured_boot_extend_measurement(uint8_t index,
     uint8_t hash_result[MEASUREMENT_VALUE_SIZE] = {0};
     size_t hash_len;
 
+    INFO_UNPRIV("MeasuredBoot: Extending measurement for sw_type: %s\r\n", sw_type);
     log_extend_measurement(index,
                            signer_id, signer_id_size,
                            version, version_size,
@@ -336,9 +337,7 @@ psa_status_t measured_boot_extend_measurement(uint8_t index,
 
 error:
     if (status != PSA_SUCCESS) {
-        VERBOSE_UNPRIV_RAW("Measured Boot : measurement extension failed.\n");
-    } else {
-        VERBOSE_UNPRIV_RAW("Measured Boot : measurement extended successfully.\n");
+        ERROR_UNPRIV("MeasuredBoot: Extension failed with status: %d\r\n", status);
     }
 
     return status;
