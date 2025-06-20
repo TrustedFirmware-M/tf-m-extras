@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2022-2025, Arm Limited. All rights reserved.
 # Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company)
 # or an affiliate of Cypress Semiconductor Corporation. All rights reserved.
+# SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -38,6 +38,7 @@ target_compile_definitions(tfm_test_suite_extra_s
 
 target_link_libraries(tfm_test_suite_extra_s
     PRIVATE
+        psa_crypto_config
         tfm_sprt #for public header: tfm_measured_boot_api.h
         platform_region_defs
 )
