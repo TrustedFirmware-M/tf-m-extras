@@ -30,7 +30,7 @@ endif()
 
 include(${TFM_TOOLCHAIN_FILE})
 
-project("TF-M Example"  LANGUAGES C)
+project("TF-M Example"  LANGUAGES C ASM)
 tfm_toolchain_reload_compiler()
 
 # The exported TF-M interfaces
