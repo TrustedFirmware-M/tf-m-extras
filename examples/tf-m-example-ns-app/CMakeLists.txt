@@ -29,7 +29,7 @@ if (NOT DEFINED TFM_TOOLCHAIN_FILE)
 endif()
 
 include(${TFM_TOOLCHAIN_FILE})
-project("TF-M Example"  LANGUAGES C)
+project("TF-M Example"  LANGUAGES C ASM)
 
 add_executable(tfm_ns)
 
