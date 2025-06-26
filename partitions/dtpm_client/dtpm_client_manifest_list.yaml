@@ -1,0 +1,28 @@
+#-------------------------------------------------------------------------------
+# SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+{
+  "description": "dTPM client Partition",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "description": "TFM dTPM client Partition",
+      "manifest": "dtpm_client.yaml",
+      "output_path": "secure_fw/partitions/dtpm_client",
+      "conditional": "TFM_PARTITION_MEASURED_BOOT",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 262,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*dtpm_client.*"
+        ]
+      }
+    }
+  ]
+}
