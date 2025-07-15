@@ -46,6 +46,7 @@ target_link_libraries(tfm_psa_rot_partition_dtpm_client
         tfm_config
         tfm_sprt
         tfm_log_headers
+        tfm_helper_lib
 )
 
 ########################### Secure API ########################################
