@@ -26,4 +26,5 @@ target_include_directories(tfm_test_suite_extra_ns
 target_link_libraries(tfm_test_suite_extra_ns
     PRIVATE
         tfm_qcbor_ns
+        tfm_t_cose_ns
 )
