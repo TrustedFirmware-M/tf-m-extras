@@ -30,9 +30,8 @@ psa_status_t dtpm_client_extend(uint8_t pcr_index, uint8_t *value, uint16_t hash
     /* Mode in this case means TPM_SU contants */
     tpm_startup(&tpm_chip_data, TPM_SU_CLEAR);
 
-    status = tpm_pcr_extend(&tpm_chip_data, 16, hash_alg, value, hash_size);
+    status = tpm_pcr_extend(&tpm_chip_data, pcr_index, hash_alg, value, hash_size);
     if (status != TPM_SUCCESS) {
-
         ERROR("dTPM Client extend failed\n");
         return PSA_ERROR_HARDWARE_FAILURE;
     }

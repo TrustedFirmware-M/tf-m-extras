@@ -48,7 +48,7 @@ static int dtpm_client_read(uint8_t pcr_index, tpm_pcr_read_res *pcr_read_respon
 
     tpm_interface_init(&tpm_chip_data, 0);
 
-    status = tpm_pcr_read(&tpm_chip_data, DEBUG_PCR_NUMBER, TPM_ALG_SHA256,  pcr_read_response);
+    status = tpm_pcr_read(&tpm_chip_data, pcr_index, TPM_ALG_SHA256,  pcr_read_response);
 
     tpm_interface_close(&tpm_chip_data, 0);
 
