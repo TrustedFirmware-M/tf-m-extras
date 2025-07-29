@@ -106,4 +106,5 @@ install(FILES       ${INTERFACE_SRC_DIR}/measured_boot_api.c
 
 install(FILES       ${INTERFACE_INC_DIR}/measured_boot_api.h
                     ${INTERFACE_INC_DIR}/measured_boot_defs.h
+                    ${INTERFACE_INC_DIR}/measurement_metadata.h
         DESTINATION ${INSTALL_INTERFACE_INC_DIR})

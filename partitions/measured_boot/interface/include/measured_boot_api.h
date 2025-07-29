@@ -14,27 +14,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "psa/error.h"
+#include "measurement_metadata.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Minimum measurement value size that can be requested to store */
-#define MEASUREMENT_VALUE_MIN_SIZE          32U
-/* Maximum measurement value size that can be requested to store */
-#define MEASUREMENT_VALUE_MAX_SIZE          64U
-/* Minimum signer id size that can be requested to store */
-#define SIGNER_ID_MIN_SIZE   MEASUREMENT_VALUE_MIN_SIZE
-/* Maximum signer id size that can be requested to store */
-#define SIGNER_ID_MAX_SIZE   MEASUREMENT_VALUE_MAX_SIZE
-/* The theoretical maximum image version is: "255.255.65535\0" */
-#define VERSION_MAX_SIZE                    14U
-/* Example sw_type: "TFM_BLX, AP_BL1, etc." */
-#define SW_TYPE_MAX_SIZE                    32U
-
-#define NUM_OF_MEASUREMENT_SLOTS            32U
-
-#define MEASUREMENT_VALUE_INIT_PATTERN        0
 
 /**
  * \brief Retrieves a measurement from the requested slot.

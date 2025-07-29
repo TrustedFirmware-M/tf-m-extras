@@ -15,26 +15,6 @@
 extern "C" {
 #endif
 
-struct measurement_metadata_t {
-    uint8_t  signer_id[SIGNER_ID_MAX_SIZE];
-    size_t   signer_id_size;
-    uint8_t  version[VERSION_MAX_SIZE];
-    size_t   version_size;
-    uint32_t measurement_algo;
-    uint8_t  sw_type[SW_TYPE_MAX_SIZE];
-    size_t   sw_type_size;
-};
-
-struct measurement_value_t {
-    uint8_t hash_buf[MEASUREMENT_VALUE_MAX_SIZE];
-    uint8_t hash_buf_size;
-};
-
-struct measurement_t {
-    struct measurement_value_t value;                   /* measurement value */
-    struct measurement_metadata_t metadata;             /* metadata */
-};
-
 struct test_buf_t {
     const void *ptr;
     size_t      len;
