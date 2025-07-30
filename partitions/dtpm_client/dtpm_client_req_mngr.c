@@ -14,7 +14,6 @@ static psa_status_t extend_pcr(const psa_msg_t *msg)
     psa_status_t status;
     struct pcr_extend_t pcr_extend_in;
     size_t num;
-    uint8_t hash[MAX_DIGEST_SIZE];
 
     /* Check input parameter */
     if (msg->in_size[0] != sizeof(pcr_extend_in) ) {
