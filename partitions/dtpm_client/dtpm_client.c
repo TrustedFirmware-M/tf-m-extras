@@ -5,9 +5,15 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "dtpm_client.h"
 #include "dtpm_client_api.h"
+#include "measured_boot_api.h"
+#include "measurement_metadata.h"
+#include "psa/crypto_types.h"
+#include "psa/crypto_values.h"
+#include "tfm_boot_measurement.h"
 
 #include "tfm_log.h"
 
@@ -20,6 +26,52 @@ struct tpm_chip_data tpm_chip_data = {
     .address = 0,
 };
 
+static void initialise_measurement(struct measurement_t *measurement)
+{
+    (void)memset(measurement, 0, (sizeof(struct measurement_t)));
+    measurement->value.hash_buf_size = MEASUREMENT_VALUE_MAX_SIZE;
+    measurement->metadata.signer_id_size = SIGNER_ID_MAX_SIZE;
+    measurement->metadata.version_size = VERSION_MAX_SIZE;
+    measurement->metadata.sw_type_size = SW_TYPE_MAX_SIZE;
+}
+
+static psa_status_t read_mb_measurement(uint8_t slot_index,
+                              struct measurement_t *measurement,
+                              bool *is_locked)
+{
+    psa_status_t status;
+    size_t signer_id_len, version_len, sw_type_len;
+    size_t measurement_value_len;
+
+    status = tfm_measured_boot_read_measurement(
+                                    slot_index,
+                                    &measurement->metadata.signer_id[0],
+                                    measurement->metadata.signer_id_size,
+                                    &signer_id_len,
+                                    &measurement->metadata.version[0],
+                                    measurement->metadata.version_size,
+                                    &version_len,
+                                    &measurement->metadata.measurement_algo,
+                                    &measurement->metadata.sw_type[0],
+                                    measurement->metadata.sw_type_size,
+                                    &sw_type_len,
+                                    &measurement->value.hash_buf[0],
+                                    measurement->value.hash_buf_size,
+                                    &measurement_value_len,
+                                    is_locked);
+
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    /* update to reflect correct sizes */
+    measurement->metadata.signer_id_size = signer_id_len;
+    measurement->metadata.version_size = version_len;
+    measurement->metadata.sw_type_size = sw_type_len;
+    measurement->value.hash_buf_size = measurement_value_len;
+
+    return PSA_SUCCESS;
+}
 
 psa_status_t dtpm_client_extend(uint8_t pcr_index, uint8_t *value, uint16_t hash_alg, size_t hash_size)
 {
@@ -42,12 +94,59 @@ psa_status_t dtpm_client_extend(uint8_t pcr_index, uint8_t *value, uint16_t hash
     return PSA_SUCCESS;
 }
 
+static int get_tpm_hash_alg(uint32_t psa_algo, uint16_t *hash_alg)
+{
+    switch (psa_algo) {
+    case PSA_ALG_SHA_256:
+        *hash_alg = TPM_ALG_SHA256;
+        return 0;
+    default:
+        return -1;
+    }
+}
+
 psa_status_t tfm_dtpm_client_init(void)
 {
     INFO_RAW("dTPM Client Partition initializing\n");
 
-    /* TODO: Query boot measurements from desired slots
-     * and extend into predetermined TPM PCR(s)
-     */
+    psa_status_t status;
+    struct measurement_t measurement;
+    bool is_locked;
+    int8_t pcr_index;
+    uint16_t hash_alg;
+    int slot;
+
+    if (init_pcr_index_for_boot_measurement()) {
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
+    /* Lowest possible slot number is Zero */
+    for (slot = 0; slot < BOOT_MEASUREMENT_SLOT_MAX; slot++) {
+        pcr_index = get_pcr_index_for_boot_measurement(slot);
+        if (pcr_index < 0) {
+            continue;
+        }
+
+        initialise_measurement(&measurement);
+        status = read_mb_measurement(slot, &measurement, &is_locked);
+        if (status != PSA_SUCCESS) {
+            if (status == PSA_ERROR_DOES_NOT_EXIST) {
+                INFO("Measurement not found at slot %d\n", slot);
+                continue;
+            }
+            return status;
+        }
+
+        if (get_tpm_hash_alg(measurement.metadata.measurement_algo, &hash_alg) != 0) {
+            return PSA_ERROR_PROGRAMMER_ERROR;
+        }
+
+        status = dtpm_client_extend(pcr_index, &measurement.value.hash_buf[0],
+                hash_alg, measurement.value.hash_buf_size);
+        if (status != PSA_SUCCESS) {
+            return status;
+        }
+    }
+
     return PSA_SUCCESS;
 }

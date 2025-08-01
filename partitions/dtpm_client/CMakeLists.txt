@@ -43,6 +43,7 @@ target_include_directories(tfm_psa_rot_partition_dtpm_client
 target_link_libraries(tfm_psa_rot_partition_dtpm_client
     PRIVATE
         platform_s
+        psa_crypto_config
         tfm_config
         tfm_sprt
         tfm_log_headers
