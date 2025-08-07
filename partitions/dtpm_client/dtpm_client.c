@@ -14,8 +14,12 @@
 #include "psa/crypto_types.h"
 #include "psa/crypto_values.h"
 #include "tfm_boot_measurement.h"
+#include "event_measure.h"
+#include "event_print.h"
 
 #include "tfm_log.h"
+
+static uint8_t event_log_buf[EVENT_LOG_BUFFER_SIZE] = {0};
 
 struct tpm_chip_data tpm_chip_data = {
     .locality = 0,
@@ -115,8 +119,17 @@ psa_status_t tfm_dtpm_client_init(void)
     int8_t pcr_index;
     uint16_t hash_alg;
     int slot;
+    event_log_metadata_t event_log_metadata;
 
     if (init_pcr_index_for_boot_measurement()) {
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
+    if (event_log_init(event_log_buf, event_log_buf + sizeof(event_log_buf))) {
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
+    if (event_log_write_header()) {
         return PSA_ERROR_PROGRAMMER_ERROR;
     }
 
@@ -145,6 +158,15 @@ psa_status_t tfm_dtpm_client_init(void)
                 hash_alg, measurement.value.hash_buf_size);
         if (status != PSA_SUCCESS) {
             return status;
+        }
+
+        if (get_event_log_metadata_for_measurement_slot(slot, &event_log_metadata)) {
+            return PSA_ERROR_PROGRAMMER_ERROR;
+        }
+
+        if (event_log_record(&measurement.value.hash_buf[0], EV_POST_CODE, &event_log_metadata)) {
+            ERROR("Event log record failed\n");
+            return PSA_ERROR_PROGRAMMER_ERROR;
         }
     }
 
