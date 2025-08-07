@@ -13,7 +13,7 @@
 #include <string.h>
 
 #include "boot_hal.h"
-#include "boot_measurement.h"
+#include "tfm_boot_measurement.h"
 #include "dice_protection_environment.h"
 #include "dpe_context_mngr.h"
 #include "platform_locality.h"
