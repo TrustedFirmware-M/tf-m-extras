@@ -67,6 +67,18 @@ comms partition (see
 :doc:`TF-M Secure IRQ integration guide<TF-M:integration_guide/tfm_secure_irq_integration_guide>`
 for more details).
 
+***************************
+Completion interrupt option
+***************************
+
+The SCMI specification describes a shared-memory–based transport that allows for
+a completion interrupt. The completion interrupt option enables the caller to
+receive an interrupt after the callee completes the message response.
+
+Currently, the completion interrupt mode is not supported.
+The code related to this feature is guarded by the
+``TRANSPORT_COMPLETION_INTERRUPT_SUPPORTED`` macro.
+
 *******
 Testing
 *******

@@ -153,7 +153,9 @@ static void transport_respond(const struct scmi_message_t *msg)
     /* Mark channel as free */
     shared_memory->status |= TRANSPORT_BUFFER_STATUS_FREE_MASK;
 
+#ifdef TRANSPORT_COMPLETION_INTERRUPT_SUPPORTED
     /* TODO: Issue completion interrupt */
+#endif
 }
 
 /**
@@ -181,6 +183,11 @@ static scmi_comms_err_t transport_send(const struct scmi_message_t *msg)
     memcpy(&shared_memory->message_header, msg, length);
     shared_memory->length = length;
 
+#ifdef TRANSPORT_COMPLETION_INTERRUPT_SUPPORTED
+    /* Interrupt-driven communications flow */
+    shared_memory->flags |= TRANSPORT_BUFFER_FLAGS_INTERRUPT_MASK;
+#endif
+
     /* Mark channel as busy */
     shared_memory->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
 
@@ -190,9 +197,12 @@ static scmi_comms_err_t transport_send(const struct scmi_message_t *msg)
         return err;
     }
 
-    /* Wait until channel is free */
+#ifdef TRANSPORT_COMPLETION_INTERRUPT_SUPPORTED
     /* TODO: Wait for completion interrupt */
+#else
+    /* Wait until channel is free */
     while (!(shared_memory->status & TRANSPORT_BUFFER_STATUS_FREE_MASK));
+#endif
 
     return SCMI_COMMS_SUCCESS;
 }
