@@ -319,10 +319,45 @@ static scmi_comms_err_t scmi_comms_notification_subscribe(struct scmi_message_t 
            SCMI_COMMS_SUCCESS : SCMI_COMMS_GENERIC_ERROR;
 }
 
+/**
+ * \brief Subscribe to system power state notifications, by sending the message,
+ *      wait and reply.
+ *
+ * \param[in,out] msg  SCMI message
+ *
+ * \return Error value as defined by scmi_comms_err_t.
+ */
+static scmi_comms_err_t scmi_comms_notification_subscribe_and_wait(
+    struct scmi_message_t *msg)
+{
+    scmi_comms_err_t err;
+
+    scmi_message_sys_power_state_notify(msg);
+
+    err = transport_send(msg);
+    if (err != SCMI_COMMS_SUCCESS) {
+        return err;
+    }
+
+    (void)psa_wait(SCP_DOORBELL_SIGNAL, PSA_BLOCK);
+
+    err = transport_receive(msg);
+    if (err != SCMI_COMMS_SUCCESS) {
+        return err;
+    }
+
+    psa_eoi(SCP_DOORBELL_SIGNAL);
+
+    return (scmi_handle_response(msg) == SCMI_STATUS_SUCCESS) ?
+           SCMI_COMMS_SUCCESS : SCMI_COMMS_GENERIC_ERROR;
+}
+
 void scmi_comms_main(void)
 {
     scmi_comms_err_t err;
     struct scmi_message_t agent_buf;
+    scmi_init_sequence_flags_t init_flags;
+    bool hook_done;
     bool resp;
 
     err = transport_init();
@@ -330,22 +365,43 @@ void scmi_comms_main(void)
         psa_panic();
     }
 
-    psa_irq_enable(SCP_DOORBELL_SIGNAL);
-
-    /* First wait for SCP to signal that it is ready to receive commands. */
-    (void)psa_wait(SCP_DOORBELL_SIGNAL, PSA_BLOCK);
-
-    err = scmi_hal_doorbell_clear();
+    err = scmi_hal_init_sequence_flags(&init_flags);
     if (err != SCMI_COMMS_SUCCESS) {
         psa_panic();
     }
 
-    psa_eoi(SCP_DOORBELL_SIGNAL);
+    if ((init_flags & SCMI_INIT_SEQ_FLAG_IRQ_EN) > 0) {
+        psa_irq_enable(SCP_DOORBELL_SIGNAL);
+    }
+
+    do {
+        err = scmi_hal_init_sequence_hook(&hook_done);
+        if (err != SCMI_COMMS_SUCCESS) {
+            psa_panic();
+        }
+
+        if (hook_done) {
+            break;
+        }
+
+        if ((init_flags & SCMI_INIT_SEQ_FLAG_IRQ_WAIT) > 0) {
+            (void)psa_wait(SCP_DOORBELL_SIGNAL, PSA_BLOCK);
+        }
+    } while (!hook_done);
+
+    if ((init_flags & SCMI_INIT_SEQ_FLAG_IRQ_WAIT) > 0) {
+        psa_eoi(SCP_DOORBELL_SIGNAL);
+    }
 
     /* Subscribe to notifications. If it fails, the agent will still listen for
      * SCMI commands.
      */
-    err = scmi_comms_notification_subscribe(&agent_buf);
+
+    if ((init_flags & SCMI_INIT_SEQ_FLAG_SUBSCRIBE_WAIT) > 0) {
+        err = scmi_comms_notification_subscribe_and_wait(&agent_buf);
+    } else {
+        err = scmi_comms_notification_subscribe(&agent_buf);
+    }
     if (err == SCMI_COMMS_SUCCESS) {
         INFO_UNPRIV_RAW("SCMI Comms subscribed to power state notifications\n");
     } else {

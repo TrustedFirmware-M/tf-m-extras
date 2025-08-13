@@ -54,3 +54,27 @@ scmi_comms_err_t scmi_hal_doorbell_clear(void)
 
     return SCMI_COMMS_SUCCESS;
 }
+
+scmi_comms_err_t scmi_hal_init_sequence_flags(
+    scmi_init_sequence_flags_t *init_flags)
+{
+    *init_flags |= (SCMI_INIT_SEQ_FLAG_IRQ_EN | SCMI_INIT_SEQ_FLAG_IRQ_WAIT);
+
+    return SCMI_COMMS_SUCCESS;
+}
+
+scmi_comms_err_t scmi_hal_init_sequence_hook(bool *hook_done)
+{
+    static uint8_t state = 0;
+
+    if (state == 0) {
+        *hook_done = false;
+        state++;
+    } else {
+        *hook_done = true;
+
+        scmi_hal_doorbell_clear();
+    }
+
+    return SCMI_COMMS_SUCCESS;
+}
