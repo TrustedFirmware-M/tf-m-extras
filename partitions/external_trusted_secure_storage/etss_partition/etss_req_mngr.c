@@ -217,8 +217,14 @@ etss_err_t etss_req_mngr_init(void)
                 }
             }
         }
-        tfm_hal_system_reset();/* Reset */
-    }
+        tfm_hal_system_reset(TFM_PLAT_SWSYN_DEFAULT);
+#if defined(__ICCARM__)
+#pragma diag_default = Pe111
+#else
+        __builtin_unreachable();
+#endif
+    } /* etss_init() != ETSS_SUCCESS */
+
     while (1) {
         signals = psa_wait(PSA_WAIT_ANY, PSA_BLOCK);
         if (signals & ETSS_SET_SIGNAL) {
