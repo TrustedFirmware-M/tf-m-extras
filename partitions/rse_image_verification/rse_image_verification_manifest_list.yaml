@@ -1,0 +1,20 @@
+#-------------------------------------------------------------------------------
+# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
+#-------------------------------------------------------------------------------
+
+{
+  "manifest_list": [
+    {
+      "description": "TF-M RSE Image Verification",
+      "manifest": "tfm_rse_image_verification.yaml",
+      "output_path": "secure_fw/partitions/rse_image_verification",
+      "conditional": "TFM_PARTITION_RSE_IMAGE_VERIFICATION",
+      "linker_pattern": {
+          "library_list": [
+            "*tfm_*partition_rse_image_verification.*"
+        ]
+      }
+    }
+  ]
+}
