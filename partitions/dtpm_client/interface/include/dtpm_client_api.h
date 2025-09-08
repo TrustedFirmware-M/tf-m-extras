@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-/* Measured boot message types that distinguish its services */
+/* dTPM client message types that distinguish its services */
 #define TFM_DTPM_CLIENT_READ        1001U
 #define TFM_DTPM_CLIENT_EXTEND      1002U
 #define MAX_DIGEST_SIZE             48 /* SHA384 */
