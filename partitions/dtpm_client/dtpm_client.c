@@ -108,6 +108,30 @@ static int get_tpm_hash_alg(uint32_t psa_algo, uint16_t *hash_alg)
     }
 }
 
+static size_t get_event_log_size()
+{
+     return event_log_get_cur_size(event_log_buf);
+}
+
+psa_status_t get_event_log(uint8_t *buffer, size_t buffer_size, size_t *event_log_size)
+{
+    size_t ev_log_size = get_event_log_size(event_log_buf);
+
+    if (buffer == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (buffer_size < ev_log_size) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    memcpy(buffer, event_log_buf, ev_log_size);
+
+    *event_log_size = ev_log_size;
+
+    return PSA_SUCCESS;
+}
+
 psa_status_t tfm_dtpm_client_init(void)
 {
     INFO_RAW("dTPM Client Partition initializing\n");

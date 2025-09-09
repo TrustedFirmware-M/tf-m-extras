@@ -9,6 +9,8 @@
 #include "dtpm_client.h"
 #include "dtpm_client_api.h"
 
+static uint8_t ev_log_buff[EVENT_LOG_BUFFER_SIZE] = {0};
+
 static psa_status_t extend_pcr(const psa_msg_t *msg)
 {
     psa_status_t status;
@@ -36,6 +38,25 @@ static psa_status_t extend_pcr(const psa_msg_t *msg)
     return status;
 }
 
+static psa_status_t event_log_buf(const psa_msg_t *msg)
+{
+
+    size_t ev_log_size;
+
+    if (get_event_log(ev_log_buff, EVENT_LOG_BUFFER_SIZE, &ev_log_size) != PSA_SUCCESS) {
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
+    if (msg->out_size[0] < ev_log_size) {
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
+    psa_write(msg->handle, 0, ev_log_buff, ev_log_size);
+    psa_write(msg->handle, 1, &ev_log_size, sizeof(ev_log_size));
+
+    return PSA_SUCCESS;
+}
+
 psa_status_t tfm_dtpm_client_sfn(const psa_msg_t *msg)
 {
     psa_status_t status;
@@ -44,6 +65,10 @@ psa_status_t tfm_dtpm_client_sfn(const psa_msg_t *msg)
     switch (msg->type) {
         case TFM_DTPM_CLIENT_EXTEND:
             status = extend_pcr(msg);
+            break;
+
+        case TFM_EVENT_LOG:
+            status = event_log_buf(msg);
             break;
 
         default:

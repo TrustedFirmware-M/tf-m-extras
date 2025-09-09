@@ -20,6 +20,7 @@ extern "C" {
 /* dTPM client message types that distinguish its services */
 #define TFM_DTPM_CLIENT_READ        1001U
 #define TFM_DTPM_CLIENT_EXTEND      1002U
+#define TFM_EVENT_LOG               1003U
 #define MAX_DIGEST_SIZE             48 /* SHA384 */
 
 struct pcr_extend_t {
@@ -30,6 +31,8 @@ struct pcr_extend_t {
 };
 
 psa_status_t tfm_dtpm_client_extend(uint8_t index, uint16_t algo, uint8_t *hash, size_t hash_size);
+
+psa_status_t tfm_get_event_log(uint8_t *buf, size_t buf_size, size_t *event_log_len);
 
 #ifdef __cplusplus
 }

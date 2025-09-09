@@ -36,3 +36,23 @@ psa_status_t tfm_dtpm_client_extend(uint8_t index, uint16_t algo, uint8_t *hash,
 
     return status;
 }
+
+psa_status_t tfm_get_event_log(uint8_t *buf, size_t buf_size, size_t *event_log_len)
+{
+    psa_status_t status;
+
+    psa_outvec out_vec[] = {
+        {
+            .base = buf, .len = buf_size,
+        },
+        {
+            .base = event_log_len, .len = sizeof(size_t),
+        }
+    };
+
+    status = psa_call(TFM_DTPM_CLIENT_HANDLE, TFM_EVENT_LOG,
+                      NULL, 0,
+                      out_vec, IOVEC_LEN(out_vec));
+
+    return status;
+}
