@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -7,30 +7,59 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "adac.h"
 #include "psa/error.h"
 #include "psa/service.h"
 #include "psa_manifest/pid.h"
-#include "tfm_adac_api.h"
+#include "psa_manifest/tfm_adac.h"
 
-static bool is_service_enabled;
+#include "target_cfg.h"
+#include "tfm_plat_otp.h"
+#include "tfm_peripherals_def.h"
+#include "psa_adac_platform.h"
 
-static psa_status_t adac_service(const psa_msg_t *msg)
+#include "tfm_log.h"
+
+#define ROTPK_SIZE 32
+
+static uint8_t secure_debug_rotpk[ROTPK_SIZE];
+
+static bool read_persistent_debug_state(void)
 {
-    uint32_t debug_request;
-    size_t num;
+    //TODO: implement persistent storage of debug state
+    return false;
+}
 
-    /* Check input parameter */
-    if (msg->in_size[0] != sizeof(debug_request)) {
-        return PSA_ERROR_PROGRAMMER_ERROR;
+psa_status_t adac_sp_init(bool *is_service_enabled)
+{
+    enum tfm_plat_err_t err;
+    enum plat_otp_lcs_t lcs;
+
+    *is_service_enabled = false;
+
+    /* Read LCS from OTP */
+    err = tfm_plat_otp_read(PLAT_OTP_ID_LCS, sizeof(lcs), (uint8_t*)&lcs);
+    if (err != TFM_PLAT_ERR_SUCCESS) {
+        ERROR_RAW("ADAC: Failed to read LCS \n");
+        return PSA_ERROR_SERVICE_FAILURE;
     }
 
-    num = psa_read(msg->handle, 0, &debug_request, sizeof(debug_request));
-    if (num != sizeof(debug_request)) {
-        return PSA_ERROR_PROGRAMMER_ERROR;
+    if (lcs != PLAT_OTP_LCS_SECURED) {
+        /* Device is not in secured state, hence ADAC service should be
+         * disabled
+         */
+
+    } else {
+        err = tfm_plat_otp_read(SECURE_DEBUG_ROTPK_ID, ROTPK_SIZE,
+                                secure_debug_rotpk);
+        if (err != TFM_PLAT_ERR_SUCCESS) {
+            ERROR_RAW("ADAC: Failed to secure debug key \n");
+            return PSA_ERROR_SERVICE_FAILURE;
+        }
+
+        *is_service_enabled = true;
     }
 
-    return adac_service_request(debug_request);
+    return PSA_SUCCESS;
 }
 
 /**
@@ -38,21 +67,38 @@ static psa_status_t adac_service(const psa_msg_t *msg)
  */
 psa_status_t tfm_adac_init(void)
 {
-    return adac_sp_init(&is_service_enabled);
-}
+    psa_status_t status;
+    int rc;
+    bool is_session_in_progress, is_service_enabled;
 
-psa_status_t tfm_adac_service_sfn(const psa_msg_t *msg)
-{
-    if (!is_service_enabled) {
-        return PSA_ERROR_NOT_PERMITTED;
+    status = adac_sp_init(&is_service_enabled);
+    INFO("ADAC partition initialised\n");
+    if (status == PSA_SUCCESS && is_service_enabled) {
+
+        psa_adac_platform_init();
+        psa_irq_enable(ADAC_REQUEST_SIGNAL);
+        while(1) {
+
+            /* First wait for Interrupt */
+            (void)psa_wait(ADAC_REQUEST_SIGNAL, PSA_BLOCK);
+
+            is_session_in_progress = read_persistent_debug_state();
+            if (is_session_in_progress) {
+                ERROR_RAW("ADAC: Debug session already in progress\n");
+                psa_eoi(ADAC_REQUEST_SIGNAL);
+                continue;
+            }
+
+            /* Authenticate incoming debug request */
+            rc = tfm_to_psa_adac_platform_secure_debug(secure_debug_rotpk, ROTPK_SIZE);
+            if (rc != 0) {
+                /* Authentication failure */
+                ERROR_RAW("ADAC: Service request failed\n");
+                return PSA_ERROR_NOT_PERMITTED;
+            }
+            psa_eoi(ADAC_REQUEST_SIGNAL);
+        }
     }
 
-    /* Process the message type */
-    switch (msg->type) {
-    case 0:
-        return adac_service(msg);
-    default:
-        /* Invalid message type */
-        return PSA_ERROR_NOT_SUPPORTED;
-    }
+    return PSA_SUCCESS;
 }

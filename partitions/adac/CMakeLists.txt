@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2022-2024, Arm Limited. All rights reserved.
+# SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -16,7 +16,6 @@ add_library(tfm_psa_rot_partition_adac STATIC)
 
 target_sources(tfm_psa_rot_partition_adac
     PRIVATE
-        adac.c
         adac_req_mngr.c
 )
 
@@ -48,24 +47,8 @@ target_link_libraries(tfm_psa_rot_partition_adac
         platform_s
         tfm_sprt
         trusted-firmware-m-psa-adac
+        tfm_spm
 )
-
-############################ Secure API ########################################
-
-set(INTERFACE_SRC_DIR            ${CMAKE_CURRENT_SOURCE_DIR}/interface/src)
-set(INTERFACE_INC_DIR            ${CMAKE_CURRENT_SOURCE_DIR}/interface/include)
-
-target_sources(tfm_sprt
-    PRIVATE
-        ${INTERFACE_SRC_DIR}/tfm_adac_api.c
-)
-
-target_include_directories(tfm_sprt
-    PUBLIC
-        ${INTERFACE_INC_DIR}
-)
-
-############################ Partition Defs ####################################
 
 target_link_libraries(tfm_partitions
     INTERFACE
@@ -76,9 +59,3 @@ target_compile_definitions(tfm_config
     INTERFACE
         TFM_PARTITION_ADAC
 )
-
-install(FILES       ${INTERFACE_SRC_DIR}/tfm_adac_api.c
-        DESTINATION ${INSTALL_INTERFACE_SRC_DIR})
-
-install(FILES       ${INTERFACE_INC_DIR}/tfm_adac_api.h
-        DESTINATION ${INSTALL_INTERFACE_INC_DIR})
