@@ -14,7 +14,7 @@
 #include "psa/crypto_types.h"
 #include "psa/crypto_values.h"
 #include "tfm_boot_measurement.h"
-#include "event_log.h"
+#include "event_record.h"
 
 #include "tfm_log.h"
 
