@@ -15,6 +15,7 @@
 #include "psa/crypto_values.h"
 #include "tfm_boot_measurement.h"
 #include "event_record.h"
+#include "event_print.h"
 
 #include "tfm_log.h"
 
@@ -192,6 +193,8 @@ psa_status_t tfm_dtpm_client_init(void)
             return PSA_ERROR_PROGRAMMER_ERROR;
         }
     }
+
+    event_log_dump(event_log_buf, get_event_log_size());
 
     return PSA_SUCCESS;
 }
