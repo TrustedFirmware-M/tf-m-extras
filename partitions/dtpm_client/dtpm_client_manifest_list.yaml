@@ -17,7 +17,7 @@
       "conditional": "TFM_PARTITION_MEASURED_BOOT",
       "version_major": 0,
       "version_minor": 1,
-      "pid": 262,
+      "pid": 265,
       "linker_pattern": {
         "library_list": [
            "*tfm_*dtpm_client.*"
