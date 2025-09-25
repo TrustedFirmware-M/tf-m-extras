@@ -23,12 +23,6 @@
 
 static uint8_t secure_debug_rotpk[ROTPK_SIZE];
 
-static bool read_persistent_debug_state(void)
-{
-    //TODO: implement persistent storage of debug state
-    return false;
-}
-
 psa_status_t adac_sp_init(bool *is_service_enabled)
 {
     enum tfm_plat_err_t err;
@@ -82,7 +76,7 @@ psa_status_t tfm_adac_init(void)
             /* First wait for Interrupt */
             (void)psa_wait(ADAC_REQUEST_SIGNAL, PSA_BLOCK);
 
-            is_session_in_progress = read_persistent_debug_state();
+            is_session_in_progress = tfm_plat_get_debug_state();
             if (is_session_in_progress) {
                 ERROR_RAW("ADAC: Debug session already in progress\n");
                 psa_eoi(ADAC_REQUEST_SIGNAL);
