@@ -48,8 +48,31 @@ struct transport_buffer_t {
     uint32_t message_payload[]; /**< Message payload */
 };
 
-static struct transport_buffer_t *const shared_memory =
+/** SCMI shareed memory direction A<->P */
+/*
+ * This partition acts as an SCMI Agent, thus:
+ * A2P: Commands sent to the platform, which implements "all" the protocols
+ * P2A: Notifications received by the platform, occasionally may receive
+ *      commands from the platform.
+ */
+enum scmi_entity_direction_t {
+    /** SCMI direction invalid */
+    SCMI_ENTITY_DIRECTION_UNKNOWN = 0,
+    /** SCMI direction sender (A->P), acts as an agent */
+    SCMI_ENTITY_DIRECTION_SENDER = 1,
+    /** SCMI direction receiver (P->A), acts as a platform/client */
+    SCMI_ENTITY_DIRECTION_RECEIVER = 2,
+
+    _SCMI_ENTITY_DIRECTION_PAD = UINT32_MAX
+};
+
+/* Sender shared memory: Agent -> Platform */
+static struct transport_buffer_t *const shared_memory_a2p =
     (struct transport_buffer_t *)SCP_SHARED_MEMORY_BASE;
+
+/* Receiver shared memory: Platform -> Agent */
+static struct transport_buffer_t *const shared_memory_p2a =
+    (struct transport_buffer_t *)SCP_SHARED_MEMORY_RECEIVER_BASE;
 
 /**
  * \brief Initialize the SCMI transport layer.
@@ -70,9 +93,13 @@ static scmi_comms_err_t transport_init(void)
         return err;
     }
 
-    shared_memory->flags = 0;
-    shared_memory->length = 0;
-    shared_memory->status = TRANSPORT_BUFFER_STATUS_FREE_MASK;
+    shared_memory_a2p->flags = 0;
+    shared_memory_a2p->length = 0;
+    shared_memory_a2p->status = TRANSPORT_BUFFER_STATUS_FREE_MASK;
+
+    shared_memory_p2a->flags = 0;
+    shared_memory_p2a->length = 0;
+    shared_memory_p2a->status = TRANSPORT_BUFFER_STATUS_FREE_MASK;
 
     return SCMI_COMMS_SUCCESS;
 }
@@ -81,39 +108,66 @@ static scmi_comms_err_t transport_init(void)
  * \brief Read a message from the shared memory to the local buffer.
  *
  * \param[out] msg  SCMI message
+ * \param[in]  dir  Direction of the message
  *
  * \return Error value as defined by scmi_comms_err_t.
  */
-static scmi_comms_err_t transport_receive(struct scmi_message_t *msg)
+static scmi_comms_err_t transport_receive(
+    struct scmi_message_t *msg,
+    enum scmi_entity_direction_t dir)
 {
-    scmi_comms_err_t err = scmi_hal_doorbell_clear();
+    struct transport_buffer_t *sh_mem;
+    scmi_comms_err_t err;
+    uint32_t msg_length;
+
+    err = scmi_hal_doorbell_clear();
     if (err != SCMI_COMMS_SUCCESS) {
         return err;
     }
 
-    uint32_t length = shared_memory->length;
+    switch (dir) {
+    case SCMI_ENTITY_DIRECTION_SENDER:
+        sh_mem = shared_memory_a2p;
+        break;
 
-    if ((length < sizeof(shared_memory->message_header)) ||
-        (length > TRANSPORT_BUFFER_MAX_LENGTH)) {
+    case SCMI_ENTITY_DIRECTION_RECEIVER:
+        sh_mem = shared_memory_p2a;
+        break;
+
+    default:
+        return SCMI_COMMS_GENERIC_ERROR;
+    }
+
+    msg_length = sh_mem->length;
+
+    if ((msg_length < sizeof(sh_mem->message_header)) ||
+        (msg_length > TRANSPORT_BUFFER_MAX_LENGTH)) {
         return SCMI_COMMS_INVALID_ARGUMENT;
     }
 
-    memcpy(msg, &shared_memory->message_header, length);
-    msg->payload_len = length - sizeof(msg->header);
+    memcpy(msg, &sh_mem->message_header, msg_length);
+    msg->payload_len = msg_length - sizeof(msg->header);
 
     return SCMI_COMMS_SUCCESS;
 }
 
 /**
- * \brief Write a response from the local buffer to the shared memory.
+ * \brief Write a response from the local buffer to the shared memory and signal
+ *        completion.
  *
  * \param[in] msg  SCMI message
  */
 static void transport_respond(const struct scmi_message_t *msg)
 {
+    /*
+     * SENDER - A2P response:
+     * Process command (done)
+     * Populate payload
+     * Mark channel as free
+     */
     /* Populate shared memory area */
-    memcpy(shared_memory->message_payload, msg->payload, msg->payload_len);
-    shared_memory->length = msg->payload_len + sizeof(msg->header);
+    memcpy(shared_memory_p2a->message_payload, msg->payload, msg->payload_len);
+    shared_memory_p2a->length = msg->payload_len + sizeof(msg->header);
 }
 
 /**
@@ -122,7 +176,7 @@ static void transport_respond(const struct scmi_message_t *msg)
 static void transport_complete(void)
 {
     /* Mark channel as free */
-    shared_memory->status |= TRANSPORT_BUFFER_STATUS_FREE_MASK;
+    shared_memory_p2a->status |= TRANSPORT_BUFFER_STATUS_FREE_MASK;
 
 #ifdef TRANSPORT_COMPLETION_INTERRUPT_SUPPORTED
     /* TODO: Issue completion interrupt */
@@ -148,19 +202,19 @@ static scmi_comms_err_t transport_send(const struct scmi_message_t *msg)
 
     /* Wait for channel to be free */
     /* TODO: Timeout */
-    while (!(shared_memory->status & TRANSPORT_BUFFER_STATUS_FREE_MASK));
+    while (!(shared_memory_a2p->status & TRANSPORT_BUFFER_STATUS_FREE_MASK));
 
     /* Populate shared memory area */
-    memcpy(&shared_memory->message_header, msg, length);
-    shared_memory->length = length;
+    memcpy(&shared_memory_a2p->message_header, msg, length);
+    shared_memory_a2p->length = length;
 
 #ifdef TRANSPORT_COMPLETION_INTERRUPT_SUPPORTED
     /* Interrupt-driven communications flow */
-    shared_memory->flags |= TRANSPORT_BUFFER_FLAGS_INTERRUPT_MASK;
+    shared_memory_a2p->flags |= TRANSPORT_BUFFER_FLAGS_INTERRUPT_MASK;
 #endif
 
     /* Mark channel as busy */
-    shared_memory->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
+    shared_memory_a2p->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
 
     /* Ring doorbell */
     err = scmi_hal_doorbell_ring();
@@ -172,7 +226,7 @@ static scmi_comms_err_t transport_send(const struct scmi_message_t *msg)
     /* TODO: Wait for completion interrupt */
 #else
     /* Wait until channel is free */
-    while (!(shared_memory->status & TRANSPORT_BUFFER_STATUS_FREE_MASK));
+    while (!(shared_memory_a2p->status & TRANSPORT_BUFFER_STATUS_FREE_MASK));
 #endif
 
     return SCMI_COMMS_SUCCESS;
@@ -310,7 +364,7 @@ static scmi_comms_err_t scmi_comms_notification_subscribe(struct scmi_message_t 
         return err;
     }
 
-    err = transport_receive(msg);
+    err = transport_receive(msg, SCMI_ENTITY_DIRECTION_SENDER);
     if (err != SCMI_COMMS_SUCCESS) {
         return err;
     }
@@ -341,7 +395,7 @@ static scmi_comms_err_t scmi_comms_notification_subscribe_and_wait(
 
     (void)psa_wait(SCP_DOORBELL_SIGNAL, PSA_BLOCK);
 
-    err = transport_receive(msg);
+    err = transport_receive(msg, SCMI_ENTITY_DIRECTION_SENDER);
     if (err != SCMI_COMMS_SUCCESS) {
         return err;
     }
@@ -411,7 +465,7 @@ void scmi_comms_main(void)
     while (1) {
         (void)psa_wait(SCP_DOORBELL_SIGNAL, PSA_BLOCK);
 
-        err = transport_receive(&agent_buf);
+        err = transport_receive(&agent_buf, SCMI_ENTITY_DIRECTION_RECEIVER);
         if (err == SCMI_COMMS_SUCCESS) {
             resp = scmi_handle_message_and_respond(&agent_buf);
         } else {

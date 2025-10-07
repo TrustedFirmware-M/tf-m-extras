@@ -21,6 +21,8 @@ extern volatile bool test_doorbell_receiver;
 #define SCP_SHARED_MEMORY_BASE (&test_shared_mem)
 #define SCP_SHARED_MEMORY_SIZE 128U
 
+#define SCP_SHARED_MEMORY_RECEIVER_BASE (&test_shared_mem[SCP_SHARED_MEMORY_SIZE / 2])
+
 #ifdef __cplusplus
 }
 #endif

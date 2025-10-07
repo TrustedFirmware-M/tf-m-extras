@@ -42,6 +42,9 @@ struct transport_buffer_t {
 static struct transport_buffer_t *const shared_memory =
     (struct transport_buffer_t *)SCP_SHARED_MEMORY_BASE;
 
+static struct transport_buffer_t *const shared_memory_receiver =
+    (struct transport_buffer_t *)SCP_SHARED_MEMORY_RECEIVER_BASE;
+
 /**
  * \brief Raise the SCMI partition's receiver doorbell and use the timer
  *        interrupt to trigger the partition's IRQ handler. Wait until the SCMI
@@ -149,17 +152,17 @@ static void scmi_test_valid_notification(struct test_result_t *ret)
     };
 
     /* Write notification */
-    shared_memory->length = 4 + sizeof(notification_payload);
-    shared_memory->message_header = message_header;
-    memcpy(shared_memory->message_payload, notification_payload,
+    shared_memory_receiver->length = 4 + sizeof(notification_payload);
+    shared_memory_receiver->message_header = message_header;
+    memcpy(shared_memory_receiver->message_payload, notification_payload,
            sizeof(notification_payload));
-    shared_memory->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
+    shared_memory_receiver->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
 
     /* Raise the partition's doorbell to signal message */
     raise_partition_receiver_doorbell();
 
     /* Check the response in the transport buffer up to the message payload */
-    if (memcmp(shared_memory, &expected_transport,
+    if (memcmp(shared_memory_receiver, &expected_transport,
         offsetof(struct transport_buffer_t, message_payload)) != 0) {
         TEST_FAIL("Transport buffer contained unexpected values\r\n");
         return;
@@ -194,21 +197,21 @@ static void scmi_test_invalid_message_length(struct test_result_t *ret)
      * TEST 1
      * Write notification with length too small for header
      */
-    shared_memory->length = 3;
-    shared_memory->message_header = message_header;
-    memcpy(shared_memory->message_payload, notification_payload,
+    shared_memory_receiver->length = 3;
+    shared_memory_receiver->message_header = message_header;
+    memcpy(shared_memory_receiver->message_payload, notification_payload,
            sizeof(notification_payload));
-    shared_memory->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
+    shared_memory_receiver->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
 
     raise_partition_receiver_doorbell();
 
-    if (memcmp(shared_memory, &expected_transport,
+    if (memcmp(shared_memory_receiver, &expected_transport,
         offsetof(struct transport_buffer_t, message_payload)) != 0) {
         TEST_FAIL("Transport buffer contained unexpected values\r\n");
         return;
     }
 
-    if (shared_memory->message_payload[0] != (uint32_t)SCMI_STATUS_PROTOCOL_ERROR) {
+    if (shared_memory_receiver->message_payload[0] != (uint32_t)SCMI_STATUS_PROTOCOL_ERROR) {
         TEST_FAIL("Invalid length did not return PROTOCOL_ERROR\r\n");
         return;
     }
@@ -217,15 +220,15 @@ static void scmi_test_invalid_message_length(struct test_result_t *ret)
      * TEST 2
      * Write notification with length that does not match message
      */
-    shared_memory->length = 8;
-    shared_memory->message_header = message_header;
-    memcpy(shared_memory->message_payload, notification_payload,
+    shared_memory_receiver->length = 8;
+    shared_memory_receiver->message_header = message_header;
+    memcpy(shared_memory_receiver->message_payload, notification_payload,
            sizeof(notification_payload));
-    shared_memory->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
+    shared_memory_receiver->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
 
     raise_partition_receiver_doorbell();
 
-    if (memcmp(shared_memory, &expected_transport,
+    if (memcmp(shared_memory_receiver, &expected_transport,
         offsetof(struct transport_buffer_t, message_payload)) != 0) {
         TEST_FAIL("Transport buffer contained unexpected values\r\n");
         return;
@@ -235,21 +238,21 @@ static void scmi_test_invalid_message_length(struct test_result_t *ret)
      * TEST 3
      * Write notification with length too large for transport
      */
-    shared_memory->length = UINT32_MAX;
-    shared_memory->message_header = message_header;
-    memcpy(shared_memory->message_payload, notification_payload,
+    shared_memory_receiver->length = UINT32_MAX;
+    shared_memory_receiver->message_header = message_header;
+    memcpy(shared_memory_receiver->message_payload, notification_payload,
            sizeof(notification_payload));
-    shared_memory->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
+    shared_memory_receiver->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
 
     raise_partition_receiver_doorbell();
 
-    if (memcmp(shared_memory, &expected_transport,
+    if (memcmp(shared_memory_receiver, &expected_transport,
         offsetof(struct transport_buffer_t, message_payload)) != 0) {
         TEST_FAIL("Transport buffer contained unexpected values\r\n");
         return;
     }
 
-    if (shared_memory->message_payload[0] != (uint32_t)SCMI_STATUS_PROTOCOL_ERROR) {
+    if (shared_memory_receiver->message_payload[0] != (uint32_t)SCMI_STATUS_PROTOCOL_ERROR) {
         TEST_FAIL("Invalid length did not return PROTOCOL_ERROR\r\n");
         return;
     }
@@ -274,21 +277,21 @@ static void scmi_test_invalid_message_header(struct test_result_t *ret)
     };
 
     /* Write message with an unknown message header */
-    shared_memory->length = 4 + sizeof(message_payload);
-    shared_memory->message_header = message_header;
-    memcpy(shared_memory->message_payload, message_payload,
+    shared_memory_receiver->length = 4 + sizeof(message_payload);
+    shared_memory_receiver->message_header = message_header;
+    memcpy(shared_memory_receiver->message_payload, message_payload,
            sizeof(message_payload));
-    shared_memory->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
+    shared_memory_receiver->status &= ~TRANSPORT_BUFFER_STATUS_FREE_MASK;
 
     raise_partition_receiver_doorbell();
 
-    if (memcmp(shared_memory, &expected_transport,
+    if (memcmp(shared_memory_receiver, &expected_transport,
         offsetof(struct transport_buffer_t, message_payload)) != 0) {
         TEST_FAIL("Transport buffer contained unexpected values\r\n");
         return;
     }
 
-    if (shared_memory->message_payload[0] != (uint32_t)SCMI_STATUS_NOT_SUPPORTED) {
+    if (shared_memory_receiver->message_payload[0] != (uint32_t)SCMI_STATUS_NOT_SUPPORTED) {
         TEST_FAIL("Invalid message type did not return NOT_SUPPORTED\r\n");
         return;
     }
