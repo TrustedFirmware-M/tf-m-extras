@@ -8,6 +8,7 @@
 #include "scmi_hal_defs.h"
 #include "tfm_hal_device_header.h"
 #include "tfm_plat_test.h"
+#include "scmi_protocol.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -88,9 +89,9 @@ static void scmi_test_subscribe(struct test_result_t *ret)
         .reserved1 = 0,
         .flags = 0,
         .length = 4 + sizeof(expected_payload),
-        .message_header = (0x12 << 10) /* protocol_id=system_power */ |
-                          (0x0 << 8) /* message_type=command */ |
-                          0x5 /* message_id=system_power_state_notify */,
+        .message_header = (SCMI_PROTOCOL_ID_SYS_POWER_STATE << 10) /* protocol_id=system_power */ |
+                          (SCMI_MESSAGE_TYPE_COMMAND << 8) /* message_type=command */ |
+                          SCMI_MESSAGE_ID_SYS_POWER_STATE_NOTIFY /* message_id=system_power_state_notify */,
     };
 
     /* First raise the partition's doorbell to signal SCP ready */
@@ -131,18 +132,18 @@ static void scmi_test_subscribe(struct test_result_t *ret)
  */
 static void scmi_test_valid_notification(struct test_result_t *ret)
 {
-    const uint32_t message_header = (0x12 << 10) /* protocol_id=system_power */ |
-                                    (0x3 << 8) /* message_type=notification */ |
-                                    0x0 /* message_id=system_power_state_notifier */;
+    const uint32_t message_header = (SCMI_PROTOCOL_ID_SYS_POWER_STATE << 10) /* protocol_id=system_power */ |
+                                    (SCMI_MESSAGE_TYPE_NOTIFICATION << 8) |
+                                    SCMI_MESSAGE_ID_SYS_POWER_STATE_NOTIFIER;
     const uint32_t notification_payload[] = { 0x1234 /* agent_id */,
                                               0x0 /* flags */,
-                                              0x0 /* system_state=shutdown */ };
+                                              SCMI_SYS_POWER_STATE_SHUTDOWN};
     const struct transport_buffer_t expected_transport = {
         .reserved0 = 0,
-        .status = 1,
+        .status = TRANSPORT_BUFFER_STATUS_FREE_MASK,
         .reserved1 = 0,
         .flags = 0,
-        .length = 4,
+        .length = 16, /* there is no response */
         .message_header = message_header,
     };
 
@@ -169,26 +170,29 @@ static void scmi_test_valid_notification(struct test_result_t *ret)
 }
 
 /**
- * \brief Tests sending messages with invalid lengths to the SCMI partition.
+ * \brief Tests sending notification with invalid lengths to the SCMI partition.
  */
 static void scmi_test_invalid_message_length(struct test_result_t *ret)
 {
-    const uint32_t message_header = (0x12 << 10) /* protocol_id=system_power */ |
-                                    (0x3 << 8) /* message_type=notification */ |
-                                    0x0 /* message_id=system_power_state_notifier */;
+    const uint32_t message_header = (SCMI_PROTOCOL_ID_SYS_POWER_STATE << 10) /* protocol_id=system_power */ |
+                                    (SCMI_MESSAGE_TYPE_NOTIFICATION << 8) |
+                                    SCMI_MESSAGE_ID_SYS_POWER_STATE_NOTIFIER;
     const uint32_t notification_payload[] = { 0x1234 /* agent_id */,
                                               0x0 /* flags */,
-                                              0x0 /* system_state=shutdown */ };
+                                              SCMI_SYS_POWER_STATE_SHUTDOWN};
     struct transport_buffer_t expected_transport = {
         .reserved0 = 0,
-        .status = 1,
+        .status = TRANSPORT_BUFFER_STATUS_FREE_MASK,
         .reserved1 = 0,
         .flags = 0,
         .length = 4 + 4,
         .message_header = message_header,
     };
 
-    /* Write notification with length too small for header */
+    /*
+     * TEST 1
+     * Write notification with length too small for header
+     */
     shared_memory->length = 3;
     shared_memory->message_header = message_header;
     memcpy(shared_memory->message_payload, notification_payload,
@@ -203,12 +207,15 @@ static void scmi_test_invalid_message_length(struct test_result_t *ret)
         return;
     }
 
-    if (shared_memory->message_payload[0] != (uint32_t)-10 /* PROTOCOL_ERROR */) {
+    if (shared_memory->message_payload[0] != (uint32_t)SCMI_STATUS_PROTOCOL_ERROR) {
         TEST_FAIL("Invalid length did not return PROTOCOL_ERROR\r\n");
         return;
     }
 
-    /* Write notification with length that does not match message */
+    /*
+     * TEST 2
+     * Write notification with length that does not match message
+     */
     shared_memory->length = 8;
     shared_memory->message_header = message_header;
     memcpy(shared_memory->message_payload, notification_payload,
@@ -217,16 +224,16 @@ static void scmi_test_invalid_message_length(struct test_result_t *ret)
 
     raise_partition_receiver_doorbell();
 
-    /* No response payload for notifications */
-    expected_transport.length = 4;
-
     if (memcmp(shared_memory, &expected_transport,
         offsetof(struct transport_buffer_t, message_payload)) != 0) {
         TEST_FAIL("Transport buffer contained unexpected values\r\n");
         return;
     }
 
-    /* Write notification with length too large for transport */
+    /*
+     * TEST 3
+     * Write notification with length too large for transport
+     */
     shared_memory->length = UINT32_MAX;
     shared_memory->message_header = message_header;
     memcpy(shared_memory->message_payload, notification_payload,
@@ -235,15 +242,13 @@ static void scmi_test_invalid_message_length(struct test_result_t *ret)
 
     raise_partition_receiver_doorbell();
 
-    expected_transport.length = 4 + 4;
-
     if (memcmp(shared_memory, &expected_transport,
         offsetof(struct transport_buffer_t, message_payload)) != 0) {
         TEST_FAIL("Transport buffer contained unexpected values\r\n");
         return;
     }
 
-    if (shared_memory->message_payload[0] != (uint32_t)-10) {
+    if (shared_memory->message_payload[0] != (uint32_t)SCMI_STATUS_PROTOCOL_ERROR) {
         TEST_FAIL("Invalid length did not return PROTOCOL_ERROR\r\n");
         return;
     }
@@ -282,7 +287,7 @@ static void scmi_test_invalid_message_header(struct test_result_t *ret)
         return;
     }
 
-    if (shared_memory->message_payload[0] != (uint32_t)-1 /* NOT_SUPPORTED */) {
+    if (shared_memory->message_payload[0] != (uint32_t)SCMI_STATUS_NOT_SUPPORTED) {
         TEST_FAIL("Invalid message type did not return NOT_SUPPORTED\r\n");
         return;
     }

@@ -139,8 +139,7 @@ static scmi_comms_err_t transport_receive(struct scmi_message_t *msg)
 }
 
 /**
- * \brief Write a response from the local buffer to the shared memory and signal
- *        completion.
+ * \brief Write a response from the local buffer to the shared memory.
  *
  * \param[in] msg  SCMI message
  */
@@ -149,7 +148,13 @@ static void transport_respond(const struct scmi_message_t *msg)
     /* Populate shared memory area */
     memcpy(shared_memory->message_payload, msg->payload, msg->payload_len);
     shared_memory->length = msg->payload_len + sizeof(msg->header);
+}
 
+/**
+ * \brief Complete the response to the shared memory and signal completion.
+ */
+static void transport_complete(void)
+{
     /* Mark channel as free */
     shared_memory->status |= TRANSPORT_BUFFER_STATUS_FREE_MASK;
 
@@ -269,18 +274,21 @@ static void scmi_handle_sys_power_state_set(struct scmi_message_t *msg)
 static void scmi_handle_sys_power_state_notifier(struct scmi_message_t *msg)
 {
     if (msg->payload_len != sizeof(struct scmi_sys_power_state_notifier_t)) {
-        /* No return values for notifications */
+        /*
+         * Invalid notification message received.
+         * No return values for notifications.
+         */
         msg->payload_len = 0;
         return;
     }
 
-    struct scmi_sys_power_state_notifier_t *pwr_not =
+    struct scmi_sys_power_state_notifier_t *sys_pwr_notif =
         (struct scmi_sys_power_state_notifier_t *)msg->payload;
 
-    scmi_hal_sys_power_state(pwr_not->agent_id, pwr_not->flags, pwr_not->system_state);
-
-    /* No return values for notifications */
-    msg->payload_len = 0;
+    scmi_hal_sys_power_state(
+        sys_pwr_notif->agent_id,
+        sys_pwr_notif->flags,
+        sys_pwr_notif->system_state);
 }
 
 /**
@@ -288,7 +296,7 @@ static void scmi_handle_sys_power_state_notifier(struct scmi_message_t *msg)
  *
  * \param[in,out] msg  SCMI message
  */
-static void scmi_handle_message(struct scmi_message_t *msg)
+static bool scmi_handle_message_and_respond(struct scmi_message_t *msg)
 {
     uint8_t message_id = (msg->header & SCMI_MESSAGE_HEADER_MESSAGE_ID_MASK)
                          >> SCMI_MESSAGE_HEADER_MESSAGE_ID_POS;
@@ -297,15 +305,23 @@ static void scmi_handle_message(struct scmi_message_t *msg)
     uint8_t protocol_id = (msg->header & SCMI_MESSAGE_HEADER_PROTOCOL_ID_MASK)
                           >> SCMI_MESSAGE_HEADER_PROTOCOL_ID_POS;
 
+    bool require_response = true;
+
     if (protocol_id == SCMI_PROTOCOL_ID_SYS_POWER_STATE) {
-        if (message_type == SCMI_MESSAGE_TYPE_COMMAND &&
-            message_id == SCMI_MESSAGE_ID_SYS_POWER_STATE_SET) {
+        if ((message_type == SCMI_MESSAGE_TYPE_COMMAND) &&
+            (message_id == SCMI_MESSAGE_ID_SYS_POWER_STATE_SET)) {
             scmi_handle_sys_power_state_set(msg);
-            return;
-        } else if (message_type == SCMI_MESSAGE_TYPE_NOTIFICATION &&
-                   message_id == SCMI_MESSAGE_ID_SYS_POWER_STATE_NOTIFIER) {
-            scmi_handle_sys_power_state_notifier(msg);
-            return;
+
+            return require_response;
+        } else if (message_type == SCMI_MESSAGE_TYPE_NOTIFICATION) {
+            /* Received notifications do not require a response */
+            require_response = false;
+
+            if (message_id == SCMI_MESSAGE_ID_SYS_POWER_STATE_NOTIFIER) {
+                scmi_handle_sys_power_state_notifier(msg);
+            }
+
+            return require_response;
         }
     }
 
@@ -313,6 +329,7 @@ static void scmi_handle_message(struct scmi_message_t *msg)
      * be responded to with a return value of NOT_SUPPORTED as the status code.
      */
     scmi_response_status(msg, SCMI_STATUS_NOT_SUPPORTED);
+    return require_response;
 }
 
 /**
@@ -362,6 +379,7 @@ void scmi_comms_main(void)
 {
     scmi_comms_err_t err;
     struct scmi_message_t agent_buf;
+    bool resp;
 
     err = transport_init();
     if (err != SCMI_COMMS_SUCCESS) {
@@ -395,11 +413,17 @@ void scmi_comms_main(void)
 
         err = transport_receive(&agent_buf);
         if (err == SCMI_COMMS_SUCCESS) {
-            scmi_handle_message(&agent_buf);
+            resp = scmi_handle_message_and_respond(&agent_buf);
         } else {
             scmi_response_status(&agent_buf, SCMI_STATUS_PROTOCOL_ERROR);
+            resp = true;
         }
-        transport_respond(&agent_buf);
+
+        if (resp) {
+            transport_respond(&agent_buf);
+        }
+
+        transport_complete();
 
         psa_eoi(SCP_DOORBELL_SIGNAL);
     }
