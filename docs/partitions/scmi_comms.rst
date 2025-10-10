@@ -2,11 +2,18 @@
 SCMI Comms Partition
 ####################
 
-The SCMI Comms partition provides a minimal implementation of the SCMI [1]_
-protocol for the purpose of subscribing to system power state notifications from
-SCP.
+Use the SCMI Comms partition to implement a minimal version of the SCMI [1]_
+protocol that subscribes to system power state notifications from the SCP [2]_.
 
-It currently supports only the shared memory based transport protocol.
+
+.. Note::
+
+ - It currently supports only the shared memory based transport protocol.
+   Refer to :doc:`Building Tests </building/tests_build_instruction>` on how to
+   build TF-M regression tests and PSA Arch tests to verify TF-M.
+ - It is designed to work primarily between RSE and a power control framework,
+   such as the one implemented by the SCP-firmware (SCP).
+
 
 ***********************
 Supported message types
@@ -32,7 +39,17 @@ Partition source files:
 - ``scmi_comms.h``: Common definitions used within the partition.
 - ``scmi_hal.h``: Hardware abstraction layer that must be implemented by the
   platform to support the SCMI Comms partition.
+
+TF-M-provided source and header files:
+
 - ``scmi_protocol.h``: Defines values from the SCMI spec.
+- ``scmi_system_power.c``: Provides the SCMI System Power Protocol
+- ``scmi_system_power.h``: Provides the SCMI System Power Protocol definitions
+- ``scmi_common.h``: Common definitions for SCMI protocols and messages
+
+The target platform must provide:
+
+- ``scmi_plat_defs.h``: Provides details for the shared memory
 
 Build options for out of tree build
 ===================================
@@ -51,7 +68,7 @@ Platform porting
 To use the SCMI Comms partition, a platform must supply an interface library
 called ``scmi_hal`` for the partition to link against. The library must contain
 implementations of all of the functions declared in ``scmi_hal.h``. It must also
-contain a header called ``scmi_hal_defs.h``, with the following definitions:
+contain a header called ``scmi_plat_defs.h``, with the following definitions:
 
 - ``SCP_SHARED_MEMORY_BASE``: The base address of a memory area shared between
   SCP and the CPU running TF-M, which is used to pass messages via the SCMI
@@ -66,6 +83,9 @@ also implement that IRQ's handler function to route the request to the SCMI
 comms partition (see
 :doc:`TF-M Secure IRQ integration guide<TF-M:integration_guide/tfm_secure_irq_integration_guide>`
 for more details).
+
+To successfully enable tests, the platform will need to link its targets to
+``tfm_extras_test_secure_headers``.
 
 ***************************
 Completion interrupt option
@@ -99,11 +119,26 @@ To run the tests, all of the following build options need to be supplied:
 - ``EXTRA_S_TEST_SUITE_PATH``: ``<tfm_extras_dir>/partitions/scmi/test/secure``
 - ``TEST_S_SCMI_COMMS``: Set to ``ON`` to enable the tests and test HAL.
 
+***********
+Limitations
+***********
+
+Note that currently this partion:
+- does not perform system discovery at initialization stage, thus the platform
+  needs to ensure that the support required by this agent is in place.
+  For example, the SCMI System Power protocol should be available and this agent
+  can subscribe to notifications.
+- is aligned with version 0x10000 of the System Power protocol.
+- when acting as a receiver, it only supports
+  SCMI_MESSAGE_ID_SYS_POWER_STATE_SET as input command.
+
 **********
 References
 **********
 
 .. [1] `Arm System Control and Management Interface (SCMI) <https://developer.arm.com/documentation/den0056/latest/>`_
+
+.. [2] `SCP-Firmware (SCP) <https://developer.arm.com/Tools%20and%20Software/SCP%20Firmware>`_
 
 --------------
 
