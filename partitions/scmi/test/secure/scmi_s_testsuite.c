@@ -9,6 +9,7 @@
 #include "tfm_hal_device_header.h"
 #include "tfm_plat_test.h"
 #include "scmi_protocol.h"
+#include "scmi_system_power.h"
 
 #include <stdbool.h>
 #include <stddef.h>

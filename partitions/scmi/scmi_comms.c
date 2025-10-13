@@ -11,39 +11,14 @@
 #include "scmi_protocol.h"
 #include "tfm_log_unpriv.h"
 
+/* From TF-M common */
+#include "scmi_common.h"
+#include "scmi_system_power.h"
+
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
-#define SCMI_MESSAGE_HEADER_MESSAGE_ID_POS   0
-#define SCMI_MESSAGE_HEADER_MESSAGE_ID_MASK \
-    (UINT32_C(0xFF) << SCMI_MESSAGE_HEADER_MESSAGE_ID_POS)
-
-#define SCMI_MESSAGE_HEADER_MESSAGE_TYPE_POS 8
-#define SCMI_MESSAGE_HEADER_MESSAGE_TYPE_MASK \
-    (UINT32_C(0x3) << SCMI_MESSAGE_HEADER_MESSAGE_TYPE_POS)
-
-#define SCMI_MESSAGE_HEADER_PROTOCOL_ID_POS  10
-#define SCMI_MESSAGE_HEADER_PROTOCOL_ID_MASK \
-    (UINT32_C(0xFF) << SCMI_MESSAGE_HEADER_PROTOCOL_ID_POS)
-
-#define SCMI_MESSAGE_HEADER_TOKEN_POS        18
-#define SCMI_MESSAGE_HEADER_TOKEN_MASK \
-    (UINT32_C(0x3FF) << SCMI_MESSAGE_HEADER_TOKEN_POS)
-
-static uint32_t scmi_message_header(uint8_t message_id, uint8_t message_type,
-                                    uint8_t protocol_id, uint8_t token)
-{
-    return (((uint32_t)message_id << SCMI_MESSAGE_HEADER_MESSAGE_ID_POS) &
-            SCMI_MESSAGE_HEADER_MESSAGE_ID_MASK) |
-           (((uint32_t)message_type << SCMI_MESSAGE_HEADER_MESSAGE_TYPE_POS) &
-            SCMI_MESSAGE_HEADER_MESSAGE_TYPE_MASK) |
-           (((uint32_t)protocol_id << SCMI_MESSAGE_HEADER_PROTOCOL_ID_POS) &
-            SCMI_MESSAGE_HEADER_PROTOCOL_ID_MASK) |
-           (((uint32_t)token << SCMI_MESSAGE_HEADER_TOKEN_POS) &
-            SCMI_MESSAGE_HEADER_TOKEN_MASK);
-}
 
 #define TRANSPORT_BUFFER_STATUS_FREE_POS  0
 #define TRANSPORT_BUFFER_STATUS_FREE_MASK \
@@ -71,15 +46,6 @@ struct transport_buffer_t {
     volatile uint32_t length; /**< Length in bytes of the message header and payload */
     uint32_t message_header; /**< Message header */
     uint32_t message_payload[]; /**< Message payload */
-};
-
-/**
- * \brief Structure representing an SCMI message.
- */
-struct scmi_message_t {
-    uint32_t header;
-    uint32_t payload[(TRANSPORT_BUFFER_MAX_LENGTH - sizeof(uint32_t)) / sizeof(uint32_t)];
-    uint32_t payload_len;
 };
 
 static struct transport_buffer_t *const shared_memory =
@@ -222,28 +188,6 @@ static void scmi_response_status(struct scmi_message_t *msg, int32_t status)
 {
     msg->payload[0] = status;
     msg->payload_len = sizeof(msg->payload[0]);
-}
-
-/**
- * \brief Create an SCMI system power state notify message.
- *
- * \param[out] msg  SCMI message
- */
-static void scmi_message_sys_power_state_notify(struct scmi_message_t *msg)
-{
-    msg->header =
-        scmi_message_header(SCMI_MESSAGE_ID_SYS_POWER_STATE_NOTIFY,
-                            SCMI_MESSAGE_TYPE_COMMAND,
-                            SCMI_PROTOCOL_ID_SYS_POWER_STATE,
-                            0);
-
-    assert(sizeof(struct scmi_sys_power_state_notify_t) <= sizeof(msg->payload));
-
-    memcpy(msg->payload,
-           &(struct scmi_sys_power_state_notify_t) { .notify_enable = 1 },
-           sizeof(struct scmi_sys_power_state_notify_t));
-
-    msg->payload_len = sizeof(struct scmi_sys_power_state_notify_t);
 }
 
 /**
