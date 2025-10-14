@@ -20,7 +20,7 @@ target_include_directories(scmi_test_hal
 target_sources(scmi_test_hal
     INTERFACE
         hal/scmi_test_hal.c
-        ${PLATFORM_DIR}/ext/common/scmi_hal_common.c
+        ${PLATFORM_DIR}/ext/common/scmi/scmi_hal_common.c
 )
 
 target_sources(tfm_test_suite_extra_s
