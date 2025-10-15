@@ -164,9 +164,9 @@ static void transport_respond(const struct scmi_message_t *msg)
  *
  * \return Error value as defined by scmi_comms_err_t.
  */
-static int32_t transport_send(const struct scmi_message_t *msg)
+static scmi_comms_err_t transport_send(const struct scmi_message_t *msg)
 {
-    int32_t err;
+    scmi_comms_err_t err;
     uint32_t length = msg->payload_len + sizeof(msg->header);
 
     if (length > TRANSPORT_BUFFER_MAX_LENGTH) {
