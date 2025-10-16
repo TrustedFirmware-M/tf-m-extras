@@ -9,17 +9,26 @@
 
 #include "dtpm_client.h"
 #include "dtpm_client_api.h"
+
 #include "measured_boot_api.h"
 #include "measurement_metadata.h"
-#include "psa/crypto_types.h"
-#include "psa/crypto_values.h"
+
+#include "psa/crypto.h"
+
+#include "config_tfm.h"
 #include "tfm_boot_measurement.h"
+#include "dtpm_client_partition_hal.h"
+#include "tfm_log.h"
+
 #include "event_record.h"
 #include "event_print.h"
 
-#include "tfm_log.h"
+#ifndef TPM_SECURITY_CONFIG_CLAIMS_CNT
+#define TPM_SECURITY_CONFIG_CLAIMS_CNT 2
+#endif
 
 static uint8_t event_log_buf[EVENT_LOG_BUFFER_SIZE] = {0};
+static struct security_config security_config_arr[TPM_SECURITY_CONFIG_CLAIMS_CNT] = {0};
 
 struct tpm_chip_data tpm_chip_data = {
     .locality = 0,
@@ -114,6 +123,59 @@ static size_t get_event_log_size()
      return event_log_get_cur_size(event_log_buf);
 }
 
+static int serialize_security_config_data(struct security_config_data *config_data,
+                                          uint8_t *serialized_data_buf,
+                                          size_t *serialized_data_len,
+                                          size_t serialized_data_buf_len)
+{
+    size_t offset = 0;
+
+    if (serialized_data_buf_len < sizeof(struct security_config_data)) {
+        return -1;
+    }
+
+    memcpy(serialized_data_buf, &(config_data->name_length), sizeof(uint64_t));
+    offset += sizeof(uint64_t);
+
+    memcpy(serialized_data_buf + offset, &(config_data->data_length), sizeof(uint64_t));
+    offset += sizeof(uint64_t);
+
+    memcpy(serialized_data_buf + offset,
+           &(config_data->name), config_data->name_length);
+    offset += config_data->name_length;
+
+    memcpy(serialized_data_buf + offset, &(config_data->config_data),
+           config_data->data_length);
+    offset += config_data->data_length;
+
+    *serialized_data_len = offset;
+
+    return 0;
+}
+
+static psa_status_t hash_platform_config_data(struct security_config_data *config_data,
+                                              psa_algorithm_t hash_algo, uint8_t *digest_buf,
+                                              size_t digest_buf_size, size_t *digest_len)
+{
+    size_t serialized_buf_len;
+    uint8_t serialized_data_buf[sizeof(struct security_config_data)] = {0};
+
+    if (digest_buf_size < PSA_HASH_LENGTH(hash_algo)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (serialize_security_config_data(config_data, serialized_data_buf,
+                                       &serialized_buf_len,
+                                       sizeof(serialized_data_buf))) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    return(psa_hash_compute(hash_algo,
+                            serialized_data_buf, serialized_buf_len,
+                            digest_buf, digest_buf_size, digest_len));
+
+}
+
 psa_status_t get_event_log(uint8_t *buffer, size_t buffer_size, size_t *event_log_size)
 {
     size_t ev_log_size = get_event_log_size(event_log_buf);
@@ -144,6 +206,10 @@ psa_status_t tfm_dtpm_client_init(void)
     uint16_t hash_alg;
     int slot;
     event_log_metadata_t event_log_metadata;
+    size_t security_config_digest_len;
+    size_t security_config_len;
+
+    uint8_t security_config_digest_buf[MAX_DIGEST_SIZE] = {0};
 
     if (init_pcr_index_for_boot_measurement()) {
         return PSA_ERROR_PROGRAMMER_ERROR;
@@ -181,6 +247,7 @@ psa_status_t tfm_dtpm_client_init(void)
         status = dtpm_client_extend(pcr_index, &measurement.value.hash_buf[0],
                 hash_alg, measurement.value.hash_buf_size);
         if (status != PSA_SUCCESS) {
+            ERROR("Extend to dTPM client failed\n");
             return status;
         }
 
@@ -191,6 +258,35 @@ psa_status_t tfm_dtpm_client_init(void)
         if (event_log_record(&measurement.value.hash_buf[0], EV_POST_CODE, &event_log_metadata)) {
             ERROR("Event log record failed\n");
             return PSA_ERROR_PROGRAMMER_ERROR;
+        }
+    }
+
+    if (tfm_plat_get_security_config_data(security_config_arr,
+                                          &security_config_len,
+                                          TPM_SECURITY_CONFIG_CLAIMS_CNT) != TFM_PLAT_ERR_SUCCESS) {
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
+    for (int i = 0; i < security_config_len; i++) {
+        status = hash_platform_config_data(&security_config_arr[i].security_config_data,
+                                           security_config_arr[i].hash_type,
+                                           security_config_digest_buf,
+                                           sizeof(security_config_digest_buf),
+                                           &security_config_digest_len);
+        if (status != PSA_SUCCESS) {
+            return status;
+        }
+
+        if (get_tpm_hash_alg(security_config_arr[i].hash_type, &hash_alg)) {
+            return PSA_ERROR_PROGRAMMER_ERROR;
+        }
+
+        status = dtpm_client_extend(security_config_arr[i].pcr_index,
+                                    security_config_digest_buf,
+                                    hash_alg, security_config_digest_len);
+        if (status != PSA_SUCCESS) {
+            ERROR("Extend to dTPM client failed\n");
+            return status;
         }
     }
 

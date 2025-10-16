@@ -25,6 +25,7 @@
     }
   ],
   "dependencies": [
-      "TFM_MEASURED_BOOT"
+      "TFM_MEASURED_BOOT",
+      "TFM_CRYPTO"
   ]
 }
