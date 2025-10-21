@@ -30,7 +30,7 @@
 static uint8_t event_log_buf[EVENT_LOG_BUFFER_SIZE] = {0};
 static struct security_config security_config_arr[TPM_SECURITY_CONFIG_CLAIMS_CNT] = {0};
 
-struct tpm_chip_data tpm_chip_data = {
+static const struct tpm_chip_data tpm_chip_data = {
     .locality = 0,
     .timeout_msec_a = 750,
     .timeout_msec_b = 2000,
