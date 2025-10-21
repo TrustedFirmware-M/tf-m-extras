@@ -23,6 +23,7 @@ extern "C" {
 #define MAX_SECURITY_CONFIG_DATA_LEN 32
 
 #define INSECURE_LIFECYCLE_EVENT_ID 0x0
+#define DEBUG_EVENT_ID 0x1
 
 struct security_config_data {   /* The digest is calculated over the structure. */
     uint64_t name_length;
