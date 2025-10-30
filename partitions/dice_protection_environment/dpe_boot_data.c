@@ -33,10 +33,6 @@
      + sizeof(struct boot_measurement_metadata) \
      + MEASUREMENT_VALUE_MAX_SIZE)
 
-/* 2 measurements from the BL1 stages and 1 measurement per image from BL2. */
-#define MAX_SHARED_BOOT_DATA_LENGTH \
-    ((2 + MCUBOOT_IMAGE_NUMBER) * SHARED_BOOT_MEASUREMENT_SIZE)
-
 /**
  * \struct boot_measurement_data
  *
