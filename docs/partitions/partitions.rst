@@ -92,8 +92,20 @@ SCP.
 
 **Maintainers**
 
-- Jamie Fox `jamie.fox@arm.com <jamie.fox@arm.com>`_
+- Nicola Mazzucato `Nicola.Mazzucato@arm.com <Nicola.Mazzucato@arm.com>`_
+
+***********
+dTPM Client
+***********
+
+A partition to extend boot measurements into TPM PCR.
+
+**Maintainers**
+
+- Mudit Sharma `Mudit Sharma <mudit.sharma@arm.com>`_
 
 ---------------------------
 
-*Copyright (c) 2021-2024, Arm Limited. All rights reserved.*
+*SPDX-License-Identifier: BSD-3-Clause*
+
+*SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors*
