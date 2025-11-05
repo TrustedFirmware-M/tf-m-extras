@@ -8,12 +8,12 @@
 #include "psa_manifest/scmi_comms.h"
 #include "scmi_comms.h"
 #include "scmi_hal.h"
-#include "scmi_protocol.h"
 #include "tfm_log_unpriv.h"
 
 /* From TF-M common */
 #include "scmi_common.h"
 #include "scmi_system_power.h"
+#include "scmi_protocol.h"
 
 #include <assert.h>
 #include <stddef.h>
