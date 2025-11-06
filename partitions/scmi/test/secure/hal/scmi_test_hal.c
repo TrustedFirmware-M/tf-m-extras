@@ -15,7 +15,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-char test_shared_mem[SCP_SHARED_MEMORY_SIZE] __ALIGNED(8);
+char test_shared_mem[128] __ALIGNED(8);
 volatile bool test_doorbell_sender;
 volatile bool test_doorbell_receiver;
 

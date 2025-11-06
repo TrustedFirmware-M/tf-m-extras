@@ -32,8 +32,6 @@
 #define TRANSPORT_BUFFER_FLAGS_INTERRUPT_MASK \
     (UINT32_C(0x1) << TRANSPORT_BUFFER_FLAGS_INTERRUPT_POS)
 
-#define TRANSPORT_BUFFER_MAX_LENGTH \
-    (SCP_SHARED_MEMORY_SIZE - offsetof(struct transport_buffer_t, message_header))
 
 /**
  * \brief Shared memory area layout used for sending & receiving messages
@@ -141,7 +139,7 @@ static scmi_comms_err_t transport_receive(
     msg_length = sh_mem->length;
 
     if ((msg_length < sizeof(sh_mem->message_header)) ||
-        (msg_length > TRANSPORT_BUFFER_MAX_LENGTH)) {
+        (msg_length > TRANSPORT_MESSAGE_MAX_LENGTH)) {
         return SCMI_COMMS_INVALID_ARGUMENT;
     }
 
@@ -196,7 +194,7 @@ static scmi_comms_err_t transport_send(const struct scmi_message_t *msg)
     scmi_comms_err_t err;
     uint32_t length = msg->payload_len + sizeof(msg->header);
 
-    if (length > TRANSPORT_BUFFER_MAX_LENGTH) {
+    if (length > TRANSPORT_MESSAGE_MAX_LENGTH) {
         return SCMI_COMMS_INVALID_ARGUMENT;
     }
 

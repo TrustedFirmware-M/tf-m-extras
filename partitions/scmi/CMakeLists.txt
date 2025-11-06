@@ -59,4 +59,5 @@ target_link_libraries(tfm_partitions
 target_compile_definitions(tfm_config
     INTERFACE
         TFM_PARTITION_SCMI_COMMS
+        $<$<BOOL:${TEST_S_SCMI_COMMS}>:TEST_S_SCMI_COMMS>
 )

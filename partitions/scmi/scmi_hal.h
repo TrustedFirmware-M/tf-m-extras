@@ -8,7 +8,7 @@
 #define __SCMI_HAL_H__
 
 #include "scmi_comms.h"
-#include "scmi_hal_defs.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 

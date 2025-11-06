@@ -38,3 +38,16 @@ target_link_libraries(tfm_test_suite_extra_s
         scmi_test_hal
         tfm_psa_rot_partition_scmi_comms # Required for psa_manifest/scmi_comms.h
 )
+
+# Add a header-only library for properties consumed in TF-M
+add_library(tfm_extras_test_secure_headers INTERFACE)
+
+target_include_directories(tfm_extras_test_secure_headers
+    INTERFACE
+        hal
+)
+
+target_include_directories(tfm_extras_test_secure_headers
+    INTERFACE
+        ../..
+)
