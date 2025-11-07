@@ -14,7 +14,7 @@
 #include "tfm_boot_measurement.h"
 #include "boot_hal.h"
 #include "service_api.h"
-#include "tfm_strnlen.h"
+#include "tfm_sprt.h"
 #include "tfm_log_unpriv.h"
 #include <stdint.h>
 #include <string.h>
@@ -526,7 +526,7 @@ psa_status_t collect_shared_measurements(void)
                     version_size,
                     metadata_ptr->measurement_type,
                     (const uint8_t*)metadata_ptr->sw_type,
-                    tfm_strnlen(metadata_ptr->sw_type,
+                    strnlen(metadata_ptr->sw_type,
                                 sizeof(metadata_ptr->sw_type)),
                     tlv_curr + SHARED_DATA_ENTRY_HEADER_SIZE,
                     tlv_entry.tlv_len,
