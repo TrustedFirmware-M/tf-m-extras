@@ -14,7 +14,7 @@
 #include "tfm_boot_measurement.h"
 #include "boot_hal.h"
 #include "service_api.h"
-#include "tfm_sprt.h"
+#include "tfm_string.h"
 #include "tfm_log_unpriv.h"
 #include <stdint.h>
 #include <string.h>
