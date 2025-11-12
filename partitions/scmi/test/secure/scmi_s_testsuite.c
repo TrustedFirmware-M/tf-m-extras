@@ -16,29 +16,6 @@
 #include <stdint.h>
 #include <string.h>
 
-/* Duplicates of definitions in SCMI partition */
-#define TRANSPORT_BUFFER_STATUS_FREE_POS  0
-#define TRANSPORT_BUFFER_STATUS_FREE_MASK \
-    (UINT32_C(0x1) << TRANSPORT_BUFFER_STATUS_FREE_POS)
-
-#define TRANSPORT_BUFFER_STATUS_ERROR_POS 1
-#define TRANSPORT_BUFFER_STATUS_ERROR_MASK \
-    (UINT32_C(0x1) << TRANSPORT_BUFFER_STATUS_ERROR_POS)
-
-#define TRANSPORT_BUFFER_FLAGS_INTERRUPT_POS 0
-#define TRANSPORT_BUFFER_FLAGS_INTERRUPT_MASK \
-    (UINT32_C(0x1) << TRANSPORT_BUFFER_FLAGS_INTERRUPT_POS)
-
-struct transport_buffer_t {
-    uint32_t reserved0; /**< Reserved, must be zero */
-    volatile uint32_t status; /**< Channel status */
-    uint64_t reserved1; /**< Implementation defined field */
-    uint32_t flags; /**< Channel flags */
-    volatile uint32_t length; /**< Length in bytes of the message header and payload */
-    uint32_t message_header; /**< Message header */
-    uint32_t message_payload[]; /**< Message payload */
-};
-
 static struct transport_buffer_t *const shared_memory =
     (struct transport_buffer_t *)SCP_SHARED_MEMORY_BASE;
 
