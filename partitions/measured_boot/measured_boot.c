@@ -24,10 +24,12 @@
 
 #ifdef CONFIG_TFM_BOOT_STORE_MEASUREMENTS
 /* Size of 1 complete measurement (value + metadata) in TLV format. */
+#ifndef SHARED_BOOT_MEASUREMENT_SIZE
 #define SHARED_BOOT_MEASUREMENT_SIZE                                           \
                             ((2 * SHARED_DATA_ENTRY_HEADER_SIZE)               \
                              + sizeof(struct boot_measurement_metadata)        \
                              + MEASUREMENT_VALUE_MAX_SIZE)
+#endif /* SHARED_BOOT_MEASUREMENT_SIZE */
 
 /*!
  * \struct boot_measurement_data
