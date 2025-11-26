@@ -12,7 +12,7 @@
   "priority": "LOW",
   "model": "SFN",
   "entry_init": "tfm_dtpm_client_init",
-  "stack_size": "0x600",
+  "stack_size": "0x620",
   "services": [
     {
       "name": "TFM_DTPM_CLIENT",
