@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2023-2025, Arm Limited. All rights reserved.
+# SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -121,11 +121,11 @@ if (HOST_BUILD)
         COMMAND ${CMAKE_COMMAND} -S ${CMAKE_CURRENT_SOURCE_DIR}/test/host
                                  -B ${CMAKE_CURRENT_BINARY_DIR}/dpe_host
                                  -G ${CMAKE_GENERATOR}
-                                 -DMBEDCRYPTO_PATH=${MBEDCRYPTO_PATH} # External dependency
-                                 -DQCBOR_PATH=${QCBOR_PATH}           # External dependency
-                                 -DTFM_PATH=${CMAKE_SOURCE_DIR}       # To locate tfm_t_cose.cmake
-                                 -DT_COSE_PATH=${T_COSE_PATH}         # External dependency
-                                 -DTFM_TEST_PATH=${TFM_TEST_PATH}     # To locate test framework src
+                                 -DTF_PSA_CRYPTO_PATH=${TF_PSA_CRYPTO_PATH} # External dependency
+                                 -DQCBOR_PATH=${QCBOR_PATH}                 # External dependency
+                                 -DTFM_PATH=${CMAKE_SOURCE_DIR}             # To locate tfm_t_cose.cmake
+                                 -DT_COSE_PATH=${T_COSE_PATH}               # External dependency
+                                 -DTFM_TEST_PATH=${TFM_TEST_PATH}           # To locate test framework src
                                  -DLOG_LEVEL_UNPRIV=${TFM_PARTITION_LOG_LEVEL}
                                  $<$<BOOL:${AFL_CC}>:-DCMAKE_C_COMPILER=${AFL_CC}>
                                  $<$<BOOL:${AFL_CC}>:-DFUZZ_TEST=ON>

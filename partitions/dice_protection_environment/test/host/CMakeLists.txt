@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright (c) 2024-2025, Arm Limited. All rights reserved.
+# SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
@@ -11,11 +11,12 @@ Project("DPE Host Build" LANGUAGES C)
 
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
+set(TF_PSA_CRYPTO_AS_SUBPROJECT ON)
 set(ENABLE_TESTING OFF)
 set(ENABLE_PROGRAMS OFF)
-set(MBEDTLS_FATAL_WARNINGS OFF)
-set(ENABLE_DOCS OFF)
-set(INSTALL_MBEDTLS_HEADERS OFF)
+set(TF_PSA_CRYPTO_FATAL_WARNINGS OFF)
+set(INSTALL_TF_PSA_CRYPTO_HEADERS OFF)
+set(GEN_FILES OFF)
 
 ################################## Fuzzing #####################################
 
@@ -30,7 +31,7 @@ endif()
 
 ############################### Crypto Library #################################
 
-add_subdirectory(${MBEDCRYPTO_PATH} mbedtls)
+add_subdirectory(${TF_PSA_CRYPTO_PATH} tfpsacrypto)
 
 ############################### QCBOR Library ##################################
 
@@ -62,7 +63,7 @@ target_link_libraries(t_cose
     PRIVATE
         tfm_t_cose_common
         qcbor
-        mbedtls
+        tfpsacrypto
 )
 
 ############################### DPE Library ####################################
@@ -95,7 +96,7 @@ target_include_directories(dpe_lib
 target_link_libraries(dpe_lib
     PUBLIC
         t_cose
-        mbedtls
+        tfpsacrypto
         qcbor
 )
 
@@ -137,7 +138,7 @@ add_subdirectory(../secure dpe_reg_test)
 target_link_libraries(tfm_test_suite_extra_s
     PRIVATE
         t_cose
-        mbedtls
+        tfpsacrypto
         qcbor
         tfm_test_framework_common
 )

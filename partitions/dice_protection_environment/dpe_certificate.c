@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -55,7 +55,7 @@ static dpe_error_t t_cose_err_to_dpe_err(enum t_cose_err_t err)
 
 static dpe_error_t certificate_encode_start(QCBOREncodeContext *cbor_enc_ctx,
                                             struct t_cose_sign1_sign_ctx *signer_ctx,
-                                            psa_key_handle_t private_key)
+                                            psa_key_id_t private_key_id)
 {
     enum t_cose_err_t t_cose_err;
     struct t_cose_key attest_key;
@@ -64,7 +64,7 @@ static dpe_error_t certificate_encode_start(QCBOREncodeContext *cbor_enc_ctx,
     /* DPE Certificate is untagged COSE_Sign1 message */
     t_cose_sign1_sign_init(signer_ctx, T_COSE_OPT_OMIT_CBOR_TAG, DPE_T_COSE_ALG);
 
-    attest_key.key.handle = private_key;
+    attest_key.key.handle = private_key_id;
 
     t_cose_sign1_set_signing_key(signer_ctx, attest_key, attest_key_id);
 
