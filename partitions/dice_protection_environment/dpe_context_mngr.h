@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright The TrustedFirmware-M Contributors
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -26,7 +26,7 @@ extern "C" {
 #define INVALID_NONCE_VALUE  0xFFFF
 
 /* Below configuration defines are platform dependent */
-#define MAX_NUM_OF_COMPONENTS 20
+#define MAX_NUM_OF_COMPONENTS 30
 #ifdef DPE_TEST_MODE
 #define MAX_NUM_OF_CERTIFICATES 8
 #else
