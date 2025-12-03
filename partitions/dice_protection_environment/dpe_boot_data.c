@@ -24,15 +24,6 @@
 
 #define DPE_PLATFORM_CERT_ID 0x200
 
-/* Maximum measurement size is size of SHA-512 hash */
-#define MEASUREMENT_VALUE_MAX_SIZE 64
-
-/* Size of 1 complete measurement (value + metadata) in TLV format. */
-#define SHARED_BOOT_MEASUREMENT_SIZE \
-    ((2 * SHARED_DATA_ENTRY_HEADER_SIZE) \
-     + sizeof(struct boot_measurement_metadata) \
-     + MEASUREMENT_VALUE_MAX_SIZE)
-
 /**
  * \struct boot_measurement_data
  *
