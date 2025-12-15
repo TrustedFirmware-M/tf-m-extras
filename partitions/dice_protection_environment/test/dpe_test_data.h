@@ -12,7 +12,6 @@
 extern "C" {
 #endif
 
-//#include "array.h"
 #include "platform_locality.h"
 
 #define MAX_NUM_OF_COMPONENTS 20

@@ -31,4 +31,5 @@ target_link_libraries(tfm_test_suite_extra_s
         qcbor
         tfm_t_cose_s
         psa_crypto_config
+        tfm_helper_lib
 )

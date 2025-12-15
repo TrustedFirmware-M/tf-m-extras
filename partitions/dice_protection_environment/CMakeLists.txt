@@ -60,6 +60,7 @@ target_link_libraries(tfm_app_rot_partition_dpe
         tfm_t_cose_s
         platform_s
         psa_crypto_config
+        tfm_helper_lib
 )
 
 ############################ Secure API ########################################

@@ -8,7 +8,7 @@
 #include "dpe_context_mngr.h"
 #include <assert.h>
 #include <string.h>
-#include "array.h"
+#include "tfm_utils.h"
 #include "dice_protection_environment.h"
 #include "dpe_certificate.h"
 #include "dpe_client.h"

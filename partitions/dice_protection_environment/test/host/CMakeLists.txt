@@ -87,7 +87,7 @@ target_include_directories(dpe_lib
         ${TFM_PATH}/platform/ext/target/arm/rse/common       # platform_locality.h
         ${TFM_PATH}/platform/ext/target/arm/rse/common/dpe   # dpe_plat.h
     PRIVATE
-        ${TFM_PATH}/secure_fw/include                        # array.h
+        ${TFM_PATH}/lib/tfm_helper_lib
 
 )
 
