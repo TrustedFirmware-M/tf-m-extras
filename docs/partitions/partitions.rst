@@ -104,6 +104,17 @@ A partition to extend boot measurements into TPM PCR.
 
 - Mudit Sharma `Mudit Sharma <mudit.sharma@arm.com>`_
 
+**********************
+RSE Image Verification
+**********************
+
+A partition to verify, load and measure images in run-time.
+
+**Maintainers**
+
+- Jackson Cooper-Driver `jackson.cooper-driver@arm.com <jackson.cooper-driver@arm.com>`_
+- Bence Balogh `bence.balogh@arm.com <bence.balogh@arm.com>`_
+
 ---------------------------
 
 *SPDX-License-Identifier: BSD-3-Clause*
