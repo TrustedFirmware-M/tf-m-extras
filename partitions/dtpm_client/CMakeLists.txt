@@ -48,6 +48,7 @@ target_link_libraries(tfm_psa_rot_partition_dtpm_client
         tfm_sprt
         tfm_log_headers
         tfm_helper_lib
+        lib_tpm
         dtpm_client_hal
 )
 

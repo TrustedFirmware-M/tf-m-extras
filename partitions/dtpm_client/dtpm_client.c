@@ -9,6 +9,7 @@
 
 #include "dtpm_client.h"
 #include "dtpm_client_api.h"
+#include "platform/tpm_platform.h"
 
 #include "measured_boot_api.h"
 #include "measurement_metadata.h"
@@ -27,16 +28,26 @@
 #define TPM_SECURITY_CONFIG_CLAIMS_CNT 2
 #endif
 
+#ifndef TPM_INSTANCE_ID
+#define TPM_INSTANCE_ID 0
+#endif
+
 static uint8_t event_log_buf[EVENT_LOG_BUFFER_SIZE] = {0};
 static struct security_config security_config_arr[TPM_SECURITY_CONFIG_CLAIMS_CNT] = {0};
 
+static const struct tpm_spi_plat *tpm_spi_plat;
+static struct tpm_timeout_ops tpm_timeout_ops;
+
+static const struct tpm_chip_timeouts tpm_timeouts = {
+        .msec_a = 750,
+        .msec_b = 2000,
+        .msec_c = 200,
+        .msec_d = 30,
+};
+
 static const struct tpm_chip_data tpm_chip_data = {
     .locality = 0,
-    .timeout_msec_a = 750,
-    .timeout_msec_b = 2000,
-    .timeout_msec_c = 200,
-    .timeout_msec_d = 30,
-    .address = 0,
+    .timeouts = &tpm_timeouts,
 };
 
 static void initialise_measurement(struct measurement_t *measurement)
@@ -86,17 +97,32 @@ static psa_status_t read_mb_measurement(uint8_t slot_index,
     return PSA_SUCCESS;
 }
 
-psa_status_t dtpm_client_extend(uint8_t pcr_index, uint8_t *value, uint16_t hash_alg, size_t hash_size)
+psa_status_t dtpm_startup()
 {
     int status;
 
-    if (tpm_interface_init(&tpm_chip_data, 0)) {
+    if (tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0)) {
         ERROR("%s: Interface init failed\n", __func__);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
 
     /* Mode in this case means TPM_SU contants */
     if (tpm_startup(&tpm_chip_data, TPM_SU_CLEAR)) {
+        ERROR("%s: TPM startup failed\n", __func__);
+        return PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    tpm_interface_close(&tpm_chip_data, 0);
+
+    return PSA_SUCCESS;
+}
+
+psa_status_t dtpm_client_extend(uint8_t pcr_index, uint8_t *value, uint16_t hash_alg,
+                                size_t hash_size)
+{
+    int status;
+
+    if (tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0)) {
         ERROR("%s: Interface init failed\n", __func__);
         return PSA_ERROR_HARDWARE_FAILURE;
     }
@@ -205,6 +231,11 @@ psa_status_t tfm_dtpm_client_init(void)
 {
     INFO_RAW("dTPM Client Partition initializing\n");
 
+    if (tpm_plat_get_tpm_platform_config(&tpm_timeout_ops, &tpm_spi_plat, TPM_INSTANCE_ID)) {
+        ERROR("%s: Invalid instance ID supplied\n", __func__);
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
     psa_status_t status;
     struct measurement_t measurement;
     bool is_locked;
@@ -217,8 +248,9 @@ psa_status_t tfm_dtpm_client_init(void)
 
     uint8_t security_config_digest_buf[MAX_DIGEST_SIZE] = {0};
 
-    if (init_pcr_index_for_boot_measurement()) {
-        return PSA_ERROR_PROGRAMMER_ERROR;
+    status = dtpm_startup();
+    if (status) {
+        return status;
     }
 
     if (event_log_init(event_log_buf, event_log_buf + sizeof(event_log_buf))) {

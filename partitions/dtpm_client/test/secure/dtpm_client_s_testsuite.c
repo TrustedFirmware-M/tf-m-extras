@@ -4,13 +4,24 @@
  */
 
 #include <endian.h>
+#include <stddef.h>
 
 #include "dtpm_client_api.h"
-#include "tpm_client/tpm2.h"
+#include "tpm2.h"
+#include "dtpm_client_partition_hal.h"
+
+#include "tfm_utils.h"
 
 #include "test_framework_helpers.h"
 
 #define DEBUG_PCR_NUMBER 16 /* Debug PCR */
+
+#ifndef TPM_INSTANCE_ID
+#define TPM_INSTANCE_ID 0
+#endif
+
+static const struct tpm_spi_plat *tpm_spi_plat;
+static struct tpm_timeout_ops tpm_timeout_ops;
 
 /* 0xf24e63d9d0b181578f1f020dbec85d2df795567599a6695b1c72197e3d375f13 */
 static const uint8_t digest_256[] = {
@@ -34,21 +45,29 @@ const uint8_t expected_data[] = {
 /*
  * Test function to read out value from a PCR
  */
-static int dtpm_client_read(uint8_t pcr_index, tpm_pcr_read_res *pcr_read_response)
+static int dtpm_client_read(uint8_t pcr_index, uint8_t *pcr_read_response,
+                            size_t pcr_read_response_len)
 {
     int status;
-    struct tpm_chip_data tpm_chip_data = {
-        .locality = 0,
-        .timeout_msec_a = 750,
-        .timeout_msec_b = 2000,
-        .timeout_msec_c = 200,
-        .timeout_msec_d = 30,
-        .address = 0,
+    const struct tpm_chip_timeouts tpm_timeouts = {
+            .msec_a = 750,
+            .msec_b = 2000,
+            .msec_c = 200,
+            .msec_d = 30,
     };
 
-    tpm_interface_init(&tpm_chip_data, 0);
+    const struct tpm_chip_data tpm_chip_data = {
+        .locality = 0,
+        .timeouts = &tpm_timeouts,
+    };
 
-    status = tpm_pcr_read(&tpm_chip_data, pcr_index, TPM_ALG_SHA256,  pcr_read_response);
+    status = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0);
+    if (status) {
+        return status;
+    }
+
+    status = tpm_pcr_read_single(&tpm_chip_data, pcr_index, TPM_ALG_SHA256,
+                                 pcr_read_response, pcr_read_response_len);
 
     tpm_interface_close(&tpm_chip_data, 0);
 
@@ -58,7 +77,12 @@ static int dtpm_client_read(uint8_t pcr_index, tpm_pcr_read_res *pcr_read_respon
 void pcr_extend_test_001(struct test_result_t *ret)
 {
     psa_status_t status;
-    struct tpm_pcr_read_res pcr_read_response;
+    uint8_t pcr_read_response[MAX_DIGEST_SIZE];
+
+    if (tpm_plat_get_tpm_platform_config(&tpm_timeout_ops, &tpm_spi_plat, TPM_INSTANCE_ID)) {
+       TEST_FAIL("Failed to get platform config");
+       return;
+    }
 
     status = tfm_dtpm_client_extend(DEBUG_PCR_NUMBER, TPM_ALG_SHA256, digest_256, sizeof(digest_256));
     if (status != PSA_SUCCESS) {
@@ -66,13 +90,13 @@ void pcr_extend_test_001(struct test_result_t *ret)
        return;
     }
 
-    status = dtpm_client_read(DEBUG_PCR_NUMBER, &pcr_read_response);
+    status = dtpm_client_read(DEBUG_PCR_NUMBER, &pcr_read_response, ARRAY_SIZE(pcr_read_response));
     if (status != TPM_SUCCESS) {
             TEST_FAIL("Failed to read extended value from TPM");
     }
 
-    for (int i = 0; i < be16toh(pcr_read_response.tpml_digest_size); i++) {
-        if (pcr_read_response.digest[i] != expected_data[i]) {
+    for (int i = 0; i < ARRAY_SIZE(expected_data); i++) {
+        if (pcr_read_response[i] != expected_data[i]) {
             TEST_FAIL("TPM extend operation returned incorrect value");
             return;
         }

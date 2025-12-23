@@ -10,7 +10,8 @@
 #include <stdint.h>
 
 #include "psa/error.h"
-#include "tpm_client/tpm2.h"
+#include "tpm2.h"
+#include "tpm2_chip.h"
 
 #include "measured_boot_api.h"
 
