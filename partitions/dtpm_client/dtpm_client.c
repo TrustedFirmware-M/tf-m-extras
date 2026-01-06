@@ -301,7 +301,7 @@ psa_status_t tfm_dtpm_client_init(void)
                                               hash_alg, &measurement.value.hash_buf[0],
                                               (const uint8_t *)event_log_metadata.name,
                                               strlen(event_log_metadata.name) + 1)) {
-            ERROR("Event log record failed\n");
+            ERROR("Event log record failed for measured boot metadata\n");
             return PSA_ERROR_PROGRAMMER_ERROR;
         }
     }
@@ -332,6 +332,15 @@ psa_status_t tfm_dtpm_client_init(void)
         if (status != PSA_SUCCESS) {
             ERROR("Extend to dTPM client failed\n");
             return status;
+        }
+
+        if (event_log_write_pcr_event2_single(security_config_arr[i].pcr_index,
+                                              EV_SECURITY_CONFIG,
+                                              hash_alg, security_config_digest_buf,
+                                              security_config_arr[i].security_config_data.name,
+                                              strlen(security_config_arr[i].security_config_data.name) + 1)) {
+            ERROR("Event log record failed for security config data\n");
+            return PSA_ERROR_PROGRAMMER_ERROR;
         }
     }
 
