@@ -90,10 +90,16 @@ psa_status_t dtpm_client_extend(uint8_t pcr_index, uint8_t *value, uint16_t hash
 {
     int status;
 
-    tpm_interface_init(&tpm_chip_data, 0);
+    if (tpm_interface_init(&tpm_chip_data, 0)) {
+        ERROR("%s: Interface init failed\n", __func__);
+        return PSA_ERROR_HARDWARE_FAILURE;
+    }
 
     /* Mode in this case means TPM_SU contants */
-    tpm_startup(&tpm_chip_data, TPM_SU_CLEAR);
+    if (tpm_startup(&tpm_chip_data, TPM_SU_CLEAR)) {
+        ERROR("%s: Interface init failed\n", __func__);
+        return PSA_ERROR_HARDWARE_FAILURE;
+    }
 
     status = tpm_pcr_extend(&tpm_chip_data, pcr_index, hash_alg, value, hash_size);
     if (status != TPM_SUCCESS) {
