@@ -20,6 +20,7 @@
 #include "tfm_boot_measurement.h"
 #include "dtpm_client_partition_hal.h"
 #include "tfm_log.h"
+#include "tfm_utils.h"
 
 #include "event_record.h"
 #include "event_print.h"
@@ -246,6 +247,8 @@ psa_status_t tfm_dtpm_client_init(void)
     size_t security_config_digest_len;
     size_t security_config_len;
 
+    const uint16_t supported_algs[] = {TPM_ALG_SHA256};
+
     uint8_t security_config_digest_buf[MAX_DIGEST_SIZE] = {0};
 
     status = dtpm_startup();
@@ -257,7 +260,8 @@ psa_status_t tfm_dtpm_client_init(void)
         return PSA_ERROR_PROGRAMMER_ERROR;
     }
 
-    if (event_log_write_header()) {
+    if (event_log_write_header(supported_algs, ARRAY_SIZE(supported_algs),
+                               0, "", sizeof(""))) {
         return PSA_ERROR_PROGRAMMER_ERROR;
     }
 
@@ -293,7 +297,10 @@ psa_status_t tfm_dtpm_client_init(void)
             return PSA_ERROR_PROGRAMMER_ERROR;
         }
 
-        if (event_log_record(&measurement.value.hash_buf[0], EV_POST_CODE, &event_log_metadata)) {
+        if (event_log_write_pcr_event2_single(event_log_metadata.pcr, EV_POST_CODE,
+                                              hash_alg, &measurement.value.hash_buf[0],
+                                              (const uint8_t *)event_log_metadata.name,
+                                              strlen(event_log_metadata.name) + 1)) {
             ERROR("Event log record failed\n");
             return PSA_ERROR_PROGRAMMER_ERROR;
         }
