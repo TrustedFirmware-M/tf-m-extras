@@ -9,9 +9,7 @@
 #define __TFM_RSE_IMAGE_VERIFICATION_H__
 
 #include <stdint.h>
-
 #include "psa/error.h"
-
 #include "rse_image_verification_defs.h"
 
 #ifdef __cplusplus
@@ -19,42 +17,45 @@ extern "C" {
 #endif
 
 /**
- * \brief Verifies, measures and loads an image to the specified destination.
+ * @brief Verifies, measures and loads an image to the specified destination.
  *
- * \param[in]  image                     Pointer to the image buffer to verify.
- * \param[in]  image_len                 Size of the image in bytes.
- * \param[in]  verification_data         Pointer to verification data that
+ *
+ * @param[in]  image                     Pointer to the image buffer to verify.
+ * @param[in]  image_len                 Size of the image in bytes.
+ * @param[in]  verification_data         Pointer to verification data that
  *                                       will be used to verify the image.
- * \param[in]  verification_data_len     Size of the verification data buffer
+ * @param[in]  verification_data_len     Size of the verification data buffer
  *                                       in bytes. Must be at least 4 bytes.
- * \param[out] boot_measurement          Pointer to boot measurement buffer.
+ * @param[out] boot_measurement          Pointer to boot measurement buffer.
  *                                       Can be NULL if there is no
  *                                       chain in the verification_data.
- * \param[in]  boot_measurement_len      Size of the boot measurement buffer
+ * @param[in]  boot_measurement_len      Size of the boot measurement buffer
  *                                       in bytes.
- * \param[out] boot_measurement_size     TODO: Is this needed?
- * \param[out] destination               Destination where the verified image
+ * @param[out] boot_measurement_size     Note: Currently unused because the
+ *                                       rse_image_verification_boot_measurement_t
+ *                                       structure size is fixed.
+ * @param[out] destination               Destination where the verified image
  *                                       will be loaded.
  *                                       If equals to the image buffer, then
  *                                       the copy will be skipped, and the
  *                                       image will NOT be erased on failure.
- * \param[in]  destination_len           Size of the destination in bytes.
+ * @param[in]  destination_len           Size of the destination in bytes.
  *
- * \retval #RSE_VERIFICATION_SERVICE_SUCCESS
+ * @retval #RSE_VERIFICATION_SERVICE_SUCCESS
  *         Success.
- * \retval #RSE_VERIFICATION_SERVICE_ERR_INVALID_ARG
+ * @retval #RSE_VERIFICATION_SERVICE_ERR_INVALID_ARG
  *         The provided arguments are invalid.
- * \retval #RSE_VERIFICATION_SERVICE_ERR_VERIFICATION_FAILED
+ * @retval #RSE_VERIFICATION_SERVICE_ERR_VERIFICATION_FAILED
  *         The authentication was done but it failed.
- * \retval #RSE_VERIFICATION_SERVICE_ERR_BAD_KEY
+ * @retval #RSE_VERIFICATION_SERVICE_ERR_BAD_KEY
  *         The provided keys in the verification data was invalid.
- * \retval #RSE_VERIFICATION_SERVICE_ERR_NV_COUNTER
+ * @retval #RSE_VERIFICATION_SERVICE_ERR_NV_COUNTER
  *         The NV counter check failed due to smaller counter value.
- * \retval #RSE_VERIFICATION_SERVICE_ERR_INTERNAL
+ * @retval #RSE_VERIFICATION_SERVICE_ERR_INTERNAL
  *         Internal error happened in the partition.
- * \retval #RSE_VERIFICATION_SERVICE_ERR_MEASUREMENT_FAILED
+ * @retval #RSE_VERIFICATION_SERVICE_ERR_MEASUREMENT_FAILED
  *         An error happened during calculating or storing the measurements.
- * \retval #RSE_VERIFICATION_SERVICE_ERR_NOT_SUPPORTED
+ * @retval #RSE_VERIFICATION_SERVICE_ERR_NOT_SUPPORTED
  *         The requested operation is not supported yet.
  */
 enum rse_verification_service_err_t rse_verify_and_load_image(
@@ -68,5 +69,4 @@ enum rse_verification_service_err_t rse_verify_and_load_image(
 #ifdef __cplusplus
 }
 #endif
-
 #endif /* __TFM_RSE_IMAGE_VERIFICATION_H__ */
