@@ -25,16 +25,12 @@
 #include "event_record.h"
 #include "event_print.h"
 
-#ifndef TPM_SECURITY_CONFIG_CLAIMS_CNT
-#define TPM_SECURITY_CONFIG_CLAIMS_CNT 2
-#endif
-
 #ifndef TPM_INSTANCE_ID
 #define TPM_INSTANCE_ID 0
 #endif
 
 static uint8_t event_log_buf[EVENT_LOG_BUFFER_SIZE] = {0};
-static struct security_config security_config_arr[TPM_SECURITY_CONFIG_CLAIMS_CNT] = {0};
+static struct security_config *security_config_arr;
 
 static const struct tpm_spi_plat *tpm_spi_plat;
 static struct tpm_timeout_ops tpm_timeout_ops;
@@ -306,9 +302,8 @@ psa_status_t tfm_dtpm_client_init(void)
         }
     }
 
-    if (tfm_plat_get_security_config_data(security_config_arr,
-                                          &security_config_len,
-                                          TPM_SECURITY_CONFIG_CLAIMS_CNT) != TFM_PLAT_ERR_SUCCESS) {
+    if (tfm_plat_get_security_config_data(&security_config_arr,
+                                          &security_config_len) != TFM_PLAT_ERR_SUCCESS) {
         return PSA_ERROR_PROGRAMMER_ERROR;
     }
 

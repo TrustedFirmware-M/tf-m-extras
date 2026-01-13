@@ -47,17 +47,14 @@ struct security_config {
  *          into the provided buffer and reports the number of bytes
  *          written.
  *
- * \param[out] security_config         Pointer to a buffer to receive the security configuration.
+ * \param[out] security_config         Double pointer to a buffer to receive the security configuration.
  * \param[out] security_config_len     Pointer to variable that on return holds the number of elements
  *                                     in security_config array.
- * \param[in]  security_config_max_len Maximum size of the provided buffer i.e. max number of
- *                                     elements in security_config buffer.
  *
  * \return  Returns values as specified by the \ref tfm_plat_err_t
  */
-enum tfm_plat_err_t tfm_plat_get_security_config_data(struct security_config *security_config,
-                                                      size_t *security_config_len,
-                                                      size_t security_config_max_len);
+enum tfm_plat_err_t tfm_plat_get_security_config_data(struct security_config **security_config,
+                                                      size_t *security_config_len);
 
 /**
  * \brief Get platform configuration for a TPM instance.
