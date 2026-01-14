@@ -23,9 +23,6 @@ extern "C" {
 #define MAX_SECURITY_CONFIG_NAME_LEN 32
 #define MAX_SECURITY_CONFIG_DATA_LEN 32
 
-#define INSECURE_LIFECYCLE_EVENT_ID 0x0
-#define DEBUG_EVENT_ID 0x1
-
 struct security_config_data {   /* The digest is calculated over the structure. */
     uint64_t name_length;
     uint64_t data_length;
@@ -35,8 +32,6 @@ struct security_config_data {   /* The digest is calculated over the structure. 
 
 struct security_config {
     struct security_config_data security_config_data;
-    event_log_metadata_t event_log_metadata;
-    psa_algorithm_t hash_type;
     uint8_t pcr_index;
 };
 
