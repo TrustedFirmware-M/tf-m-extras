@@ -309,7 +309,7 @@ psa_status_t tfm_dtpm_client_init(void)
 
     for (int i = 0; i < security_config_len; i++) {
         status = hash_platform_config_data(&security_config_arr[i].security_config_data,
-                                           security_config_arr[i].hash_type,
+                                           DTPM_CLIENT_PSA_HASH_ALG,
                                            security_config_digest_buf,
                                            sizeof(security_config_digest_buf),
                                            &security_config_digest_len);
@@ -317,7 +317,7 @@ psa_status_t tfm_dtpm_client_init(void)
             return status;
         }
 
-        if (get_tpm_hash_alg(security_config_arr[i].hash_type, &hash_alg)) {
+        if (get_tpm_hash_alg(DTPM_CLIENT_PSA_HASH_ALG, &hash_alg)) {
             return PSA_ERROR_PROGRAMMER_ERROR;
         }
 

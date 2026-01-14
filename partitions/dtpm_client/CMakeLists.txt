@@ -74,6 +74,20 @@ target_link_libraries(tfm_partitions
         tfm_psa_rot_partition_dtpm_client
 )
 
+set(DTPM_CLIENT_PSA_HASH_ALG PSA_ALG_SHA_256)
+
+if(MEASURED_BOOT_HASH_ALG STREQUAL "SHA384")
+    set(DTPM_CLIENT_PSA_HASH_ALG PSA_ALG_SHA_384)
+endif()
+
+set(DTPM_CLIENT_PSA_HASH_ALG
+    ${DTPM_CLIENT_PSA_HASH_ALG}
+    CACHE STRING "PSA Hash algorithm definition used by dTPM client")
+
+target_compile_definitions(tfm_psa_rot_partition_dtpm_client
+    PRIVATE
+        DTPM_CLIENT_PSA_HASH_ALG=${DTPM_CLIENT_PSA_HASH_ALG}
+)
 
 target_compile_definitions(tfm_config
     INTERFACE
