@@ -29,6 +29,13 @@
 #define TPM_INSTANCE_ID 0
 #endif
 
+/* Caller needs to check that `str` can fit in `event_name_buffer` */
+#define APPEND_TO_EVENT_NAME(event_name_buffer, str, str_len, index)           \
+do {                                                                           \
+    memcpy(event_name_buffer + index, str, str_len);                           \
+    index += str_len;                                                          \
+} while (0)
+
 static uint8_t event_log_buf[EVENT_LOG_BUFFER_SIZE] = {0};
 static struct security_config *security_config_arr;
 
@@ -205,6 +212,33 @@ static psa_status_t hash_platform_config_data(struct security_config_data *confi
 
 }
 
+static psa_status_t form_event_log_name(struct measurement_t *measurement, char *event_name,
+                                        size_t event_name_size)
+{
+    size_t index = 0;
+
+    if (measurement->metadata.sw_type_size > 0 && measurement->metadata.version_size > 0) {
+        if (measurement->metadata.sw_type_size + strlen("-v") +  measurement->metadata.version_size
+                + 1 > event_name_size) {
+            return PSA_ERROR_BUFFER_TOO_SMALL;
+        }
+
+        APPEND_TO_EVENT_NAME(event_name, measurement->metadata.sw_type,
+                            measurement->metadata.sw_type_size, index);
+
+        APPEND_TO_EVENT_NAME(event_name, "-v", strlen("-v"), index);
+
+        APPEND_TO_EVENT_NAME(event_name, measurement->metadata.version,
+                            measurement->metadata.version_size, index);
+
+        event_name[index] = 0;
+    } else {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    return PSA_SUCCESS;
+}
+
 psa_status_t get_event_log(uint8_t *buffer, size_t buffer_size, size_t *event_log_size)
 {
     size_t ev_log_size = get_event_log_size(event_log_buf);
@@ -243,8 +277,9 @@ psa_status_t tfm_dtpm_client_init(void)
     size_t security_config_digest_len;
     size_t security_config_len;
 
+    /* <SW_TYPE_STR>-v<VERSION_STR>\0 */
+    char event_name[SW_TYPE_MAX_SIZE + VERSION_MAX_SIZE + 3] = {0};
     const uint16_t supported_algs[] = {TPM_ALG_SHA256};
-
     uint8_t security_config_digest_buf[MAX_DIGEST_SIZE] = {0};
 
     status = dtpm_startup();
@@ -293,10 +328,23 @@ psa_status_t tfm_dtpm_client_init(void)
             return PSA_ERROR_PROGRAMMER_ERROR;
         }
 
+        /* Form event name string using measured boot measurement metadata sw_type + version in
+         * format `<SW_TYPE_STR>-v<VERSION_STR>`. If these are missing from the measured boot
+         * metadata, fall back to using platform defined `name` supplied with `event_log_metadata`.
+         */
+        status = form_event_log_name(&measurement, &event_name, ARRAY_SIZE(event_name));
+        if (status != PSA_SUCCESS) {
+            if (ARRAY_SIZE(event_name) < strlen(event_log_metadata.name) + 1) {
+                return PSA_ERROR_PROGRAMMER_ERROR;
+            }
+
+            memcpy(event_name, event_log_metadata.name, strlen(event_log_metadata.name) + 1);
+        }
+
         if (event_log_write_pcr_event2_single(event_log_metadata.pcr, EV_POST_CODE,
                                               hash_alg, &measurement.value.hash_buf[0],
-                                              (const uint8_t *)event_log_metadata.name,
-                                              strlen(event_log_metadata.name) + 1)) {
+                                              (const uint8_t *)event_name,
+                                              strlen(event_name) + 1)) {
             ERROR("Event log record failed for measured boot metadata\n");
             return PSA_ERROR_PROGRAMMER_ERROR;
         }
