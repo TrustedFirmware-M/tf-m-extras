@@ -268,6 +268,7 @@ psa_status_t tfm_dtpm_client_init(void)
     }
 
     psa_status_t status;
+    int event_log_status;
     struct measurement_t measurement;
     bool is_locked;
     int8_t pcr_index;
@@ -276,6 +277,7 @@ psa_status_t tfm_dtpm_client_init(void)
     event_log_metadata_t event_log_metadata;
     size_t security_config_digest_len;
     size_t security_config_len;
+    const uint8_t *security_config_data_name;
 
     /* <SW_TYPE_STR>-v<VERSION_STR>\0 */
     char event_name[SW_TYPE_MAX_SIZE + VERSION_MAX_SIZE + 3] = {0};
@@ -341,11 +343,13 @@ psa_status_t tfm_dtpm_client_init(void)
             memcpy(event_name, event_log_metadata.name, strlen(event_log_metadata.name) + 1);
         }
 
-        if (event_log_write_pcr_event2_single(event_log_metadata.pcr, EV_POST_CODE,
-                                              hash_alg, &measurement.value.hash_buf[0],
-                                              (const uint8_t *)event_name,
-                                              strlen(event_name) + 1)) {
-            ERROR("Event log record failed for measured boot metadata\n");
+        event_log_status = event_log_write_pcr_event2_single(event_log_metadata.pcr,
+                                                             EV_POST_CODE, hash_alg,
+                                                             &measurement.value.hash_buf[0],
+                                                             (const uint8_t *)event_name,
+                                                             strlen(event_name) + 1);
+        if (event_log_status) {
+            ERROR("Event log record failed for measured boot metadata %d\n", event_log_status);
             return PSA_ERROR_PROGRAMMER_ERROR;
         }
     }
@@ -377,12 +381,16 @@ psa_status_t tfm_dtpm_client_init(void)
             return status;
         }
 
-        if (event_log_write_pcr_event2_single(security_config_arr[i].pcr_index,
-                                              EV_SECURITY_CONFIG,
-                                              hash_alg, security_config_digest_buf,
-                                              security_config_arr[i].security_config_data.name,
-                                              strlen(security_config_arr[i].security_config_data.name) + 1)) {
-            ERROR("Event log record failed for security config data\n");
+        security_config_data_name = security_config_arr[i].security_config_data.name;
+
+        event_log_status = event_log_write_pcr_event2_single(security_config_arr[i].pcr_index,
+                                                             EV_SECURITY_CONFIG,
+                                                             hash_alg, security_config_digest_buf,
+                                                             security_config_data_name,
+                                                             strlen(security_config_data_name) + 1);
+
+        if (event_log_status) {
+            ERROR("Event log record failed for security config data %d\n", event_log_status);
             return PSA_ERROR_PROGRAMMER_ERROR;
         }
     }
