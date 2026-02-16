@@ -173,7 +173,7 @@ static int serialize_security_config_data(struct security_config_data *config_da
     memcpy(serialized_data_buf, &(config_data->name_length), sizeof(uint64_t));
     offset += sizeof(uint64_t);
 
-    memcpy(serialized_data_buf + offset, &(config_data->data_length), sizeof(uint64_t));
+    memcpy(serialized_data_buf + offset, &(config_data->config_data_length), sizeof(uint64_t));
     offset += sizeof(uint64_t);
 
     memcpy(serialized_data_buf + offset,
@@ -181,8 +181,8 @@ static int serialize_security_config_data(struct security_config_data *config_da
     offset += config_data->name_length;
 
     memcpy(serialized_data_buf + offset, &(config_data->config_data),
-           config_data->data_length);
-    offset += config_data->data_length;
+           config_data->config_data_length);
+    offset += config_data->config_data_length;
 
     *serialized_data_len = offset;
 

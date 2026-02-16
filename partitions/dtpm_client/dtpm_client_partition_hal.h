@@ -17,18 +17,9 @@ extern "C" {
 
 #include "tfm_plat_defs.h"
 #include "tpm_platform.h"
+#include "tcg.h"
 
 #include "psa/crypto.h"
-
-#define MAX_SECURITY_CONFIG_NAME_LEN 32
-#define MAX_SECURITY_CONFIG_DATA_LEN 32
-
-struct security_config_data {   /* The digest is calculated over the structure. */
-    uint64_t name_length;
-    uint64_t data_length;
-    char     name[MAX_SECURITY_CONFIG_NAME_LEN];
-    int8_t   config_data[MAX_SECURITY_CONFIG_DATA_LEN];
-};
 
 struct security_config {
     struct security_config_data security_config_data;
