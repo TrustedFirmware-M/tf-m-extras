@@ -5,11 +5,10 @@ SCMI Comms Partition
 Use the SCMI Comms partition to implement a minimal version of the SCMI [1]_
 protocol that subscribes to system power state notifications from the SCP [2]_.
 
-
 .. Note::
 
  - It currently supports only the shared memory based transport protocol.
-   Refer to :doc:`Building Tests </building/tests_build_instruction>` on how to
+   Refer to `Building Tests <https://trustedfirmware-m.readthedocs.io/en/latest/building/tests_build_instruction.html>`_ on how to
    build TF-M regression tests and PSA Arch tests to verify TF-M.
  - It is designed to work primarily between RSE and a power control framework,
    such as the one implemented by the SCP-firmware (SCP).
@@ -124,6 +123,7 @@ Limitations
 ***********
 
 Note that currently this partion:
+
 - does not perform system discovery at initialization stage, thus the platform
   needs to ensure that the support required by this agent is in place.
   For example, the SCMI System Power protocol should be available and this agent

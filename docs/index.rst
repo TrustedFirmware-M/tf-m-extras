@@ -1,6 +1,6 @@
-################################
+#########################
 Trusted Firmware-M Extras
-################################
+#########################
 
 The Trusted Firmware-M (TF-M) Extras repository is the extension of the TF-M
 main repository to host the examples, demonstrations, third-party modules,
