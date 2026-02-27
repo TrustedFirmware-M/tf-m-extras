@@ -149,6 +149,9 @@ static int get_tpm_hash_alg(uint32_t psa_algo, uint16_t *hash_alg)
     case PSA_ALG_SHA_256:
         *hash_alg = TPM_ALG_SHA256;
         return 0;
+    case PSA_ALG_SHA_384:
+        *hash_alg = TPM_ALG_SHA384;
+        return 0;
     default:
         return -1;
     }
@@ -187,6 +190,72 @@ static int serialize_security_config_data(struct security_config_data *config_da
     *serialized_data_len = offset;
 
     return 0;
+}
+
+static psa_status_t check_dtpm_alg_supported(uint16_t alg, bool *alg_supported)
+{
+
+    enum tpm_ret_value status;
+
+    if (alg_supported == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0)) {
+        ERROR("%s: Interface init failed\n", __func__);
+        tpm_interface_close(&tpm_chip_data, 0);
+        return PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    status = tpm_has_alg(&tpm_chip_data, alg, alg_supported);
+    if (status) {
+        ERROR("%s: tpm_has_alg failed with error: %d\n", __func__, status);
+        tpm_interface_close(&tpm_chip_data, 0);
+        return PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    tpm_interface_close(&tpm_chip_data, 0);
+
+    return PSA_SUCCESS;
+}
+
+static psa_status_t get_dtpm_alg_allocation_for_pcr(uint16_t alg, bool *alg_allocated)
+{
+    enum tpm_ret_value status;
+
+    tpm_pcr_bank_query_t query[] = {
+        [0] = {.hash_alg = alg},
+        [1] = {.hash_alg = TPM_ALG_NULL},
+    };
+
+    if (alg_allocated == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0)) {
+        ERROR("%s: Interface init failed\n", __func__);
+        return PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    status = tpm_getcap_query_pcrs(&tpm_chip_data, query);
+    if (status) {
+        ERROR("%s: tpm_getcap_query_pcrs failed with error: %d\n", __func__, status);
+        tpm_interface_close(&tpm_chip_data, 0);
+        return PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    *alg_allocated = true;
+
+    /* Check if the PCR mask returned has all PCRs allocated to alg of choice */
+    for (int i = 0; i < TPM_PCR_SELECT_SIZE; i++) {
+        if (query[0].pcr_select[i] != 0xff) {
+            *alg_allocated = false;
+        }
+    }
+
+    tpm_interface_close(&tpm_chip_data, 0);
+
+    return PSA_SUCCESS;
 }
 
 static psa_status_t hash_platform_config_data(struct security_config_data *config_data,
@@ -258,6 +327,61 @@ psa_status_t get_event_log(uint8_t *buffer, size_t buffer_size, size_t *event_lo
     return PSA_SUCCESS;
 }
 
+static psa_status_t check_dtpm_alg_config(uint16_t hash_alg)
+{
+    psa_status_t status;
+    int event_log_status;
+    bool alg_supported, alg_allocated;
+
+    static const char allocation_err[] = "Unsupported alg for PCR bank allocation";
+    static const char unsupported_alg_err[] = "TPM does not support required alg";
+
+    /* Check if connected dTPM supports required alg */
+    status = check_dtpm_alg_supported(hash_alg , &alg_supported);
+    if (status != PSA_SUCCESS) {
+        ERROR("%s: Failed to check dTPM supported algs %d\n", __func__, status);
+        return status;
+    }
+
+    /* Check if connected dTPM has PCR bank for required alg allocated */
+    status = get_dtpm_alg_allocation_for_pcr(hash_alg, &alg_allocated);
+    if (status != PSA_SUCCESS) {
+        ERROR("%s: Failed to check PCR allocation %d\n", __func__, status);
+        return status;
+    }
+
+    if (alg_supported == false) {
+        ERROR("%s: connected dTPM does not support required TPM alg 0x%x\n", __func__, hash_alg);
+
+        event_log_status = event_log_write_pcr_event2_single(0, EV_NO_ACTION, hash_alg, NULL,
+                                                            (uint8_t *)unsupported_alg_err,
+                                                            sizeof(unsupported_alg_err) - 1);
+        if (event_log_status) {
+            ERROR("%s: Event log record failed for PCR bank misconfiguration %d\n",
+                    __func__, event_log_status);
+            return PSA_ERROR_PROGRAMMER_ERROR;
+        }
+
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    if (alg_allocated == false) {
+        ERROR("%s: connected dTPM does not have PCRs allocated to required TPM alg 0x%x\n", hash_alg);
+
+        event_log_status = event_log_write_pcr_event2_single(0, EV_NO_ACTION, hash_alg, NULL,
+                                                            (uint8_t *)allocation_err,
+                                                            sizeof(allocation_err) - 1);
+        if (event_log_status) {
+            ERROR("Event log record failed for PCR bank misconfiguration %d\n", event_log_status);
+            return PSA_ERROR_PROGRAMMER_ERROR;
+        }
+
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    return PSA_SUCCESS;
+}
+
 psa_status_t tfm_dtpm_client_init(void)
 {
     INFO_RAW("dTPM Client Partition initializing\n");
@@ -281,8 +405,8 @@ psa_status_t tfm_dtpm_client_init(void)
 
     /* <SW_TYPE_STR>-v<VERSION_STR>\0 */
     char event_name[SW_TYPE_MAX_SIZE + VERSION_MAX_SIZE + 3] = {0};
-    const uint16_t supported_algs[] = {TPM_ALG_SHA256};
     uint8_t security_config_digest_buf[MAX_DIGEST_SIZE] = {0};
+    uint16_t supported_algs[1];
 
     status = dtpm_startup();
     if (status) {
@@ -293,9 +417,20 @@ psa_status_t tfm_dtpm_client_init(void)
         return PSA_ERROR_PROGRAMMER_ERROR;
     }
 
+    if (get_tpm_hash_alg(DTPM_CLIENT_PSA_HASH_ALG, &hash_alg)) {
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
+    supported_algs[0] = hash_alg;
+
     if (event_log_write_header(supported_algs, ARRAY_SIZE(supported_algs),
                                0, "", sizeof(""))) {
         return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
+    status = check_dtpm_alg_config(hash_alg);
+    if (status != PSA_SUCCESS) {
+        return status;
     }
 
     /* Lowest possible slot number is Zero */
