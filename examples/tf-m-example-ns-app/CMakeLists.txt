@@ -44,7 +44,7 @@ target_sources(tfm_ns
         # has a linker issue that required system calls are missing,
         # such as _read and _write. Add stub functions of required
         # system calls to solve this issue.
-        $<$<BOOL:${CONFIG_GNU_SYSCALL_STUB_ENABLED}>:syscalls_stub.c>
+        $<$<C_COMPILER_ID:GNU>:syscalls_stub.c>
 )
 
 target_link_libraries(tfm_ns
