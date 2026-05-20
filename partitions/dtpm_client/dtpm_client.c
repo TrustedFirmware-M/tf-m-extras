@@ -49,10 +49,30 @@ static const struct tpm_chip_timeouts tpm_timeouts = {
         .msec_d = 30,
 };
 
-static const struct tpm_chip_data tpm_chip_data = {
+static struct tpm_chip_data tpm_chip_data = {
     .locality = 0,
     .timeouts = &tpm_timeouts,
 };
+
+static psa_status_t tpm_ret_to_psa(enum tpm_ret_value val)
+{
+    switch (val) {
+    case TPM_SUCCESS:
+        return PSA_SUCCESS;
+    case TPM_INVALID_PARAM:
+        return PSA_ERROR_INVALID_ARGUMENT;
+    case TPM_ERR_RESPONSE:
+        return PSA_ERROR_BAD_STATE;
+    case TPM_ERR_TIMEOUT:
+        return PSA_ERROR_CONNECTION_BUSY;
+    case TPM_ERR_TRANSFER:
+        return PSA_ERROR_HARDWARE_FAILURE;
+    case TPM_ERR_ITERATION_LIMIT:
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    default:
+        return PSA_ERROR_GENERIC_ERROR;
+    }
+}
 
 static void initialise_measurement(struct measurement_t *measurement)
 {
@@ -101,59 +121,74 @@ static psa_status_t read_mb_measurement(uint8_t slot_index,
     return PSA_SUCCESS;
 }
 
-psa_status_t dtpm_startup()
+static psa_status_t dtpm_startup(void)
 {
-    int status;
+    enum tpm_ret_value tpm_ret;
 
-    if (tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0)) {
+    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0);
+    if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s: Interface init failed\n", __func__);
-        return PSA_ERROR_HARDWARE_FAILURE;
+        return tpm_ret_to_psa(tpm_ret);
     }
 
     /* Mode in this case means TPM_SU contants */
-    if (tpm_startup(&tpm_chip_data, TPM_SU_CLEAR)) {
+    tpm_ret = tpm_startup(&tpm_chip_data, TPM_SU_CLEAR);
+    if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s: TPM startup failed\n", __func__);
-        return PSA_ERROR_HARDWARE_FAILURE;
+        if (tpm_interface_close(&tpm_chip_data, 0) != TPM_SUCCESS) {
+            ERROR("%s:Interface close failed \n", __func__);
+        }
+        return tpm_ret_to_psa(tpm_ret);
     }
 
-    tpm_interface_close(&tpm_chip_data, 0);
+    tpm_ret = tpm_interface_close(&tpm_chip_data, 0);
+    if (tpm_ret != TPM_SUCCESS) {
+        ERROR("%s:Interface close failed \n", __func__);
+    }
 
-    return PSA_SUCCESS;
+    return tpm_ret_to_psa(tpm_ret);
 }
 
-psa_status_t dtpm_client_extend(uint8_t pcr_index, uint8_t *value, uint16_t hash_alg,
-                                size_t hash_size)
+psa_status_t dtpm_client_extend(uint8_t pcr_index, const uint8_t *value,
+                                uint16_t hash_alg, size_t hash_size)
 {
-    int status;
+    enum tpm_ret_value tpm_ret;
 
-    if (tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0)) {
+    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0);
+    if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s: Interface init failed\n", __func__);
-        return PSA_ERROR_HARDWARE_FAILURE;
+        return tpm_ret_to_psa(tpm_ret);
     }
 
-    status = tpm_pcr_extend(&tpm_chip_data, pcr_index, hash_alg, value, hash_size);
-    if (status != TPM_SUCCESS) {
-        tpm_interface_close(&tpm_chip_data, 0);
+    tpm_ret = tpm_pcr_extend(&tpm_chip_data, pcr_index, hash_alg, value, hash_size);
+    if (tpm_ret != TPM_SUCCESS) {
         ERROR("dTPM Client extend failed\n");
-        return PSA_ERROR_HARDWARE_FAILURE;
+        if (tpm_interface_close(&tpm_chip_data, 0) != TPM_SUCCESS) {
+            ERROR("%s:Interface close failed \n", __func__);
+            return tpm_ret_to_psa(tpm_ret);
+        }
+        return tpm_ret_to_psa(tpm_ret);
     }
 
-    tpm_interface_close(&tpm_chip_data, 0);
+    tpm_ret = tpm_interface_close(&tpm_chip_data, 0);
+    if (tpm_ret != TPM_SUCCESS) {
+        ERROR("%s:Interface close failed \n", __func__);
+    }
 
-    return PSA_SUCCESS;
+    return tpm_ret_to_psa(tpm_ret);
 }
 
-static int get_tpm_hash_alg(uint32_t psa_algo, uint16_t *hash_alg)
+static psa_status_t get_tpm_hash_alg(uint32_t psa_algo, uint16_t *hash_alg)
 {
     switch (psa_algo) {
     case PSA_ALG_SHA_256:
         *hash_alg = TPM_ALG_SHA256;
-        return 0;
+        return PSA_SUCCESS;
     case PSA_ALG_SHA_384:
         *hash_alg = TPM_ALG_SHA384;
-        return 0;
+        return PSA_SUCCESS;
     default:
-        return -1;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 }
 
@@ -162,26 +197,26 @@ static size_t get_event_log_size()
      return event_log_get_cur_size(event_log_buf);
 }
 
-static int serialize_security_config_data(struct security_config_data *config_data,
-                                          uint8_t *serialized_data_buf,
-                                          size_t *serialized_data_len,
-                                          size_t serialized_data_buf_len)
+static psa_status_t serialize_security_config_data(const struct security_config_data *config_data,
+                                                   uint8_t *serialized_data_buf,
+                                                   size_t *serialized_data_len,
+                                                   size_t serialized_data_buf_len)
 {
     size_t offset = 0;
 
     if (serialized_data_buf_len < sizeof(struct security_config_data)) {
-        return -1;
+        return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
     memcpy(serialized_data_buf, &(config_data->name_length), sizeof(uint64_t));
     offset += sizeof(uint64_t);
 
-    memcpy(serialized_data_buf + offset, &(config_data->config_data_length), sizeof(uint64_t));
-    offset += sizeof(uint64_t);
-
     memcpy(serialized_data_buf + offset,
            &(config_data->name), config_data->name_length);
     offset += config_data->name_length;
+
+    memcpy(serialized_data_buf + offset, &(config_data->config_data_length), sizeof(uint64_t));
+    offset += sizeof(uint64_t);
 
     memcpy(serialized_data_buf + offset, &(config_data->config_data),
            config_data->config_data_length);
@@ -189,39 +224,46 @@ static int serialize_security_config_data(struct security_config_data *config_da
 
     *serialized_data_len = offset;
 
-    return 0;
+    return PSA_SUCCESS;
 }
 
 static psa_status_t check_dtpm_alg_supported(uint16_t alg, bool *alg_supported)
 {
-
-    enum tpm_ret_value status;
+    enum tpm_ret_value tpm_ret;
 
     if (alg_supported == NULL) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0)) {
+    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0);
+    if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s: Interface init failed\n", __func__);
-        tpm_interface_close(&tpm_chip_data, 0);
-        return PSA_ERROR_HARDWARE_FAILURE;
+        if (tpm_interface_close(&tpm_chip_data, 0) != TPM_SUCCESS) {
+            ERROR("%s:Interface close failed \n", __func__);
+        }
+        return tpm_ret_to_psa(tpm_ret);
     }
 
-    status = tpm_has_alg(&tpm_chip_data, alg, alg_supported);
-    if (status) {
-        ERROR("%s: tpm_has_alg failed with error: %d\n", __func__, status);
-        tpm_interface_close(&tpm_chip_data, 0);
-        return PSA_ERROR_HARDWARE_FAILURE;
+    tpm_ret = tpm_has_alg(&tpm_chip_data, alg, alg_supported);
+    if (tpm_ret != TPM_SUCCESS) {
+        ERROR("%s: tpm_has_alg failed with error: %d\n", __func__, tpm_ret);
+        if (tpm_interface_close(&tpm_chip_data, 0) != TPM_SUCCESS) {
+            ERROR("%s:Interface close failed \n", __func__);
+        }
+        return tpm_ret_to_psa(tpm_ret);
     }
 
-    tpm_interface_close(&tpm_chip_data, 0);
+    tpm_ret = tpm_interface_close(&tpm_chip_data, 0);
+    if (tpm_ret != TPM_SUCCESS) {
+        ERROR("%s:Interface close failed \n", __func__);
+    }
 
-    return PSA_SUCCESS;
+    return tpm_ret_to_psa(tpm_ret);
 }
 
 static psa_status_t get_dtpm_alg_allocation_for_pcr(uint16_t alg, bool *alg_allocated)
 {
-    enum tpm_ret_value status;
+    enum tpm_ret_value tpm_ret;
 
     tpm_pcr_bank_query_t query[] = {
         [0] = {.hash_alg = alg},
@@ -232,16 +274,19 @@ static psa_status_t get_dtpm_alg_allocation_for_pcr(uint16_t alg, bool *alg_allo
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0)) {
+    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0);
+    if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s: Interface init failed\n", __func__);
-        return PSA_ERROR_HARDWARE_FAILURE;
+        return tpm_ret_to_psa(tpm_ret);
     }
 
-    status = tpm_getcap_query_pcrs(&tpm_chip_data, query);
-    if (status) {
-        ERROR("%s: tpm_getcap_query_pcrs failed with error: %d\n", __func__, status);
-        tpm_interface_close(&tpm_chip_data, 0);
-        return PSA_ERROR_HARDWARE_FAILURE;
+    tpm_ret = tpm_getcap_query_pcrs(&tpm_chip_data, query);
+    if (tpm_ret != TPM_SUCCESS) {
+        ERROR("%s: tpm_getcap_query_pcrs failed with error: %d\n", __func__, tpm_ret);
+        if (tpm_interface_close(&tpm_chip_data, 0) != TPM_SUCCESS) {
+            ERROR("%s:Interface close failed \n", __func__);
+        }
+        return tpm_ret_to_psa(tpm_ret);
     }
 
     *alg_allocated = true;
@@ -253,30 +298,26 @@ static psa_status_t get_dtpm_alg_allocation_for_pcr(uint16_t alg, bool *alg_allo
         }
     }
 
-    tpm_interface_close(&tpm_chip_data, 0);
+    tpm_ret = tpm_interface_close(&tpm_chip_data, 0);
+    if (tpm_ret != TPM_SUCCESS) {
+        ERROR("%s:Interface close failed \n", __func__);
+        return tpm_ret_to_psa(tpm_ret);
+    }
 
     return PSA_SUCCESS;
 }
 
-static psa_status_t hash_platform_config_data(struct security_config_data *config_data,
+static psa_status_t hash_platform_config_data(const uint8_t *serialized_config_data,
+                                              size_t serialized_config_data_len,
                                               psa_algorithm_t hash_algo, uint8_t *digest_buf,
                                               size_t digest_buf_size, size_t *digest_len)
 {
-    size_t serialized_buf_len;
-    uint8_t serialized_data_buf[sizeof(struct security_config_data)] = {0};
-
     if (digest_buf_size < PSA_HASH_LENGTH(hash_algo)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (serialize_security_config_data(config_data, serialized_data_buf,
-                                       &serialized_buf_len,
-                                       sizeof(serialized_data_buf))) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
     return(psa_hash_compute(hash_algo,
-                            serialized_data_buf, serialized_buf_len,
+                            serialized_config_data, serialized_config_data_len,
                             digest_buf, digest_buf_size, digest_len));
 
 }
@@ -310,7 +351,7 @@ static psa_status_t form_event_log_name(struct measurement_t *measurement, char 
 
 psa_status_t get_event_log(uint8_t *buffer, size_t buffer_size, size_t *event_log_size)
 {
-    size_t ev_log_size = get_event_log_size(event_log_buf);
+    size_t ev_log_size = get_event_log_size();
 
     if (buffer == NULL) {
         return PSA_ERROR_INVALID_ARGUMENT;
@@ -327,17 +368,33 @@ psa_status_t get_event_log(uint8_t *buffer, size_t buffer_size, size_t *event_lo
     return PSA_SUCCESS;
 }
 
+static psa_status_t log_dtpm_err_to_eventlog(uint16_t hash_alg,
+                                             const char *err_msg,
+                                             size_t err_msg_len)
+{
+    int event_log_status;
+
+    event_log_status = event_log_write_pcr_event2_single(0, EV_NO_ACTION, hash_alg, NULL,
+                                                         (const uint8_t *)err_msg,
+                                                         err_msg_len);
+    if (event_log_status) {
+        ERROR("Event log record failed %d\n", event_log_status);
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
+    return PSA_SUCCESS;
+}
+
 static psa_status_t check_dtpm_alg_config(uint16_t hash_alg)
 {
     psa_status_t status;
-    int event_log_status;
-    bool alg_supported, alg_allocated;
+    bool alg_supported, alg_allocated = false;
 
     static const char allocation_err[] = "Unsupported alg for PCR bank allocation";
     static const char unsupported_alg_err[] = "TPM does not support required alg";
 
     /* Check if connected dTPM supports required alg */
-    status = check_dtpm_alg_supported(hash_alg , &alg_supported);
+    status = check_dtpm_alg_supported(hash_alg, &alg_supported);
     if (status != PSA_SUCCESS) {
         ERROR("%s: Failed to check dTPM supported algs %d\n", __func__, status);
         return status;
@@ -353,27 +410,23 @@ static psa_status_t check_dtpm_alg_config(uint16_t hash_alg)
     if (alg_supported == false) {
         ERROR("%s: connected dTPM does not support required TPM alg 0x%x\n", __func__, hash_alg);
 
-        event_log_status = event_log_write_pcr_event2_single(0, EV_NO_ACTION, hash_alg, NULL,
-                                                            (uint8_t *)unsupported_alg_err,
-                                                            sizeof(unsupported_alg_err) - 1);
-        if (event_log_status) {
-            ERROR("%s: Event log record failed for PCR bank misconfiguration %d\n",
-                    __func__, event_log_status);
-            return PSA_ERROR_PROGRAMMER_ERROR;
+        status = log_dtpm_err_to_eventlog(hash_alg, unsupported_alg_err,
+                                          sizeof(unsupported_alg_err) - 1);
+        if (status != PSA_SUCCESS) {
+            return status;
         }
 
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
     if (alg_allocated == false) {
-        ERROR("%s: connected dTPM does not have PCRs allocated to required TPM alg 0x%x\n", hash_alg);
+        ERROR("%s: connected dTPM does not have PCRs allocated to required TPM alg 0x%x\n",
+              __func__, hash_alg);
 
-        event_log_status = event_log_write_pcr_event2_single(0, EV_NO_ACTION, hash_alg, NULL,
-                                                            (uint8_t *)allocation_err,
-                                                            sizeof(allocation_err) - 1);
-        if (event_log_status) {
-            ERROR("Event log record failed for PCR bank misconfiguration %d\n", event_log_status);
-            return PSA_ERROR_PROGRAMMER_ERROR;
+        status = log_dtpm_err_to_eventlog(hash_alg, allocation_err,
+                                          sizeof(allocation_err) - 1);
+        if (status != PSA_SUCCESS) {
+            return status;
         }
 
         return PSA_ERROR_BAD_STATE;
@@ -400,37 +453,64 @@ psa_status_t tfm_dtpm_client_init(void)
     int slot;
     event_log_metadata_t event_log_metadata;
     size_t security_config_digest_len;
-    size_t security_config_len;
-    const uint8_t *security_config_data_name;
+    size_t security_config_len, serialized_security_config_len;
 
     /* <SW_TYPE_STR>-v<VERSION_STR>\0 */
     char event_name[SW_TYPE_MAX_SIZE + VERSION_MAX_SIZE + 3] = {0};
     uint8_t security_config_digest_buf[MAX_DIGEST_SIZE] = {0};
+    uint8_t serialized_security_config_data_buf[sizeof(struct security_config_data)] = {0};
     uint16_t supported_algs[1];
+    static const char dtpm_startup_err[] = "dTPM hardware error during startup";
+    static const char dtpm_alg_config_err[] = "dTPM hardware error during config check";
+    static const char dtpm_extend_err[] = "dTPM hardware error during extend";
 
-    status = dtpm_startup();
-    if (status) {
+
+    status = get_tpm_hash_alg(DTPM_CLIENT_PSA_HASH_ALG, &hash_alg);
+    if (status != PSA_SUCCESS) {
         return status;
     }
+
+    supported_algs[0] = hash_alg;
 
     if (event_log_init(event_log_buf, event_log_buf + sizeof(event_log_buf))) {
         return PSA_ERROR_PROGRAMMER_ERROR;
     }
 
-    if (get_tpm_hash_alg(DTPM_CLIENT_PSA_HASH_ALG, &hash_alg)) {
+    event_log_status = event_log_write_header(supported_algs, ARRAY_SIZE(supported_algs),
+                                              0, NULL, 0);
+    if (event_log_status != 0) {
         return PSA_ERROR_PROGRAMMER_ERROR;
     }
 
-    supported_algs[0] = hash_alg;
-
-    if (event_log_write_header(supported_algs, ARRAY_SIZE(supported_algs),
-                               0, "", sizeof(""))) {
-        return PSA_ERROR_PROGRAMMER_ERROR;
+    status = dtpm_startup();
+    if (status != PSA_SUCCESS) {
+        status = log_dtpm_err_to_eventlog(hash_alg, dtpm_startup_err,
+                                          sizeof(dtpm_startup_err) - 1);
+        if (status != PSA_SUCCESS) {
+            return status;
+        }
+        goto end;
     }
 
+    /* Let the partition boot on algorithm misconfiguration or comms failure:
+     * check_dtpm_alg_config() logs misconfig errors itself to event log, and
+     * we log PSA_ERROR_HARDWARE_FAILURE here before continuing.
+     */
     status = check_dtpm_alg_config(hash_alg);
     if (status != PSA_SUCCESS) {
-        return status;
+        if (status == PSA_ERROR_INVALID_ARGUMENT) {
+            return status;
+        }
+
+        if (status == PSA_ERROR_HARDWARE_FAILURE) {
+            status = log_dtpm_err_to_eventlog(hash_alg, dtpm_alg_config_err,
+                                              sizeof(dtpm_alg_config_err) - 1);
+            if (status != PSA_SUCCESS) {
+                return status;
+            }
+        }
+
+        goto end;
     }
 
     /* Lowest possible slot number is Zero */
@@ -450,15 +530,20 @@ psa_status_t tfm_dtpm_client_init(void)
             return status;
         }
 
-        if (get_tpm_hash_alg(measurement.metadata.measurement_algo, &hash_alg) != 0) {
+        if (measurement.metadata.measurement_algo != DTPM_CLIENT_PSA_HASH_ALG) {
             return PSA_ERROR_PROGRAMMER_ERROR;
         }
 
-        status = dtpm_client_extend(pcr_index, &measurement.value.hash_buf[0],
-                hash_alg, measurement.value.hash_buf_size);
+        status = dtpm_client_extend(pcr_index, &measurement.value.hash_buf[0], hash_alg,
+                                    measurement.value.hash_buf_size);
         if (status != PSA_SUCCESS) {
             ERROR("Extend to dTPM client failed\n");
-            return status;
+            status = log_dtpm_err_to_eventlog(hash_alg, dtpm_extend_err,
+                                              sizeof(dtpm_extend_err) - 1);
+            if (status != PSA_SUCCESS) {
+                return status;
+            }
+            goto end;
         }
 
         if (get_event_log_metadata_for_measurement_slot(slot, &event_log_metadata)) {
@@ -495,17 +580,21 @@ psa_status_t tfm_dtpm_client_init(void)
     }
 
     for (int i = 0; i < security_config_len; i++) {
-        status = hash_platform_config_data(&security_config_arr[i].security_config_data,
-                                           DTPM_CLIENT_PSA_HASH_ALG,
-                                           security_config_digest_buf,
-                                           sizeof(security_config_digest_buf),
-                                           &security_config_digest_len);
+        status = serialize_security_config_data(&security_config_arr[i].security_config_data,
+                                                serialized_security_config_data_buf,
+                                                &serialized_security_config_len,
+                                                sizeof(serialized_security_config_data_buf));
         if (status != PSA_SUCCESS) {
             return status;
         }
 
-        if (get_tpm_hash_alg(DTPM_CLIENT_PSA_HASH_ALG, &hash_alg)) {
-            return PSA_ERROR_PROGRAMMER_ERROR;
+        status = hash_platform_config_data(serialized_security_config_data_buf,
+                                           serialized_security_config_len,
+                                           DTPM_CLIENT_PSA_HASH_ALG, security_config_digest_buf,
+                                           sizeof(security_config_digest_buf),
+                                           &security_config_digest_len);
+        if (status != PSA_SUCCESS) {
+            return status;
         }
 
         status = dtpm_client_extend(security_config_arr[i].pcr_index,
@@ -513,23 +602,25 @@ psa_status_t tfm_dtpm_client_init(void)
                                     hash_alg, security_config_digest_len);
         if (status != PSA_SUCCESS) {
             ERROR("Extend to dTPM client failed\n");
-            return status;
+            status = log_dtpm_err_to_eventlog(hash_alg, dtpm_extend_err,
+                                              sizeof(dtpm_extend_err) - 1);
+            if (status != PSA_SUCCESS) {
+                return status;
+            }
+            goto end;
         }
 
-        security_config_data_name = security_config_arr[i].security_config_data.name;
-
-        event_log_status = event_log_write_pcr_event2_single(security_config_arr[i].pcr_index,
-                                                             EV_SECURITY_CONFIG,
-                                                             hash_alg, security_config_digest_buf,
-                                                             security_config_data_name,
-                                                             strlen(security_config_data_name) + 1);
-
+        event_log_status = event_log_write_pcr_event2_single(
+            security_config_arr[i].pcr_index, EV_SECURITY_CONFIG, hash_alg,
+            security_config_digest_buf, serialized_security_config_data_buf,
+            serialized_security_config_len);
         if (event_log_status) {
             ERROR("Event log record failed for security config data %d\n", event_log_status);
             return PSA_ERROR_PROGRAMMER_ERROR;
         }
     }
 
+end:
     event_log_dump(event_log_buf, get_event_log_size());
 
     return PSA_SUCCESS;
