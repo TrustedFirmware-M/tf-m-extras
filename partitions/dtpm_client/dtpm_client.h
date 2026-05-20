@@ -19,7 +19,8 @@
 extern "C" {
 #endif
 
-psa_status_t dtpm_client_extend(uint8_t pcr_index, uint8_t *value, uint16_t hash_alg, size_t hash_size);
+psa_status_t dtpm_client_extend(uint8_t pcr_index, const uint8_t *value,
+                                uint16_t hash_alg, size_t hash_size);
 
 psa_status_t get_event_log(uint8_t *buffer, size_t buffer_size, size_t *event_log_size);
 
