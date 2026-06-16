@@ -1,0 +1,30 @@
+#-------------------------------------------------------------------------------
+# (c) 2026, Infineon Technologies AG, or an affiliate of Infineon
+# Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "description": "IFX SE IPC partition manifests",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "description": "IFX SE IPC Partition",
+      "manifest": "ifx_se_ipc_service.yaml",
+      "output_path": "secure_fw/partitions/ifx_se_ipc_service",
+      "conditional": "IFX_PARTITION_SE_IPC_SERVICE",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 0x5555a21a,
+      "linker_pattern": {
+        "library_list": [
+           "*ifx_*se_ipc_service.*"
+         ]
+      }
+    }
+  ]
+}

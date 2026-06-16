@@ -1,0 +1,31 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2018-2022, Arm Limited. All rights reserved.
+# (c) 2023-2026, Infineon Technologies AG, or an affiliate of Infineon
+# Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+  "psa_framework_version": 1.1,
+  "name": "IFX_SE_IPC_SERVICE",
+  "type": "PSA-ROT",
+  "priority": "HIGH",
+  "model": "SFN",
+  "entry_init": "ifx_se_ipc_service_entry",
+  "stack_size": "IFX_SE_IPC_SERVICE_STACK_SIZE",
+  "services" : [
+    {
+      "name": "IFX_SE_IPC_SERVICE",
+      "sid": "0x00001000",
+      "non_secure_clients": false,
+      "connection_based": false,
+      "stateless_handle": auto,
+      "version": 1,
+      "version_policy": "STRICT"
+    }
+  ],
+  "dependencies": [
+  ]
+}

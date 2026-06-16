@@ -114,6 +114,16 @@ IFX extensions partition providing Infineon-specific extension services.
 
 - Chris Brand `Chris Brand <chris.brand@cypress.com>`_
 
+******************
+IFX SE IPC SERVICE
+******************
+
+IFX SE IPC service partition for Secure Enclave IPC request handling.
+
+**Maintainers**
+
+- Chris Brand `Chris Brand <chris.brand@cypress.com>`_
+
 **********************
 RSE Image Verification
 **********************
