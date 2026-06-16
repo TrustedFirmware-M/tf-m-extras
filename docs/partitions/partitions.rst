@@ -104,6 +104,16 @@ A partition to extend boot measurements into TPM PCR.
 
 - Mudit Sharma `Mudit Sharma <mudit.sharma@arm.com>`_
 
+**************
+IFX EXTENSIONS
+**************
+
+IFX extensions partition providing Infineon-specific extension services.
+
+**Maintainers**
+
+- Chris Brand `Chris Brand <chris.brand@cypress.com>`_
+
 **********************
 RSE Image Verification
 **********************
