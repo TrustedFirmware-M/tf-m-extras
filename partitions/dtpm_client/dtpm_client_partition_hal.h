@@ -59,6 +59,20 @@ int tpm_plat_get_tpm_platform_config(struct tpm_timeout_ops *timeout_ops,
                                     const struct tpm_spi_plat **spi_plat,
                                     uint8_t tpm_instance_id);
 
+#ifdef DTPM_CLIENT_ALLOCATE_PCR_DURING_INIT
+/**
+ * \brief Perform a TPM reset.
+ *
+ * This function must block until the reset sequence has completed and the TPM
+ * is ready to accept commands.
+ *
+ * \param[in] spi_plat Pointer to the SPI platform configuration.
+ *
+ * \return 0 on success; a negative value if the TPM reset fails.
+ */
+enum tfm_plat_err_t tpm_plat_perform_tpm_reset(const struct tpm_spi_plat *spi_plat);
+#endif /* DTPM_CLIENT_ALLOCATE_PCR_DURING_INIT */
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

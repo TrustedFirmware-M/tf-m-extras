@@ -266,7 +266,7 @@ static psa_status_t check_dtpm_alg_supported(uint16_t alg, bool *alg_supported)
     return tpm_ret_to_psa(tpm_ret);
 }
 
-static psa_status_t get_dtpm_alg_allocation_for_pcr(uint16_t alg, bool *alg_allocated)
+static psa_status_t check_dtpm_alg_allocation(uint16_t alg, bool *alg_allocated)
 {
     enum tpm_ret_value tpm_ret;
 
@@ -374,15 +374,15 @@ psa_status_t get_event_log(uint8_t *buffer, size_t buffer_size, size_t *event_lo
     return PSA_SUCCESS;
 }
 
-static psa_status_t log_dtpm_err_to_eventlog(uint16_t hash_alg,
-                                             const char *err_msg,
-                                             size_t err_msg_len)
+static psa_status_t log_dtpm_event_to_eventlog(uint16_t hash_alg,
+                                               const char *event,
+                                               size_t event_len)
 {
     int event_log_status;
 
     event_log_status = event_log_write_pcr_event2_single(0, EV_NO_ACTION, hash_alg, NULL,
-                                                         (const uint8_t *)err_msg,
-                                                         err_msg_len);
+                                                         (const uint8_t *)event,
+                                                         event_len);
     if (event_log_status) {
         ERROR("Event log record failed %d\n", event_log_status);
         return PSA_ERROR_PROGRAMMER_ERROR;
@@ -391,33 +391,107 @@ static psa_status_t log_dtpm_err_to_eventlog(uint16_t hash_alg,
     return PSA_SUCCESS;
 }
 
+#ifdef DTPM_CLIENT_ALLOCATE_PCR_DURING_INIT
+static psa_status_t allocate_dtpm_pcr_bank(uint16_t hash_alg)
+{
+    enum tpm_ret_value tpm_ret;
+    enum tfm_plat_err_t plat_err;
+
+    bool allocation_success = false;
+    uint32_t max_pcr = 0;
+    uint32_t size_needed = 0;
+    uint32_t size_available = 0;
+    tpm_pcr_allocate_bank_t sha256_allocation = {
+        .hash_alg = TPM_ALG_SHA256,
+        .pcr_select = {0},
+    };
+    tpm_pcr_allocate_bank_t sha384_allocation = {
+        .hash_alg = TPM_ALG_SHA384,
+        .pcr_select = {0},
+    };
+
+    if (hash_alg == TPM_ALG_SHA256) {
+        sha256_allocation.pcr_select[0] = 0xff;
+        sha256_allocation.pcr_select[1] = 0xff;
+        sha256_allocation.pcr_select[2] = 0xff;
+    } else if (hash_alg == TPM_ALG_SHA384) {
+        sha384_allocation.pcr_select[0] = 0xff;
+        sha384_allocation.pcr_select[1] = 0xff;
+        sha384_allocation.pcr_select[2] = 0xff;
+    } else {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    tpm_pcr_allocate_bank_t allocations[] = {
+        sha256_allocation,
+        sha384_allocation,
+        {
+            .hash_alg = TPM_ALG_NULL,
+        },
+    };
+
+    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data,
+                                 DTPM_CLIENT_LOCALITY);
+    if (tpm_ret != TPM_SUCCESS) {
+        ERROR("%s: Interface init failed\n", __func__);
+        return tpm_ret_to_psa(tpm_ret);
+    }
+
+    tpm_ret = tpm_pcr_allocate_auth_password(&tpm_chip_data, NULL, 0, allocations,
+                                             &allocation_success, &max_pcr,
+                                             &size_needed, &size_available);
+    if (tpm_ret != TPM_SUCCESS) {
+        ERROR("%s: PCR bank allocation failed with error: %d\n", __func__, tpm_ret);
+        if (tpm_interface_close(&tpm_chip_data, DTPM_CLIENT_LOCALITY) != TPM_SUCCESS) {
+            ERROR("%s: Interface close failed\n", __func__);
+        }
+        return tpm_ret_to_psa(tpm_ret);
+    }
+
+    tpm_ret = tpm_interface_close(&tpm_chip_data, DTPM_CLIENT_LOCALITY);
+    if (tpm_ret != TPM_SUCCESS) {
+        ERROR("%s: Interface close failed\n", __func__);
+        return tpm_ret_to_psa(tpm_ret);
+    }
+
+    if (allocation_success == false) {
+        ERROR("%s: PCR bank allocation rejected, max_pcr %lu, needed %lu, available %lu\n",
+              __func__, (unsigned long)max_pcr, (unsigned long)size_needed,
+              (unsigned long)size_available);
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    /* The platform TPM reset implementation must block until the reset sequence completes */
+    plat_err = tpm_plat_perform_tpm_reset(tpm_spi_plat);
+    if (plat_err != TFM_PLAT_ERR_SUCCESS) {
+        ERROR("%s: TPM reset failed with error: %d\n", __func__, plat_err);
+        return PSA_ERROR_HARDWARE_FAILURE;
+    }
+
+    return dtpm_startup();
+}
+#endif /* DTPM_CLIENT_ALLOCATE_PCR_DURING_INIT */
+
 static psa_status_t check_dtpm_alg_config(uint16_t hash_alg)
 {
     psa_status_t status;
     bool alg_supported, alg_allocated = false;
 
-    static const char allocation_err[] = "Unsupported alg for PCR bank allocation";
-    static const char unsupported_alg_err[] = "TPM does not support required alg";
+    static const char allocation_err[] = "PCR bank allocation attempt failed for the required hash alg";
+    static const char unsupported_alg_err[] = "The TPM does not support the required algorithm";
 
-    /* Check if connected dTPM supports required alg */
+    /* Check whether the connected dTPM supports the required algorithm */
     status = check_dtpm_alg_supported(hash_alg, &alg_supported);
     if (status != PSA_SUCCESS) {
         ERROR("%s: Failed to check dTPM supported algs %d\n", __func__, status);
         return status;
     }
 
-    /* Check if connected dTPM has PCR bank for required alg allocated */
-    status = get_dtpm_alg_allocation_for_pcr(hash_alg, &alg_allocated);
-    if (status != PSA_SUCCESS) {
-        ERROR("%s: Failed to check PCR allocation %d\n", __func__, status);
-        return status;
-    }
-
     if (alg_supported == false) {
         ERROR("%s: connected dTPM does not support required TPM alg 0x%x\n", __func__, hash_alg);
 
-        status = log_dtpm_err_to_eventlog(hash_alg, unsupported_alg_err,
-                                          sizeof(unsupported_alg_err) - 1);
+        status = log_dtpm_event_to_eventlog(hash_alg, unsupported_alg_err,
+                                            sizeof(unsupported_alg_err) - 1);
         if (status != PSA_SUCCESS) {
             return status;
         }
@@ -425,12 +499,27 @@ static psa_status_t check_dtpm_alg_config(uint16_t hash_alg)
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    if (alg_allocated == false) {
-        ERROR("%s: connected dTPM does not have PCRs allocated to required TPM alg 0x%x\n",
-              __func__, hash_alg);
+    /* Check if connected dTPM has PCR bank for required alg allocated */
+    status = check_dtpm_alg_allocation(hash_alg, &alg_allocated);
+    if (status != PSA_SUCCESS) {
+        ERROR("%s: Failed to check PCR allocation %d\n", __func__, status);
+        return status;
+    }
 
-        status = log_dtpm_err_to_eventlog(hash_alg, allocation_err,
-                                          sizeof(allocation_err) - 1);
+    if (alg_allocated == true) {
+        return PSA_SUCCESS;
+    }
+
+#if defined(DTPM_CLIENT_ALLOCATE_PCR_DURING_INIT)
+    static const char allocation_success[] = "The PCR bank for the required algorithm was allocated";
+
+    /* Attempt allocating the PCR */
+    status = allocate_dtpm_pcr_bank(hash_alg);
+    if (status != PSA_SUCCESS) {
+        ERROR("%s: Failed to allocate PCR bank: %d\n", __func__, status);
+
+        status = log_dtpm_event_to_eventlog(hash_alg, allocation_err,
+                                            sizeof(allocation_err) - 1);
         if (status != PSA_SUCCESS) {
             return status;
         }
@@ -438,7 +527,36 @@ static psa_status_t check_dtpm_alg_config(uint16_t hash_alg)
         return PSA_ERROR_BAD_STATE;
     }
 
-    return PSA_SUCCESS;
+    /* Query the PCR bank allocation for the required hash alg */
+    status = check_dtpm_alg_allocation(hash_alg, &alg_allocated);
+    if (status != PSA_SUCCESS) {
+        ERROR("%s: Failed to check PCR allocation after reset: %d\n",
+              __func__, status);
+        return status;
+    }
+
+    if (alg_allocated == true) {
+        INFO("%s: PCR bank allcation successful hash alg 0x%x\n", __func__, hash_alg);
+        status = log_dtpm_event_to_eventlog(hash_alg, allocation_success,
+                                            sizeof(allocation_success) - 1);
+        if (status != PSA_SUCCESS) {
+            return status;
+        }
+
+        return PSA_SUCCESS;
+    }
+#endif /* DTPM_CLIENT_ALLOCATE_PCR_DURING_INIT */
+
+    ERROR("%s: connected dTPM does not have PCRs allocated to required TPM alg 0x%x\n",
+          __func__, hash_alg);
+
+    status = log_dtpm_event_to_eventlog(hash_alg, allocation_err,
+                                        sizeof(allocation_err) - 1);
+    if (status != PSA_SUCCESS) {
+        return status;
+    }
+
+    return PSA_ERROR_BAD_STATE;
 }
 
 psa_status_t tfm_dtpm_client_init(void)
@@ -490,8 +608,8 @@ psa_status_t tfm_dtpm_client_init(void)
 
     status = dtpm_startup();
     if (status != PSA_SUCCESS) {
-        status = log_dtpm_err_to_eventlog(hash_alg, dtpm_startup_err,
-                                          sizeof(dtpm_startup_err) - 1);
+        status = log_dtpm_event_to_eventlog(hash_alg, dtpm_startup_err,
+                                            sizeof(dtpm_startup_err) - 1);
         if (status != PSA_SUCCESS) {
             return status;
         }
@@ -509,8 +627,8 @@ psa_status_t tfm_dtpm_client_init(void)
         }
 
         if (status == PSA_ERROR_HARDWARE_FAILURE) {
-            status = log_dtpm_err_to_eventlog(hash_alg, dtpm_alg_config_err,
-                                              sizeof(dtpm_alg_config_err) - 1);
+            status = log_dtpm_event_to_eventlog(hash_alg, dtpm_alg_config_err,
+                                                sizeof(dtpm_alg_config_err) - 1);
             if (status != PSA_SUCCESS) {
                 return status;
             }
@@ -544,8 +662,8 @@ psa_status_t tfm_dtpm_client_init(void)
                                     measurement.value.hash_buf_size);
         if (status != PSA_SUCCESS) {
             ERROR("Extend to dTPM client failed\n");
-            status = log_dtpm_err_to_eventlog(hash_alg, dtpm_extend_err,
-                                              sizeof(dtpm_extend_err) - 1);
+            status = log_dtpm_event_to_eventlog(hash_alg, dtpm_extend_err,
+                                                sizeof(dtpm_extend_err) - 1);
             if (status != PSA_SUCCESS) {
                 return status;
             }
@@ -560,7 +678,7 @@ psa_status_t tfm_dtpm_client_init(void)
          * format `<SW_TYPE_STR>-v<VERSION_STR>`. If these are missing from the measured boot
          * metadata, fall back to using platform defined `name` supplied with `event_log_metadata`.
          */
-        status = form_event_log_name(&measurement, &event_name, ARRAY_SIZE(event_name));
+        status = form_event_log_name(&measurement, event_name, ARRAY_SIZE(event_name));
         if (status != PSA_SUCCESS) {
             if (ARRAY_SIZE(event_name) < strlen(event_log_metadata.name) + 1) {
                 return PSA_ERROR_PROGRAMMER_ERROR;
@@ -608,8 +726,8 @@ psa_status_t tfm_dtpm_client_init(void)
                                     hash_alg, security_config_digest_len);
         if (status != PSA_SUCCESS) {
             ERROR("Extend to dTPM client failed\n");
-            status = log_dtpm_err_to_eventlog(hash_alg, dtpm_extend_err,
-                                              sizeof(dtpm_extend_err) - 1);
+            status = log_dtpm_event_to_eventlog(hash_alg, dtpm_extend_err,
+                                                sizeof(dtpm_extend_err) - 1);
             if (status != PSA_SUCCESS) {
                 return status;
             }

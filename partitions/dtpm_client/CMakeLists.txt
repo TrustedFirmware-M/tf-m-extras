@@ -78,6 +78,9 @@ set(DTPM_CLIENT_PSA_HASH_ALG PSA_ALG_SHA_256)
 set(DTPM_CLIENT_STARTUP_LOCALITY 0
     CACHE STRING "Locality used by the dTPM client at startup")
 
+set(DTPM_CLIENT_ALLOCATE_PCR_DURING_INIT OFF
+    CACHE BOOL "Allocate the PCR bank corresponding to the required hash algorithm")
+
 if(NOT DTPM_CLIENT_STARTUP_LOCALITY MATCHES "^[0-4]$")
     message(FATAL_ERROR "DTPM_CLIENT_STARTUP_LOCALITY must be between 0 and 4")
 endif()
@@ -94,6 +97,7 @@ target_compile_definitions(tfm_psa_rot_partition_dtpm_client
     PRIVATE
         DTPM_CLIENT_PSA_HASH_ALG=${DTPM_CLIENT_PSA_HASH_ALG}
         DTPM_CLIENT_STARTUP_LOCALITY=${DTPM_CLIENT_STARTUP_LOCALITY}
+        $<$<BOOL:${DTPM_CLIENT_ALLOCATE_PCR_DURING_INIT}>:DTPM_CLIENT_ALLOCATE_PCR_DURING_INIT>
 )
 
 target_compile_definitions(tfm_config
