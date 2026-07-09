@@ -29,6 +29,8 @@
 #define TPM_INSTANCE_ID 0
 #endif
 
+#define DTPM_CLIENT_LOCALITY ((uint8_t)DTPM_CLIENT_STARTUP_LOCALITY)
+
 /* Caller needs to check that `str` can fit in `event_name_buffer` */
 #define APPEND_TO_EVENT_NAME(event_name_buffer, str, str_len, index)           \
 do {                                                                           \
@@ -50,7 +52,7 @@ static const struct tpm_chip_timeouts tpm_timeouts = {
 };
 
 static struct tpm_chip_data tpm_chip_data = {
-    .locality = 0,
+    .locality = DTPM_CLIENT_LOCALITY,
     .timeouts = &tpm_timeouts,
 };
 
@@ -125,7 +127,8 @@ static psa_status_t dtpm_startup(void)
 {
     enum tpm_ret_value tpm_ret;
 
-    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0);
+    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data,
+                                 DTPM_CLIENT_LOCALITY);
     if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s: Interface init failed\n", __func__);
         return tpm_ret_to_psa(tpm_ret);
@@ -135,13 +138,13 @@ static psa_status_t dtpm_startup(void)
     tpm_ret = tpm_startup(&tpm_chip_data, TPM_SU_CLEAR);
     if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s: TPM startup failed\n", __func__);
-        if (tpm_interface_close(&tpm_chip_data, 0) != TPM_SUCCESS) {
+        if (tpm_interface_close(&tpm_chip_data, DTPM_CLIENT_LOCALITY) != TPM_SUCCESS) {
             ERROR("%s:Interface close failed \n", __func__);
         }
         return tpm_ret_to_psa(tpm_ret);
     }
 
-    tpm_ret = tpm_interface_close(&tpm_chip_data, 0);
+    tpm_ret = tpm_interface_close(&tpm_chip_data, DTPM_CLIENT_LOCALITY);
     if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s:Interface close failed \n", __func__);
     }
@@ -154,7 +157,8 @@ psa_status_t dtpm_client_extend(uint8_t pcr_index, const uint8_t *value,
 {
     enum tpm_ret_value tpm_ret;
 
-    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0);
+    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data,
+                                 DTPM_CLIENT_LOCALITY);
     if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s: Interface init failed\n", __func__);
         return tpm_ret_to_psa(tpm_ret);
@@ -163,14 +167,14 @@ psa_status_t dtpm_client_extend(uint8_t pcr_index, const uint8_t *value,
     tpm_ret = tpm_pcr_extend(&tpm_chip_data, pcr_index, hash_alg, value, hash_size);
     if (tpm_ret != TPM_SUCCESS) {
         ERROR("dTPM Client extend failed\n");
-        if (tpm_interface_close(&tpm_chip_data, 0) != TPM_SUCCESS) {
+        if (tpm_interface_close(&tpm_chip_data, DTPM_CLIENT_LOCALITY) != TPM_SUCCESS) {
             ERROR("%s:Interface close failed \n", __func__);
             return tpm_ret_to_psa(tpm_ret);
         }
         return tpm_ret_to_psa(tpm_ret);
     }
 
-    tpm_ret = tpm_interface_close(&tpm_chip_data, 0);
+    tpm_ret = tpm_interface_close(&tpm_chip_data, DTPM_CLIENT_LOCALITY);
     if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s:Interface close failed \n", __func__);
     }
@@ -235,10 +239,11 @@ static psa_status_t check_dtpm_alg_supported(uint16_t alg, bool *alg_supported)
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0);
+    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data,
+                                 DTPM_CLIENT_LOCALITY);
     if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s: Interface init failed\n", __func__);
-        if (tpm_interface_close(&tpm_chip_data, 0) != TPM_SUCCESS) {
+        if (tpm_interface_close(&tpm_chip_data, DTPM_CLIENT_LOCALITY) != TPM_SUCCESS) {
             ERROR("%s:Interface close failed \n", __func__);
         }
         return tpm_ret_to_psa(tpm_ret);
@@ -247,13 +252,13 @@ static psa_status_t check_dtpm_alg_supported(uint16_t alg, bool *alg_supported)
     tpm_ret = tpm_has_alg(&tpm_chip_data, alg, alg_supported);
     if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s: tpm_has_alg failed with error: %d\n", __func__, tpm_ret);
-        if (tpm_interface_close(&tpm_chip_data, 0) != TPM_SUCCESS) {
+        if (tpm_interface_close(&tpm_chip_data, DTPM_CLIENT_LOCALITY) != TPM_SUCCESS) {
             ERROR("%s:Interface close failed \n", __func__);
         }
         return tpm_ret_to_psa(tpm_ret);
     }
 
-    tpm_ret = tpm_interface_close(&tpm_chip_data, 0);
+    tpm_ret = tpm_interface_close(&tpm_chip_data, DTPM_CLIENT_LOCALITY);
     if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s:Interface close failed \n", __func__);
     }
@@ -274,7 +279,8 @@ static psa_status_t get_dtpm_alg_allocation_for_pcr(uint16_t alg, bool *alg_allo
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data, 0);
+    tpm_ret = tpm_interface_init(tpm_spi_plat, &tpm_timeout_ops, &tpm_chip_data,
+                                 DTPM_CLIENT_LOCALITY);
     if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s: Interface init failed\n", __func__);
         return tpm_ret_to_psa(tpm_ret);
@@ -283,7 +289,7 @@ static psa_status_t get_dtpm_alg_allocation_for_pcr(uint16_t alg, bool *alg_allo
     tpm_ret = tpm_getcap_query_pcrs(&tpm_chip_data, query);
     if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s: tpm_getcap_query_pcrs failed with error: %d\n", __func__, tpm_ret);
-        if (tpm_interface_close(&tpm_chip_data, 0) != TPM_SUCCESS) {
+        if (tpm_interface_close(&tpm_chip_data, DTPM_CLIENT_LOCALITY) != TPM_SUCCESS) {
             ERROR("%s:Interface close failed \n", __func__);
         }
         return tpm_ret_to_psa(tpm_ret);
@@ -298,7 +304,7 @@ static psa_status_t get_dtpm_alg_allocation_for_pcr(uint16_t alg, bool *alg_allo
         }
     }
 
-    tpm_ret = tpm_interface_close(&tpm_chip_data, 0);
+    tpm_ret = tpm_interface_close(&tpm_chip_data, DTPM_CLIENT_LOCALITY);
     if (tpm_ret != TPM_SUCCESS) {
         ERROR("%s:Interface close failed \n", __func__);
         return tpm_ret_to_psa(tpm_ret);
@@ -477,7 +483,7 @@ psa_status_t tfm_dtpm_client_init(void)
     }
 
     event_log_status = event_log_write_header(supported_algs, ARRAY_SIZE(supported_algs),
-                                              0, NULL, 0);
+                                              DTPM_CLIENT_LOCALITY, NULL, 0);
     if (event_log_status != 0) {
         return PSA_ERROR_PROGRAMMER_ERROR;
     }
