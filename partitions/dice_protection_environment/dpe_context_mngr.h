@@ -38,7 +38,7 @@ extern "C" {
 #define GET_NONCE(handle) ((handle >> 16) & 0xffff)
 
 #define SET_IDX(handle, idx) ((handle & 0xffff0000) | idx)
-#define SET_NONCE(handle, nonce) ((handle & 0x00ffff) | (nonce << 16))
+#define SET_NONCE(handle, nonce) ((handle & 0x00ffff) | ((uint32_t)nonce << 16))
 
 /* Current locality by default */
 #define DEFAULT_TARGET_LOCALITY  LOCALITY_NONE
