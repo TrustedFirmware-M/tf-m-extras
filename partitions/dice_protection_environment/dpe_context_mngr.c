@@ -509,6 +509,16 @@ static bool is_client_authorised(int32_t client_id, int32_t target_locality)
     return (client_locality == target_locality);
 }
 
+static bool is_context_handle_authorised(int input_ctx_handle, int32_t client_id)
+{
+    if (!is_input_handle_valid(input_ctx_handle)) {
+        return false;
+    }
+
+    return is_client_authorised(client_id,
+               component_ctx_array[GET_IDX(input_ctx_handle)].target_locality);
+}
+
 static bool is_cert_id_used(uint32_t cert_id, struct cert_context_t **cert_ctx)
 {
     int i;
@@ -723,8 +733,8 @@ validate_derive_context_inputs(int input_ctx_handle,
         return DPE_INVALID_ARGUMENT;
     }
 
-    /* Validate input handle */
-    if (!is_input_handle_valid(input_ctx_handle)) {
+    /* Validate the handle and its binding to the caller's locality. */
+    if (!is_context_handle_authorised(input_ctx_handle, client_id)) {
         return DPE_INVALID_ARGUMENT;
     }
     /* Get parent component index from the input handle */
@@ -739,10 +749,6 @@ validate_derive_context_inputs(int input_ctx_handle,
 
     /* Check if parent context is allowed to derive */
     if (!parent_ctx->is_allowed_to_derive) {
-        return DPE_INVALID_ARGUMENT;
-    }
-
-    if (!is_client_authorised(client_id, parent_ctx->target_locality)) {
         return DPE_INVALID_ARGUMENT;
     }
 
@@ -1170,6 +1176,7 @@ destroy_context(struct component_context_t *comp_ctx,
 }
 
 dpe_error_t destroy_context_request(int input_ctx_handle,
+                                    int32_t client_id,
                                     bool destroy_recursively)
 {
     uint16_t comp_ctx_idx;
@@ -1177,8 +1184,8 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
 
     log_destroy_context(input_ctx_handle, destroy_recursively);
 
-    /* Validate input handle */
-    if (!is_input_handle_valid(input_ctx_handle)) {
+    /* Validate the handle and its binding to the caller's locality. */
+    if (!is_context_handle_authorised(input_ctx_handle, client_id)) {
         return DPE_INVALID_ARGUMENT;
     }
 
@@ -1199,6 +1206,7 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
 }
 
 dpe_error_t certify_key_request(int input_ctx_handle,
+                                int32_t client_id,
                                 bool retain_context,
                                 const uint8_t *public_key,
                                 size_t public_key_size,
@@ -1222,8 +1230,8 @@ dpe_error_t certify_key_request(int input_ctx_handle,
     log_certify_key(input_ctx_handle, retain_context, public_key, public_key_size,
                     label, label_size);
 
-    /* Validate input handle */
-    if (!is_input_handle_valid(input_ctx_handle)) {
+    /* Validate the handle and its binding to the caller's locality. */
+    if (!is_context_handle_authorised(input_ctx_handle, client_id)) {
         return DPE_INVALID_ARGUMENT;
     }
 
@@ -1362,6 +1370,7 @@ dpe_error_t certify_key_request(int input_ctx_handle,
 }
 
 dpe_error_t get_certificate_chain_request(int input_ctx_handle,
+                                          int32_t client_id,
                                           bool retain_context,
                                           bool clear_from_context,
                                           uint8_t *certificate_chain_buf,
@@ -1378,8 +1387,8 @@ dpe_error_t get_certificate_chain_request(int input_ctx_handle,
     log_get_certificate_chain(input_ctx_handle, retain_context,
                               clear_from_context, certificate_chain_buf_size);
 
-    /* Validate input handle */
-    if (!is_input_handle_valid(input_ctx_handle)) {
+    /* Validate the handle and its binding to the caller's locality. */
+    if (!is_context_handle_authorised(input_ctx_handle, client_id)) {
         return DPE_INVALID_ARGUMENT;
     }
 

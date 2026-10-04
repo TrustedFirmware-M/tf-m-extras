@@ -374,7 +374,8 @@ static dpe_error_t decode_derive_context(QCBORDecodeContext *decode_ctx,
 }
 
 static dpe_error_t decode_destroy_context(QCBORDecodeContext *decode_ctx,
-                                          QCBOREncodeContext *encode_ctx)
+                                          QCBOREncodeContext *encode_ctx,
+                                          int32_t client_id)
 {
     dpe_error_t dpe_err;
     QCBORError qcbor_err;
@@ -429,7 +430,7 @@ static dpe_error_t decode_destroy_context(QCBORDecodeContext *decode_ctx,
         return DPE_INVALID_ARGUMENT;
     }
 
-    dpe_err = destroy_context_request(context_handle, destroy_recursively);
+    dpe_err = destroy_context_request(context_handle, client_id, destroy_recursively);
     if (dpe_err != DPE_NO_ERROR) {
         return dpe_err;
     }
@@ -443,7 +444,8 @@ static dpe_error_t decode_destroy_context(QCBORDecodeContext *decode_ctx,
 }
 
 static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
-                                      QCBOREncodeContext *encode_ctx)
+                                      QCBOREncodeContext *encode_ctx,
+                                      int32_t client_id)
 {
     QCBORError qcbor_err;
     UsefulBufC out;
@@ -526,7 +528,7 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
         return DPE_INVALID_ARGUMENT;
     }
 
-    dpe_err = certify_key_request(context_handle, retain_context, public_key,
+    dpe_err = certify_key_request(context_handle, client_id, retain_context, public_key,
                                   public_key_size, label, label_size,
                                   certificate_buf,
                                   SIZEOF_TEMP_BUF,
@@ -569,7 +571,8 @@ static dpe_error_t decode_certify_key(QCBORDecodeContext *decode_ctx,
 }
 
 static dpe_error_t decode_get_certificate_chain(QCBORDecodeContext *decode_ctx,
-                                                QCBOREncodeContext *encode_ctx)
+                                                QCBOREncodeContext *encode_ctx,
+                                                int32_t client_id)
 {
     QCBORError qcbor_err;
     UsefulBufC out;
@@ -634,6 +637,7 @@ static dpe_error_t decode_get_certificate_chain(QCBORDecodeContext *decode_ctx,
     }
 
     dpe_err = get_certificate_chain_request(context_handle,
+                                            client_id,
                                             retain_context,
                                             clear_from_context,
                                             certificate_chain_buf,
@@ -708,13 +712,13 @@ int32_t dpe_command_decode(int32_t client_id,
             dpe_err = decode_derive_context(&decode_ctx, &encode_ctx, client_id);
             break;
         case DPE_CERTIFY_KEY:
-            dpe_err = decode_certify_key(&decode_ctx, &encode_ctx);
+            dpe_err = decode_certify_key(&decode_ctx, &encode_ctx, client_id);
             break;
         case DPE_GET_CERTIFICATE_CHAIN:
-            dpe_err = decode_get_certificate_chain(&decode_ctx, &encode_ctx);
+            dpe_err = decode_get_certificate_chain(&decode_ctx, &encode_ctx, client_id);
             break;
         case DPE_DESTROY_CONTEXT:
-            dpe_err = decode_destroy_context(&decode_ctx, &encode_ctx);
+            dpe_err = decode_destroy_context(&decode_ctx, &encode_ctx, client_id);
             break;
         default:
             dpe_err = DPE_INVALID_COMMAND;

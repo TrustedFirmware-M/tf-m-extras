@@ -192,12 +192,14 @@ dpe_error_t derive_context_request(int input_ctx_handle,
  *        destroy_recursively, destroys all its child context too.
  *
  * \param[in]  input_context_handle      Input handle to child component context
+ * \param[in]  client_id                 Authenticated PSA caller identifier.
  * \param[in]  destroy_recursively       Flag to indicate if all derived contexts
  *                                       should also be destroyed recursively.
  *
  * \return Returns error code of type dpe_error_t
  */
 dpe_error_t destroy_context_request(int input_ctx_handle,
+                                    int32_t client_id,
                                     bool destroy_recursively);
 
 /**
@@ -235,6 +237,7 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
  *      and creates certificate.
  *
  * \param[in]  input_ctx_handle                Input handle to component context.
+ * \param[in]  client_id                       Authenticated PSA caller identifier.
  * \param[in]  retain_context                  Flag to indicate if context needs
  *                                             to be retained. TRUE only if a client
  *                                             is calling DPE commands multiple times.
@@ -263,6 +266,7 @@ dpe_error_t destroy_context_request(int input_ctx_handle,
  * \return Returns error code of type dpe_error_t
  */
 dpe_error_t certify_key_request(int input_ctx_handle,
+                                int32_t client_id,
                                 bool retain_context,
                                 const uint8_t *public_key,
                                 size_t public_key_size,
@@ -283,6 +287,7 @@ dpe_error_t certify_key_request(int input_ctx_handle,
  *
  * \param[in]  input_ctx_handle                Input context handle for the DPE
  *                                             context.
+ * \param[in]  client_id                       Authenticated PSA caller identifier.
  * \param[in]  retain_context                  Flag to indicate whether to
  *                                             retain the context.
  * \param[in]  clear_from_context              Flag to indicate whether DPE must
@@ -304,6 +309,7 @@ dpe_error_t certify_key_request(int input_ctx_handle,
  * \return Returns error code of type dpe_error_t
  */
 dpe_error_t get_certificate_chain_request(int input_ctx_handle,
+                                          int32_t client_id,
                                           bool retain_context,
                                           bool clear_from_context,
                                           uint8_t *certificate_chain_buf,
