@@ -12,8 +12,11 @@
 
 psa_status_t tfm_dtpm_client_extend(uint8_t index, uint16_t algo, uint8_t *hash, size_t hash_size)
 {
-
     psa_status_t status;
+
+    if ((hash == NULL) || (hash_size > TFM_DTPM_MAX_DIGEST_SIZE)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
 
     struct pcr_extend_t pcr_extend = {
         .index = index,

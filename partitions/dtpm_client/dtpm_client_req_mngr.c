@@ -27,8 +27,9 @@ static psa_status_t extend_pcr(const psa_msg_t *msg)
         return PSA_ERROR_PROGRAMMER_ERROR;
     }
 
-    /* Check we're not writing to a PCR index beyond 24 */
-    if (pcr_extend_in.index > 24) {
+    /* Check the PCR index and digest size before forwarding the request. */
+    if ((pcr_extend_in.index > 24) ||
+        (pcr_extend_in.hash_size > sizeof(pcr_extend_in.hash))) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
