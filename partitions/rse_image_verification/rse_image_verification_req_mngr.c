@@ -234,11 +234,21 @@ process_chain_link(struct rse_image_verification_chain_link_t *link,
                    struct verification_context_t *ctx)
 {
     enum rse_verification_service_err_t status;
+    uint32_t chain_buffer_size;
     size_t key_len = (size_t)link->key_size;
     uint8_t *key_ptr;
 
-    if ((link->key_offset_in_chain_buffer + link->key_size) >
-        (link->chain_data_size + link->chain_signature_size)) {
+    if (link->chain_signature_size >
+        (UINT32_MAX - link->chain_data_size)) {
+        return RSE_VERIFICATION_SERVICE_ERR_INVALID_ARG;
+    }
+
+    chain_buffer_size =
+        link->chain_signature_size + link->chain_data_size;
+
+    if ((link->key_offset_in_chain_buffer > chain_buffer_size) ||
+        (link->key_size >
+         (chain_buffer_size - link->key_offset_in_chain_buffer))) {
         return RSE_VERIFICATION_SERVICE_ERR_INVALID_ARG;
     }
 
