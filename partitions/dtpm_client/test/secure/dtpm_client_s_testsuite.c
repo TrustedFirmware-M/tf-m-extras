@@ -56,7 +56,7 @@ static int dtpm_client_read(uint8_t pcr_index, uint8_t *pcr_read_response,
             .msec_d = 30,
     };
 
-    const struct tpm_chip_data tpm_chip_data = {
+    struct tpm_chip_data tpm_chip_data = {
         .locality = 0,
         .timeouts = &tpm_timeouts,
     };
@@ -77,7 +77,7 @@ static int dtpm_client_read(uint8_t pcr_index, uint8_t *pcr_read_response,
 void pcr_extend_test_001(struct test_result_t *ret)
 {
     psa_status_t status;
-    uint8_t pcr_read_response[MAX_DIGEST_SIZE];
+    uint8_t pcr_read_response[TFM_DTPM_MAX_DIGEST_SIZE];
 
     if (tpm_plat_get_tpm_platform_config(&tpm_timeout_ops, &tpm_spi_plat, TPM_INSTANCE_ID)) {
        TEST_FAIL("Failed to get platform config");
@@ -90,7 +90,8 @@ void pcr_extend_test_001(struct test_result_t *ret)
        return;
     }
 
-    status = dtpm_client_read(DEBUG_PCR_NUMBER, &pcr_read_response, ARRAY_SIZE(pcr_read_response));
+    status = dtpm_client_read(DEBUG_PCR_NUMBER, (uint8_t *)pcr_read_response,
+                              ARRAY_SIZE(pcr_read_response));
     if (status != TPM_SUCCESS) {
             TEST_FAIL("Failed to read extended value from TPM");
     }

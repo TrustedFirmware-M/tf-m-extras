@@ -21,16 +21,17 @@ extern "C" {
 #define TFM_DTPM_CLIENT_READ        1001U
 #define TFM_DTPM_CLIENT_EXTEND      1002U
 #define TFM_EVENT_LOG               1003U
-#define MAX_DIGEST_SIZE             48 /* SHA384 */
+#define TFM_DTPM_MAX_DIGEST_SIZE       48 /* SHA384 */
 
 struct pcr_extend_t {
     size_t hash_size;
     uint16_t hash_algo;
     uint8_t index;
-    uint8_t hash[MAX_DIGEST_SIZE];
+    uint8_t hash[TFM_DTPM_MAX_DIGEST_SIZE];
 };
 
-psa_status_t tfm_dtpm_client_extend(uint8_t index, uint16_t algo, uint8_t *hash, size_t hash_size);
+psa_status_t tfm_dtpm_client_extend(uint8_t index, uint16_t algo, const uint8_t *hash,
+                                    size_t hash_size);
 
 psa_status_t tfm_get_event_log(uint8_t *buf, size_t buf_size, size_t *event_log_len);
 

@@ -581,7 +581,7 @@ psa_status_t tfm_dtpm_client_init(void)
 
     /* <SW_TYPE_STR>-v<VERSION_STR>\0 */
     char event_name[SW_TYPE_MAX_SIZE + VERSION_MAX_SIZE + 3] = {0};
-    uint8_t security_config_digest_buf[MAX_DIGEST_SIZE] = {0};
+    uint8_t security_config_digest_buf[TFM_DTPM_MAX_DIGEST_SIZE] = {0};
     uint8_t serialized_security_config_data_buf[sizeof(struct security_config_data)] = {0};
     uint16_t supported_algs[1];
     static const char dtpm_startup_err[] = "dTPM hardware error during startup";

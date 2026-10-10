@@ -10,7 +10,8 @@
 #include "psa/client.h"
 #include "psa_manifest/sid.h"
 
-psa_status_t tfm_dtpm_client_extend(uint8_t index, uint16_t algo, uint8_t *hash, size_t hash_size)
+psa_status_t tfm_dtpm_client_extend(uint8_t index, uint16_t algo, const uint8_t *hash,
+                                    size_t hash_size)
 {
     psa_status_t status;
 
