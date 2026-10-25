@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2023-2026, Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -734,9 +734,16 @@ void derive_context_with_unsupported_params_test(struct test_result_t *ret)
 void derive_context_with_invalid_target_locality_test(struct test_result_t *ret)
 {
     dpe_error_t dpe_err;
+    int foreign_ctx_handle;
     struct derive_context_cmd_input_t dc_input = DEFAULT_DC_CMD_INPUT;
     struct derive_context_cmd_output_t dc_output = {0};
+
     dc_input.context_handle = retained_rot_ctx_handle;
+    /* This caller cannot destroy the foreign-locality context. Leave it
+     * certificate-free so it cannot affect subsequent certificate tests.
+     */
+    dc_input.cert_id = DPE_CERT_ID_INVALID;
+    dc_input.create_certificate = false;
     /* Use a distinct target_locality for the context to be derived */
     dc_input.target_locality = RANDOM_DISTINCT_LOCALITY;
 
@@ -747,19 +754,24 @@ void derive_context_with_invalid_target_locality_test(struct test_result_t *ret)
     }
     /* Save the last handle for the subsequent test */
     retained_rot_ctx_handle = dc_output.out_parent_handle;
+    foreign_ctx_handle = dc_output.out_ctx_handle;
     TEST_LOG("retained_rot_ctx_handle = 0x%x\r\n", retained_rot_ctx_handle);
 
     /* Parent context has different target locality, now try to use the handle
      * to derive the context from this test partition client and it should fail
      */
-    dc_input.context_handle = dc_output.out_ctx_handle;
+    dc_input.context_handle = foreign_ctx_handle;
     dpe_err = CALL_DERIVE_CONTEXT(dc_input, dc_output);
     if (dpe_err != DPE_INVALID_ARGUMENT) {
         TEST_FAIL("DPE DeriveContext test: Invalid target_locality "
                   "should return invalid argument");
         return;
     }
-    DESTROY_SINGLE_CONTEXT(dc_output.out_ctx_handle);
+    dpe_err = dpe_destroy_context(foreign_ctx_handle, false);
+    if (dpe_err != DPE_INVALID_ARGUMENT) {
+        TEST_FAIL("DPE DestroyContext should return invalid argument");
+        return;
+    }
 
     ret->val = TEST_PASSED;
 }
